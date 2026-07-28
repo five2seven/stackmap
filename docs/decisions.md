@@ -6,7 +6,7 @@ Record durable technical choices here so future contributors understand their co
 
 **Status:** Accepted
 
-**Context:** `{{DISPLAY_NAME}}` needs a lightweight, reusable frontend foundation.
+**Context:** `StackMap` needs a lightweight, reusable frontend foundation.
 
 **Decision:** Use React for the user interface, TypeScript for static checks, and Vite for development and production builds.
 
@@ -28,7 +28,7 @@ Record durable technical choices here so future contributors understand their co
 
 **Context:** Applications created from the starter need a consistent proof-of-concept publishing convention without coupling application code to deployment providers.
 
-**Decision:** Use GitHub for source control, Cloudflare Pages for POC hosting, Cloudflare for DNS, and Porkbun as the registrar for the `rareobjectlabs.app` umbrella domain. Each application uses `{{POC_DOMAIN}}`, which defaults to `{{REPO_NAME}}.rareobjectlabs.app`.
+**Decision:** Use GitHub for source control, Cloudflare Pages for POC hosting, Cloudflare for DNS, and Porkbun as the registrar for the `rareobjectlabs.app` umbrella domain. Each application uses `stackmap.rareobjectlabs.app`, which defaults to `stackmap.rareobjectlabs.app`.
 
 **Consequences:** POC URLs are predictable across applications. DNS and hosting remain external configuration concerns; this decision adds no Cloudflare-specific application code and provisions no resources.
 

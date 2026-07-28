@@ -4,8 +4,8 @@ function App() {
   return (
     <div className="app-shell">
       <header className="site-header">
-        <a className="brand" href="/" aria-label="{{DISPLAY_NAME}} home">
-          {'{{DISPLAY_NAME}}'}
+        <a className="brand" href="/" aria-label="StackMap home">
+          {'StackMap'}
         </a>
         <nav aria-label="Primary navigation">
           <a href="#overview">Overview</a>
@@ -16,8 +16,8 @@ function App() {
       <main>
         <section className="hero" id="overview">
           <p className="eyebrow">React application starter</p>
-          <h1>{'{{DISPLAY_NAME}}'}</h1>
-          <p className="summary">{'{{DESCRIPTION}}'}</p>
+          <h1>{'StackMap'}</h1>
+          <p className="summary">{'A local-first homelab planning application'}</p>
         </section>
 
         <section className="content-card" id="next-steps">
@@ -30,7 +30,7 @@ function App() {
       </main>
 
       <footer>
-        <p>{'{{DISPLAY_NAME}}'} starter template</p>
+        <p>{'StackMap'} starter template</p>
       </footer>
     </div>
   )

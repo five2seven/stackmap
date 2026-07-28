@@ -7,7 +7,7 @@ describe('App', () => {
     render(<App />)
 
     expect(
-      screen.getByRole('heading', { level: 1, name: '{{DISPLAY_NAME}}' }),
+      screen.getByRole('heading', { level: 1, name: 'StackMap' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('navigation')).toBeInTheDocument()
     expect(screen.getByRole('contentinfo')).toBeInTheDocument()

@@ -1,10 +1,10 @@
-# {{DISPLAY_NAME}}
+# StackMap
 
-{{DESCRIPTION}}
+A local-first homelab planning application
 
-Repository: `{{REPO_NAME}}`  
-Default folder: `{{FOLDER_NAME}}`  
-POC domain: `{{POC_DOMAIN}}`
+Repository: `stackmap`  
+Default folder: `APP-StackMap`  
+POC domain: `stackmap.rareobjectlabs.app`
 
 ## Prerequisites
 
@@ -41,8 +41,8 @@ Proof-of-concept deployments follow this convention:
 - POC hosting: Cloudflare Pages
 - Source control: GitHub
 - Umbrella domain: `rareobjectlabs.app`
-- App POC domain: `{{POC_DOMAIN}}`
-- Default POC domain: `{{REPO_NAME}}.rareobjectlabs.app`
+- App POC domain: `stackmap.rareobjectlabs.app`
+- Default POC domain: `stackmap.rareobjectlabs.app`
 
 Examples include `stackmap.rareobjectlabs.app` and `parenting-time.rareobjectlabs.app`.
 
@@ -60,4 +60,4 @@ eslint.config.js       ESLint flat configuration
 
 ## Customizing the template
 
-Replace `{{DISPLAY_NAME}}`, `{{REPO_NAME}}`, `{{FOLDER_NAME}}`, `{{DESCRIPTION}}`, and `{{POC_DOMAIN}}` when creating an application from this template. Unless explicitly overridden, set `{{POC_DOMAIN}}` to `{{REPO_NAME}}.rareobjectlabs.app`. Then replace the neutral shell with product-specific components and documentation.
+Replace `StackMap`, `stackmap`, `APP-StackMap`, `A local-first homelab planning application`, and `stackmap.rareobjectlabs.app` when creating an application from this template. Unless explicitly overridden, set `stackmap.rareobjectlabs.app` to `stackmap.rareobjectlabs.app`. Then replace the neutral shell with product-specific components and documentation.

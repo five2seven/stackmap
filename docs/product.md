@@ -2,9 +2,9 @@
 
 ## Summary
 
-`{{DISPLAY_NAME}}` is described as:
+`StackMap` is described as:
 
-> {{DESCRIPTION}}
+> A local-first homelab planning application
 
 This document is a starting point for product context after the template is instantiated.
 

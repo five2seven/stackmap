@@ -2,7 +2,7 @@
 
 ## Overview
 
-`{{REPO_NAME}}` is a client-side React application written in TypeScript and built with Vite.
+`stackmap` is a client-side React application written in TypeScript and built with Vite.
 
 ## Current structure
 
@@ -33,7 +33,7 @@ The standard proof-of-concept delivery path is:
 GitHub source repository
   └─ Cloudflare Pages static deployment
       └─ Cloudflare-managed DNS
-          └─ {{POC_DOMAIN}}
+          └─ stackmap.rareobjectlabs.app
               └─ Registered under rareobjectlabs.app at Porkbun
 ```
 
@@ -42,7 +42,7 @@ GitHub source repository
 - Cloudflare Pages hosts the POC static build.
 - GitHub provides source control.
 - `rareobjectlabs.app` is the umbrella domain.
-- Each app uses `{{POC_DOMAIN}}`, defaulting to `{{REPO_NAME}}.rareobjectlabs.app`.
+- Each app uses `stackmap.rareobjectlabs.app`, defaulting to `stackmap.rareobjectlabs.app`.
 
 For example, repositories may be published at `stackmap.rareobjectlabs.app` or `parenting-time.rareobjectlabs.app`.
 
@@ -50,4 +50,4 @@ These services are deployment infrastructure, not application runtime dependenci
 
 ## Configuration
 
-`POC_DOMAIN` is deployment metadata and should be populated with `{{POC_DOMAIN}}` when the template is instantiated. Public runtime configuration may use Vite environment variables prefixed with `VITE_`. Secrets must not be placed in frontend environment variables.
+`POC_DOMAIN` is deployment metadata and should be populated with `stackmap.rareobjectlabs.app` when the template is instantiated. Public runtime configuration may use Vite environment variables prefixed with `VITE_`. Secrets must not be placed in frontend environment variables.
