@@ -6,15 +6,13 @@
 
 > A local-first homelab planning application
 
-This document is a starting point for product context after the template is instantiated.
-
 ## Primary User
 
 StackMap is initially designed for technically capable homelab hobbyists who enjoy self-hosting, experimenting with software, and building their own infrastructure.
 
 The primary user is comfortable with tools such as Docker, Docker Compose, Plex, Jellyfin, Sonarr, Radarr, Home Assistant, Portainer, Tailscale, and similar self-hosted applications. They may work in technology professionally, but they are not necessarily software developers or infrastructure engineers.
 
-They typically have limited free time and several partially completed projects. Their homelab has grown gradually, and important information may be spread across configuration files, browser bookmarks, notes, spreadsheets, screenshots, and memory.
+They typically have limited free time and several partially completed projects. Their homelab has grown gradually, and important information may be scattered across many sources.
 
 They may understand the value of documentation but are unlikely to maintain a system that requires extensive setup or frequent administrative work.
 
@@ -49,11 +47,11 @@ For each service, they should be able to understand:
 - Whether it is exposed outside the local network
 - Which other services it depends on
 
-The core value is not only storing information. StackMap should help the user return after days or months and quickly understand how their environment is organized without searching through notes, bookmarks, configuration files, or memory.
+The core value is not only storing information. StackMap should help the user return after days or months and quickly understand how their environment is organized without reconstructing it from scattered sources.
 
 ## Core Service Information
 
-The first version of StackMap should allow the user to record the following information for each service:
+The MVP should allow the user to record the following information for each service:
 
 - Service name
 - Status: active, planned, paused, or retired
@@ -89,13 +87,9 @@ The first useful version of StackMap should include:
 
 The MVP should prioritize fast entry, clear organization, and useful warnings over visual complexity.
 
-Do not add automatic Docker discovery, monitoring, authentication, cloud synchronization, payments, mobile apps, or server-side infrastructure to the MVP.
-
-Do not define implementation details or database schema yet.
-
 ## MVP Non-Goals
 
-The first version of StackMap will not include:
+The MVP will not include:
 
 - Automatic Docker discovery
 - Direct connections to Docker hosts
@@ -114,18 +108,4 @@ The first version of StackMap will not include:
 - Automatic import from Docker Compose files
 - Infrastructure diagrams generated from live systems
 
-These may be considered later, but they are intentionally excluded from the MVP so the first version remains local-first, easy to build, and easy to test.
-
-## Product definition
-
-Before implementing product features, document:
-
-- The problem being solved
-- The intended users
-- The primary user outcomes
-- The initial scope and explicit non-goals
-- How success will be measured
-
-## Starter scope
-
-The reusable starter provides only a responsive application shell and development tooling. It intentionally includes no backend, authentication, payments, external APIs, or app-specific features.
+These may be considered later, but they are intentionally excluded so the MVP remains local-first, easy to build, and easy to test.

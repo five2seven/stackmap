@@ -1,15 +1,251 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import type { StackMapRepository } from './data/database'
+import { createService } from './domain/serviceUtils'
+import type { Host, Service, StackMapData } from './domain/types'
 
-describe('App', () => {
-  it('renders the starter shell', () => {
-    render(<App />)
+class MemoryRepository implements StackMapRepository {
+  data: StackMapData
 
+  constructor(data: StackMapData = { services: [], hosts: [] }) {
+    this.data = structuredClone(data)
+  }
+
+  async getAll() {
+    return structuredClone(this.data)
+  }
+
+  async putService(service: Service) {
+    this.data.services = [
+      ...this.data.services.filter((item) => item.id !== service.id),
+      structuredClone(service),
+    ]
+  }
+
+  async deleteService(id: string) {
+    this.data.services = this.data.services.filter((service) => service.id !== id)
+    this.data.services = this.data.services.map((service) => ({
+      ...service,
+      dependencyIds: service.dependencyIds.filter((dependencyId) => dependencyId !== id),
+    }))
+  }
+
+  async putHost(host: Host) {
+    this.data.hosts = [
+      ...this.data.hosts.filter((item) => item.id !== host.id),
+      structuredClone(host),
+    ]
+  }
+
+  async deleteHost(id: string) {
+    if (this.data.services.some((service) => service.hostId === id)) {
+      throw new Error('This host is assigned to one or more services.')
+    }
+    this.data.hosts = this.data.hosts.filter((host) => host.id !== id)
+  }
+
+  async replaceAll(data: StackMapData) {
+    this.data = structuredClone(data)
+  }
+
+  async getSchemaVersion() {
+    return 1
+  }
+}
+
+function serviceNamed(name: string) {
+  return { ...createService(name), id: name.toLowerCase().replaceAll(' ', '-') }
+}
+
+describe('StackMap service workflows', () => {
+  afterEach(() => cleanup())
+
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('creates a service with only a name', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository()
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Add service' }))
+    await user.type(screen.getByLabelText('Service name *'), 'Jellyfin')
+    await user.click(screen.getByRole('button', { name: 'Create service' }))
+
+    expect(await screen.findByRole('heading', { level: 3, name: 'Jellyfin' })).toBeInTheDocument()
+    expect(repository.data.services[0].name).toBe('Jellyfin')
+    expect(screen.getAllByText('Incomplete')).toHaveLength(2)
+  })
+
+  it('edits a service', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository({ services: [serviceNamed('Plex')], hosts: [] })
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Edit Plex' }))
+    const name = screen.getByLabelText('Service name *')
+    await user.clear(name)
+    await user.type(name, 'Plex Media')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(await screen.findByRole('heading', { level: 3, name: 'Plex Media' })).toBeInTheDocument()
+    await waitFor(() => expect(repository.data.services[0].name).toBe('Plex Media'))
+  })
+
+  it('retires a service', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository({ services: [serviceNamed('Sonarr')], hosts: [] })
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Retire Sonarr' }))
+
+    await waitFor(() => expect(document.querySelector('.status-retired')).toHaveTextContent('retired'))
+    expect(repository.data.services[0].status).toBe('retired')
+    expect(screen.getByRole('status')).toHaveTextContent('Sonarr retired.')
+  })
+
+  it('permanently deletes a service only after confirmation', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository({ services: [serviceNamed('Radarr')], hosts: [] })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Delete Radarr' }))
+    expect(repository.data.services).toHaveLength(1)
+
+    confirm.mockReturnValue(true)
+    await user.click(screen.getByRole('button', { name: 'Delete Radarr' }))
+    expect(await screen.findByRole('heading', { name: 'Map your first service' })).toBeInTheDocument()
+    expect(repository.data.services).toHaveLength(0)
+  })
+
+  it('adds a host and assigns it to a service', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository()
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Manage hosts' }))
+    await user.type(screen.getByLabelText('Host name *'), 'nas-01')
+    await user.click(screen.getByRole('button', { name: 'Create host' }))
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+    await user.click(screen.getByRole('button', { name: 'Add service' }))
+    await user.type(screen.getByLabelText('Service name *'), 'Home Assistant')
+    const serviceEditor = screen.getByRole('heading', { name: 'Add service' }).closest('section')
+    expect(serviceEditor).not.toBeNull()
+    await user.selectOptions(
+      within(serviceEditor as HTMLElement).getByLabelText('Host'),
+      repository.data.hosts[0].id,
+    )
+    await user.click(screen.getByRole('button', { name: 'Create service' }))
+
+    expect(repository.data.hosts).toHaveLength(1)
+    expect(repository.data.services[0].hostId).toBe(repository.data.hosts[0].id)
+    const serviceCard = (await screen.findByRole('heading', { name: 'Home Assistant' })).closest(
+      'article',
+    )
+    expect(serviceCard).not.toBeNull()
+    expect(within(serviceCard as HTMLElement).getByText('nas-01')).toBeInTheDocument()
+  })
+
+  it('prevents deletion of a referenced host', async () => {
+    const user = userEvent.setup()
+    const host: Host = {
+      id: 'host-1',
+      name: 'server-01',
+      type: 'physical',
+      ipAddress: '',
+      operatingSystem: '',
+      notes: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }
+    const service = { ...serviceNamed('Portainer'), hostId: host.id }
+    render(<App repository={new MemoryRepository({ services: [service], hosts: [host] })} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Manage hosts' }))
+    const hostItem = screen.getByRole('button', { name: 'Edit host server-01' }).closest('.host-list-item')
+    expect(hostItem).not.toBeNull()
     expect(
-      screen.getByRole('heading', { level: 1, name: 'StackMap' }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('navigation')).toBeInTheDocument()
-    expect(screen.getByRole('contentinfo')).toBeInTheDocument()
+      within(hostItem as HTMLElement).getByRole('button', { name: 'Delete host server-01' }),
+    ).toBeDisabled()
+    expect(within(hostItem as HTMLElement).getByText('Reassign services before deleting.')).toBeVisible()
+  })
+
+  it('creates a complete service with multiple ports and dependencies', async () => {
+    const user = userEvent.setup()
+    const host: Host = {
+      id: 'host-1',
+      name: 'nas-01',
+      type: 'nas',
+      ipAddress: '192.168.1.10',
+      operatingSystem: 'TrueNAS',
+      notes: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    }
+    const dependency = serviceNamed('Postgres')
+    const repository = new MemoryRepository({ services: [dependency], hosts: [host] })
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Add service' }))
+    const editor = screen.getByRole('heading', { name: 'Add service' }).closest('section')
+    expect(editor).not.toBeNull()
+    const form = within(editor as HTMLElement)
+    await user.type(form.getByLabelText('Service name *'), 'Immich')
+    await user.selectOptions(form.getByLabelText('Host'), host.id)
+    await user.type(form.getByLabelText('Internal URL or IP'), 'http://192.168.1.10:2283')
+    await user.selectOptions(form.getByLabelText('External exposure'), 'vpn')
+    await user.type(form.getByLabelText('Configuration path'), '/opt/immich')
+    await user.type(form.getByLabelText('Data path'), '/mnt/photos')
+    await user.type(form.getByLabelText('Docker network'), 'photos')
+    await user.click(form.getByLabelText('Postgres'))
+    await user.click(form.getByRole('button', { name: 'Add port' }))
+    await user.type(form.getByLabelText('Host port 1'), '2283')
+    await user.type(form.getByLabelText('Container port 1'), '2283')
+    await user.click(form.getByRole('button', { name: 'Add port' }))
+    await user.type(form.getByLabelText('Host port 2'), '2284')
+    await user.type(form.getByLabelText('Container port 2'), '2284')
+    await user.click(form.getByRole('button', { name: 'Create service' }))
+
+    const created = repository.data.services.find((service) => service.name === 'Immich')
+    expect(created).toMatchObject({
+      hostId: host.id,
+      internalUrl: 'http://192.168.1.10:2283',
+      network: 'photos',
+      exposure: 'vpn',
+      dependencyIds: [dependency.id],
+    })
+    expect(created?.ports).toHaveLength(2)
+    expect(screen.getByText('Postgres', { selector: '.service-dependencies span' })).toBeVisible()
+  })
+
+  it('discards a completely blank port row', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository()
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Add service' }))
+    await user.type(screen.getByLabelText('Service name *'), 'Blank port')
+    await user.click(screen.getByRole('button', { name: 'Add port' }))
+    await user.click(screen.getByRole('button', { name: 'Create service' }))
+
+    expect(repository.data.services[0].ports).toEqual([])
+  })
+
+  it('shows persistence failures without closing the service form', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository()
+    repository.putService = vi.fn().mockRejectedValue(new Error('Storage unavailable.'))
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Add service' }))
+    await user.type(screen.getByLabelText('Service name *'), 'Unsaved service')
+    await user.click(screen.getByRole('button', { name: 'Create service' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Storage unavailable.')
+    expect(screen.getByRole('heading', { name: 'Add service' })).toBeVisible()
   })
 })
