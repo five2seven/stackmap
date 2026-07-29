@@ -32,6 +32,119 @@ Record durable technical choices here so future contributors understand their co
 
 **Consequences:** POC URLs are predictable across applications. DNS and hosting remain external configuration concerns; this decision adds no Cloudflare-specific application code and provisions no resources.
 
+## ADR-004: MVP Data Model
+
+**Status:** Accepted
+
+### Record Types
+
+The MVP should use these primary record types:
+
+#### Service
+
+Represents a self-hosted application or planned service.
+
+Fields:
+
+- id
+- name
+- status
+- hostId
+- internalUrl
+- ports
+- configPath
+- dataPath
+- network
+- exposure
+- dependencyIds
+- notes
+- createdAt
+- updatedAt
+
+#### Host
+
+Represents the device, server, VM, NAS, or other system where services run.
+
+Fields:
+
+- id
+- name
+- type
+- ipAddress
+- operatingSystem
+- notes
+- createdAt
+- updatedAt
+
+### Field Behavior
+
+- Only service name is required when creating a service.
+- Host assignment is optional.
+- A service may use multiple ports.
+- A service may depend on multiple other services.
+- Incomplete records are valid.
+- Planned, paused, and retired services remain visible unless filtered out.
+- Retiring a service is preferred over deleting it when historical context may matter.
+
+### Enumerated Values
+
+Service status:
+
+- active
+- planned
+- paused
+- retired
+
+Exposure:
+
+- local
+- vpn
+- reverse-proxy
+- public
+- unknown
+
+Host type:
+
+- physical
+- virtual-machine
+- container-host
+- nas
+- other
+- unknown
+
+### Ports
+
+Each service port entry should support:
+
+- hostPort
+- containerPort
+- protocol
+- description
+
+Protocol values:
+
+- tcp
+- udp
+- both
+- unknown
+
+### Local Data Versioning
+
+- Store a schema version with the local dataset.
+- Keep migration logic separate from UI components.
+- Future schema changes should migrate existing data where practical.
+- Import files must be validated before replacing local data.
+
+### Deletion Behavior
+
+- Services may be permanently deleted only after confirmation.
+- Retired services remain stored.
+- Hosts cannot be deleted while services reference them unless the user first reassigns or removes those references.
+
+### Rationale
+
+This model keeps the MVP simple while still supporting duplicate-port detection, filtering, dependencies, incomplete records, and future migration.
+
 ## New decision template
 
 Copy this section for future decisions:
