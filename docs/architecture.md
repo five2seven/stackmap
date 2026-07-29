@@ -1,53 +1,90 @@
 # Architecture
 
-## Overview
+## Application Type
 
-`stackmap` is a client-side React application written in TypeScript and built with Vite.
+StackMap is a local-first single-page web application.
 
-## Current structure
+## Frontend
 
-```text
-Browser
-  └─ Vite application
-      └─ React component tree
-          ├─ Responsive app shell
-          └─ Product components added later
-```
+Use:
 
-## Tooling
+- React
+- TypeScript
+- Vite
 
-- Vite provides local development and production bundling.
-- TypeScript provides static type checking.
-- ESLint enforces baseline code quality rules.
-- Vitest and Testing Library provide component tests.
+The interface should be responsive and work well on desktop and tablet-sized screens. Mobile support is secondary for the MVP.
 
-## Boundaries
+## Data Storage
 
-The starter has no server runtime, database, authentication layer, payment integration, or external API dependency. Add infrastructure only through an explicit architectural decision.
+Use IndexedDB for local application data.
 
-## Deployment foundation
+Do not use localStorage for the primary dataset because StackMap will store structured records and may grow beyond simple key-value data.
 
-The standard proof-of-concept delivery path is:
+Use a small IndexedDB wrapper library if it improves reliability and maintainability. Prefer a lightweight, established option.
 
-```text
-GitHub source repository
-  └─ Cloudflare Pages static deployment
-      └─ Cloudflare-managed DNS
-          └─ stackmap.rareobjectlabs.app
-              └─ Registered under rareobjectlabs.app at Porkbun
-```
+## Backend
 
-- Porkbun is the domain registrar.
-- Cloudflare is the DNS provider.
-- Cloudflare Pages hosts the POC static build.
-- GitHub provides source control.
-- `rareobjectlabs.app` is the umbrella domain.
-- Each app uses `stackmap.rareobjectlabs.app`, defaulting to `stackmap.rareobjectlabs.app`.
+The MVP will not have a hosted backend.
 
-For example, repositories may be published at `stackmap.rareobjectlabs.app` or `parenting-time.rareobjectlabs.app`.
+Do not add:
 
-These services are deployment infrastructure, not application runtime dependencies. The starter contains no Cloudflare-specific application code and does not provision hosting or DNS.
+- Supabase
+- Firebase
+- Server-side APIs
+- User accounts
+- Cloud synchronization
 
-## Configuration
+## Data Portability
 
-`POC_DOMAIN` is deployment metadata and should be populated with `stackmap.rareobjectlabs.app` when the template is instantiated. Public runtime configuration may use Vite environment variables prefixed with `VITE_`. Secrets must not be placed in frontend environment variables.
+Support JSON export and import.
+
+The exported file should include:
+
+- A schema version
+- Export timestamp
+- All StackMap records required to restore the app
+
+The architecture should allow future migration if cloud synchronization is added later.
+
+## Hosting
+
+The proof-of-concept frontend will be hosted on Cloudflare Pages.
+
+The intended public URL is:
+
+`stackmap.rareobjectlabs.app`
+
+The source repository is:
+
+`five2seven/stackmap`
+
+## Privacy
+
+All user-created StackMap data remains in the user’s browser for the MVP.
+
+The hosted application files are public, but the user’s homelab records are not uploaded to StackMap servers.
+
+Browser data can be lost if the user clears site data or changes browsers without exporting a backup.
+
+## Testing
+
+Use:
+
+- Vitest for unit and component tests
+- Testing Library for UI behavior
+- Build validation through `npm run build`
+
+End-to-end testing may be added later if the workflow becomes complex enough to justify it.
+
+## Architecture Constraints
+
+- Keep the MVP local-first
+- Do not add a backend without an explicit architecture decision
+- Do not store credentials or secrets
+- Keep data access separate from UI components
+- Version the local data schema
+- Preserve backward compatibility where practical
+- Ensure import validation does not blindly trust uploaded JSON
+- Keep deployment compatible with static hosting on Cloudflare Pages
+
+Do not define the full database schema or build application features yet.
