@@ -1,0 +1,22 @@
+Review the full docs/product.md file for StackMap.
+
+Do not add new product ideas, features, architecture decisions, or implementation details.
+
+Check for:
+
+- Duplicate wording
+- Contradictions
+- Sections that overlap unnecessarily
+- Inconsistent terminology
+- Anything that no longer matches the current MVP
+- Missing headings or awkward organization
+
+Preserve the current intent and scope.
+
+Make only small editorial changes needed to improve clarity and consistency.
+
+After editing:
+
+1. Show me a summary of what changed.
+2. Show me the exact diff.
+3. Do not modify any other file.
