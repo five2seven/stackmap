@@ -1,0 +1,26 @@
+I completed the recommended manual checks.
+
+Please perform the final pre-commit review.
+
+Confirm:
+
+- The current git diff contains only intended StackMap MVP changes
+- All documented MVP requirements are implemented or explicitly documented as unresolved
+- ESLint passes
+- Vitest passes
+- Playwright passes
+- The production build passes
+- No credentials, personal data, exported JSON files, screenshots, test artifacts, or local database files are included
+- No generated Playwright reports or browser artifacts should be committed
+- Documentation matches the implementation
+- The Cloudflare Pages workflow path and configuration are valid
+- No change exceeds the documented MVP scope
+- The repository is ready to commit and deploy
+
+Show me:
+1. A concise final diff summary
+2. Any files that should be excluded from the commit
+3. The recommended commit message
+4. The exact commands to commit and push
+
+Do not commit or push.
