@@ -1,0 +1,25 @@
+Update docs/product.md for StackMap.
+
+Add a section titled "MVP Features" with this content:
+
+The first useful version of StackMap should include:
+
+- A service list showing all documented services
+- The ability to add a service
+- The ability to edit a service
+- The ability to delete or retire a service
+- Search across service names, hosts, ports, paths, networks, and notes
+- Filters for status, host, Docker network, and external exposure
+- Detection of duplicate port assignments
+- Clear indication when a service record is incomplete
+- Local storage so the app works without an account or hosted backend
+- JSON export for backup and portability
+- JSON import for restore or migration
+
+The MVP should prioritize fast entry, clear organization, and useful warnings over visual complexity.
+
+Do not add automatic Docker discovery, monitoring, authentication, cloud synchronization, payments, mobile apps, or server-side infrastructure to the MVP.
+
+Do not define implementation details or database schema yet.
+
+After updating the file, show me the exact diff.
