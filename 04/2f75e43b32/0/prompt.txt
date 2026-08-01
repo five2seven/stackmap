@@ -1,0 +1,158 @@
+Perform a full quality review of the current StackMap MVP.
+
+Use these files as the requirements source of truth:
+
+- AGENTS.md
+- docs/product.md
+- docs/architecture.md
+- docs/decisions.md
+
+I have manually confirmed that I can create two hosts and two services, but I have not exhaustively tested the application.
+
+Do not assume that an existing passing test suite means the app is correct.
+
+## Phase 1: Requirements audit
+
+Compare the implemented application against every documented MVP requirement.
+
+Create a checklist showing each requirement as:
+
+- Implemented and verified
+- Implemented but not adequately tested
+- Partially implemented
+- Missing
+- Contradictory or ambiguous
+
+Include:
+
+- Service creation with only a name
+- Complete service creation
+- Service editing
+- Retirement
+- Permanent deletion with confirmation
+- Host creation and editing
+- Assigning services to hosts
+- Preventing deletion of referenced hosts
+- Multiple ports per service
+- Duplicate host-port detection
+- Dependencies between services
+- Search
+- Filters
+- Incomplete-record indicators
+- Local persistence
+- JSON export
+- Valid JSON import
+- Invalid JSON rejection
+- Import preview and confirmation
+- Data schema versioning
+
+## Phase 2: Code and data review
+
+Inspect the implementation for:
+
+- Data-loss risks
+- IndexedDB initialization problems
+- Broken schema migrations
+- Invalid imports replacing valid data
+- Duplicate IDs
+- Orphaned host or dependency references
+- Circular service dependencies
+- Incorrect duplicate-port warnings
+- State becoming inconsistent after editing or deleting records
+- Stale UI after database changes
+- Unsafe assumptions about optional fields
+- Unhandled errors
+- Browser refresh behavior
+- Empty-state behavior
+- Large or malformed input handling
+- Accessibility problems
+- Responsive-layout problems
+- Console errors and warnings
+
+Do not store or request credentials.
+
+## Phase 3: Automated testing
+
+Review the existing tests and identify meaningful gaps.
+
+Add or improve automated tests for the highest-risk workflows.
+
+Use unit and component tests where appropriate.
+
+Add Playwright end-to-end tests if the current test suite cannot reliably verify complete user workflows. Keep Playwright configuration minimal and suitable for local and CI use.
+
+At minimum, automate these workflows:
+
+1. Create a host.
+2. Create a service with only a name.
+3. Create a complete service assigned to a host.
+4. Edit and retire a service.
+5. Permanently delete a service after confirmation.
+6. Prevent deletion of a referenced host.
+7. Detect a duplicate host-port conflict.
+8. Search and filter services.
+9. Export data and validate the exported structure.
+10. Import valid exported data.
+11. Reject malformed or incompatible imports.
+12. Refresh the app and verify persisted data remains.
+
+Tests must use isolated data and must not depend on my manually entered hosts or services.
+
+## Phase 4: Usability review
+
+Review the app as a first-time homelab user with limited free time.
+
+Identify:
+
+- Labels that are unclear
+- Actions that are difficult to find
+- Forms that feel unnecessarily long
+- Missing feedback after save, import, export, retire, or delete
+- Warnings that are too subtle
+- Destructive actions that are too easy
+- Screens that require explanation
+- Areas where incomplete information is treated poorly
+- Anything that feels like documentation work rather than a helpful tool
+
+Separate findings into:
+
+- Blocking issue
+- Important improvement
+- Minor improvement
+- Future enhancement outside the MVP
+
+Do not expand the MVP while fixing usability problems.
+
+## Phase 5: Fix verified issues
+
+Before changing code, show me:
+
+- The requirements checklist
+- Confirmed bugs
+- Test gaps
+- Usability findings
+- Proposed fixes
+- Files expected to change
+
+Then proceed with fixes that are clearly required by the existing MVP documents.
+
+Do not add unrelated features.
+
+After fixing:
+
+- Run npm run lint
+- Run npm test
+- Run any end-to-end test command added
+- Run npm run build
+
+Report:
+
+- Bugs found
+- Bugs fixed
+- Tests added or changed
+- Requirements still not verified
+- Known limitations
+- Manual checks still required
+- Exact command needed to run the complete test suite
+
+Do not commit or push until I review the results.
