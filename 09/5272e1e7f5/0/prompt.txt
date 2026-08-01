@@ -1,0 +1,46 @@
+Create a minimal Entire integration test commit.
+
+First confirm:
+
+- The repository root is C:\Code\Projects\APP-StackMap
+- The working tree is clean
+- Entire reports this conversation will be linked to the next commit
+
+Do not switch to main. Remain on codex/service-identity-fields.
+
+Add this one line under the appropriate unreleased or maintenance section of CHANGELOG.md:
+
+- Verified Entire checkpoint capture from a Codex CLI session.
+
+Do not modify any other file.
+
+Review the complete diff and confirm only CHANGELOG.md changed.
+
+Commit with this exact message:
+
+Test Entire checkpoint capture from Codex CLI
+
+Push the current branch to origin.
+
+Do not merge anything.
+Do not manually modify Entire checkpoint refs.
+
+After pushing, report:
+
+1. Commit ID
+2. Any Entire hook output
+3. Checkpoint ID, if shown
+4. Whether the commit contains an Entire checkpoint trailer
+5. Whether entire/checkpoints/v1 changed
+6. Whether the checkpoint ref was pushed
+7. Final git status
+
+---
+
+# Files mentioned by the user:
+
+## # StackMap Build Task: Generalized Docker Path Mappings Implement generalized D…: C:\Users\rae\.codex/attachments/23c63c8b-d709-4d80-a000-047b13f405dd/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:

@@ -1,0 +1,67 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "095272e1e7f5",
+  "session_id": "019fbf97-c63e-7bc3-b164-2a5ac843a56b",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-01T23:32:07.7478317Z",
+  "branch": "codex/generalized-path-mappings",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md",
+    "README.md",
+    "docs/architecture.md",
+    "docs/decisions.md",
+    "docs/product.md",
+    "e2e/stackmap.spec.ts",
+    "src/App.css",
+    "src/App.test.tsx",
+    "src/App.tsx",
+    "src/components/ServiceForm.tsx",
+    "src/data/backup.test.ts",
+    "src/data/database.test.ts",
+    "src/data/database.ts",
+    "src/domain/pathMappings.test.ts",
+    "src/domain/pathMappings.ts",
+    "src/domain/schema.ts",
+    "src/domain/serviceUtils.test.ts",
+    "src/domain/serviceUtils.ts",
+    "src/domain/types.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "4571c4bcdbb4",
+  "checkpoint_transcript_start": 67,
+  "transcript_lines_at_start": 67,
+  "compact_transcript_start": 13,
+  "token_usage": {
+    "input_tokens": 126971,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4101632,
+    "output_tokens": 21410,
+    "api_call_count": 58
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-01T23:32:07.6701666Z",
+    "agent_lines": 573,
+    "agent_removed": 93,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 573,
+    "total_lines_changed": 666,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
