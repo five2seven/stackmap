@@ -1,0 +1,5 @@
+<environment_context>
+  <current_date>2026-07-29</current_date>
+  <timezone>America/Chicago</timezone>
+  <filesystem><workspace_roots><root>C:\Code\Projects\APP-StackMap</root><root>C:\Users\rae\.codex\visualizations\2026\07\28\019fab20-4a1e-70e3-a467-a29016081e71</root></workspace_roots><permission_profile type="disabled"><file_system type="unrestricted" /></permission_profile></filesystem>
+</environment_context>
