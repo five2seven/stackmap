@@ -1,0 +1,1 @@
+The Node.js 20 deprecation warning in GitHub Actions did not affect this deployment, but Codex should update the workflow to Node.js 24 later so the warning does not eventually become a failure.
