@@ -1,0 +1,28 @@
+Update docs/product.md for StackMap.
+
+Add a section titled "MVP Non-Goals" with this content:
+
+The first version of StackMap will not include:
+
+- Automatic Docker discovery
+- Direct connections to Docker hosts
+- Container monitoring
+- Service health checks
+- Alerts or notifications
+- Starting, stopping, or restarting containers
+- User accounts
+- Cloud synchronization
+- Multi-user collaboration
+- Mobile apps
+- Subscription billing
+- AI-generated recommendations
+- Reverse proxy configuration
+- Secrets or credential storage
+- Automatic import from Docker Compose files
+- Infrastructure diagrams generated from live systems
+
+These may be considered later, but they are intentionally excluded from the MVP so the first version remains local-first, easy to build, and easy to test.
+
+Do not add implementation details or future roadmap items beyond this section.
+
+After updating the file, show me the exact diff.
