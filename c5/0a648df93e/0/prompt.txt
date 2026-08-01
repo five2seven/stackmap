@@ -1,0 +1,25 @@
+Update docs/product.md for StackMap.
+
+Add a section titled "Core Service Information" with this content:
+
+The first version of StackMap should allow the user to record the following information for each service:
+
+- Service name
+- Status: active, planned, paused, or retired
+- Host or device where it runs
+- Internal URL or IP address
+- Ports
+- Configuration path
+- Data path
+- Docker network
+- External exposure: local only, VPN, reverse proxy, or public
+- Dependencies on other services
+- Notes
+
+Only the service name should be required when initially creating a record.
+
+The user should be able to save incomplete information and return later to add more detail. StackMap should not block progress because the user does not currently know every value.
+
+Do not define the database schema, form layout, validation rules, or implementation details yet.
+
+After updating the file, show me the exact diff.
