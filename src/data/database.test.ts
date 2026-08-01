@@ -22,7 +22,7 @@ describe('DexieStackMapRepository', () => {
     const repository = new DexieStackMapRepository(database)
     await repository.putService(createService('Persistent service'))
 
-    expect(await repository.getSchemaVersion()).toBe(1)
+    expect(await repository.getSchemaVersion()).toBe(2)
     expect((await repository.getAll()).services[0].name).toBe('Persistent service')
 
     database.close()
@@ -45,13 +45,34 @@ describe('DexieStackMapRepository', () => {
       }
     }
 
+    const current = {
+      ...createService('Legacy service'),
+      hostId: 'host-1',
+      dependencyIds: ['dependency-1'],
+      ports: [{ hostPort: 8080, containerPort: 80, protocol: 'tcp' as const, description: 'web' }],
+      configPath: '/srv/appdata/legacy',
+      dataPath: '/srv/data/legacy',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-02-01T00:00:00.000Z',
+    }
+    const legacyService: Record<string, unknown> = { ...current }
+    delete legacyService.containerName
+    delete legacyService.dockerImage
+    delete legacyService.description
+    delete legacyService.applicationUrl
     const legacy = new LegacyDatabase()
-    await legacy.services.add(createService('Legacy service'))
+    await legacy.services.add(legacyService as unknown as Service)
     legacy.close()
 
     const repository = new DexieStackMapRepository(new StackMapDatabase(name))
-    expect(await repository.getSchemaVersion()).toBe(1)
-    expect((await repository.getAll()).services[0].name).toBe('Legacy service')
+    expect(await repository.getSchemaVersion()).toBe(2)
+    expect((await repository.getAll()).services[0]).toEqual({
+      ...legacyService,
+      containerName: '',
+      dockerImage: '',
+      description: '',
+      applicationUrl: '',
+    })
   })
 
   it('keeps existing data when replacement fails', async () => {

@@ -22,18 +22,22 @@ Vite prints the local development URL after startup.
 ## Current functionality
 
 - Create, edit, retire, and permanently delete service records
-- Record optional hosts, URLs, paths, networks, exposure, dependencies, notes, and multiple ports
+- Record optional container names, Docker images, descriptions, application URLs, internal hostnames or IPs, hosts, paths, networks, exposure, dependencies, notes, and multiple ports
 - Add and edit hosts, assign services to them, and protect referenced hosts from deletion
 - Search services and filter by status, host, Docker network, and exposure
-- Identify incomplete service records and duplicate host-port assignments
+- Identify incomplete service records, duplicate host-port assignments, and duplicate active container names on the same host
 - Export the complete local dataset to a versioned JSON backup
 - Validate and review JSON imports before replacing local data
 
 Only a service name is required when creating a record. Incomplete records are intentionally supported.
 
+The application URL is the address a user opens to reach the application. The internal hostname or IP records the service's internal network address. Container-name conflicts are reported only for non-retired services assigned to the same host; comparison ignores case and surrounding whitespace.
+
 ## Local data and backups
 
 All user-created data remains in the browser for this MVP. Clearing site data or switching browsers does not transfer the dataset. Use **Export JSON** to create a backup before clearing browser data or moving to another browser, and use **Import JSON** to validate and restore that backup.
+
+Current exports use JSON schema version 2. Valid version 1 backups remain importable and receive empty values for the newer optional service identity fields during import.
 
 ## Available commands
 

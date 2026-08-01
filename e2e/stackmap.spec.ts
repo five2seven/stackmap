@@ -59,8 +59,8 @@ test('manages complete service, host, conflicts, search, filters, retirement, an
   await page.getByRole('button', { name: 'Add service' }).click()
   const editor = page.getByRole('region', { name: 'Add service' })
   await editor.getByLabel('Service name *').fill('Jellyfin')
-  await editor.getByLabel('Host').selectOption({ label: 'nas-01' })
-  await editor.getByLabel('Internal URL or IP').fill('http://192.168.1.10:8096')
+  await editor.locator('label').filter({ hasText: /^Host/ }).locator('select').selectOption({ label: 'nas-01' })
+  await editor.getByLabel('Internal hostname or IP').fill('http://192.168.1.10:8096')
   await editor.getByLabel('External exposure').selectOption('vpn')
   await editor.getByLabel('Configuration path').fill('/opt/jellyfin/config')
   await editor.getByLabel('Data path').fill('/mnt/media')
@@ -90,7 +90,7 @@ test('manages complete service, host, conflicts, search, filters, retirement, an
   await page.getByRole('button', { name: 'Add service' }).click()
   const duplicateEditor = page.getByRole('region', { name: 'Add service' })
   await duplicateEditor.getByLabel('Service name *').fill('Plex')
-  await duplicateEditor.getByLabel('Host').selectOption({ label: 'nas-01' })
+  await duplicateEditor.locator('label').filter({ hasText: /^Host/ }).locator('select').selectOption({ label: 'nas-01' })
   await duplicateEditor.getByRole('button', { name: 'Add port' }).click()
   await duplicateEditor.getByLabel('Host port 1').fill('8096')
   await duplicateEditor.getByLabel('Container port 1').fill('32400')
@@ -130,7 +130,7 @@ test('exports data and imports it only after preview confirmation', async ({ pag
   const exported = JSON.parse(await (await import('node:fs/promises')).readFile(await download.path(), 'utf8'))
 
   expect(exported).toMatchObject({
-    schemaVersion: 1,
+    schemaVersion: 2,
     services: [expect.objectContaining({ name: 'Exported service' })],
     hosts: [],
   })
@@ -144,7 +144,7 @@ test('exports data and imports it only after preview confirmation', async ({ pag
     updatedAt: '2026-07-28T12:00:00.000Z',
   }
   const importPayload = JSON.stringify({
-    schemaVersion: 1,
+    schemaVersion: 2,
     exportedAt: '2026-07-28T12:00:00.000Z',
     services: [importedService],
     hosts: [],
@@ -210,4 +210,40 @@ test('persists created data after refresh', async ({ page }) => {
   await expect(serviceCard(page, 'Refresh service')).toBeVisible()
   await page.getByRole('button', { name: 'Manage hosts' }).click()
   await expect(page.getByRole('button', { name: 'Edit host refresh-host' })).toBeVisible()
+})
+
+test('persists identity fields and flags duplicate container names per host', async ({ page }) => {
+  await page.goto('/')
+  await addHost(page, 'host-one')
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  const addIdentityService = async (name: string, host: string, containerName: string) => {
+    await page.getByRole('button', { name: 'Add service' }).click()
+    const editor = page.getByRole('region', { name: 'Add service' })
+    await editor.getByLabel('Service name *').fill(name)
+    await editor.locator('label').filter({ hasText: /^Host/ }).locator('select').selectOption({ label: host })
+    await editor.getByLabel('Description').fill(`${name} description`)
+    await editor.getByLabel('Container name').fill(containerName)
+    await editor.getByLabel('Docker image').fill(`example/${name.toLowerCase()}:1`)
+    await editor.getByLabel('Application URL').fill(`https://${name.toLowerCase()}.example.test`)
+    await editor.getByRole('button', { name: 'Create service' }).click()
+  }
+
+  await addIdentityService('First', 'host-one', ' Jellyfin ')
+  await addIdentityService('Second', 'host-one', 'jELLYfin')
+  await expect(serviceCard(page, 'First').getByText('Container-name conflict')).toBeVisible()
+  await expect(serviceCard(page, 'Second').getByText('Container-name conflict')).toBeVisible()
+  const summary = page.getByRole('region', { name: 'Service summary' })
+  await expect(summary.getByText('Container conflicts').locator('..').locator('strong')).toHaveText('2')
+
+  await addHost(page, 'host-two')
+  await page.getByRole('button', { name: 'Close' }).click()
+  await addIdentityService('Third', 'host-two', 'jellyfin')
+  await expect(serviceCard(page, 'Third').getByText('Container-name conflict')).toHaveCount(0)
+  await expect(summary.getByText('Container conflicts').locator('..').locator('strong')).toHaveText('2')
+
+  await page.reload()
+  await expect(serviceCard(page, 'First')).toContainText('example/first:1')
+  await expect(serviceCard(page, 'First')).toContainText('First description')
+  await expect(serviceCard(page, 'First')).toContainText('https://first.example.test')
 })

@@ -44,6 +44,8 @@ The exported file should include:
 - Export timestamp
 - All StackMap records required to restore the app
 
+The current export schema is version 2. The import boundary validates current records and migrates valid version 1 services in memory by adding empty optional identity fields without mutating the uploaded object.
+
 The architecture should allow future migration if cloud synchronization is added later.
 
 ## Hosting
@@ -74,7 +76,7 @@ Use:
 - Testing Library for UI behavior
 - Build validation through `npm run build`
 
-End-to-end testing may be added later if the workflow becomes complex enough to justify it.
+Use Playwright for focused browser workflows that cover IndexedDB persistence and critical user journeys.
 
 ## Architecture Constraints
 
@@ -87,4 +89,4 @@ End-to-end testing may be added later if the workflow becomes complex enough to 
 - Ensure import validation does not blindly trust uploaded JSON
 - Keep deployment compatible with static hosting on Cloudflare Pages
 
-Do not define the full database schema or build application features yet.
+Dexie database version 3 migrates existing service records by adding empty container name, Docker image, description, and application URL fields while preserving all prior data.
