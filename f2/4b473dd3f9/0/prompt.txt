@@ -1,0 +1,13 @@
+Update docs/product.md for StackMap.
+
+Add a section titled "Core Problem" with this content:
+
+Homelab users often lose track of which services are running, which ports are already assigned, where configuration and data are stored, and how services connect because that information is scattered across configuration files, notes, bookmarks, spreadsheets, screenshots, and memory.
+
+This becomes more difficult as the homelab grows gradually over time. Services are added, changed, moved, or abandoned, but the documentation rarely stays current.
+
+StackMap should solve this by giving the user one clear place to understand what exists, how it is configured, and how the pieces relate to each other.
+
+Do not add features, architecture decisions, or implementation details yet.
+
+After updating the file, show me the exact diff.
