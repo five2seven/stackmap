@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b76d15a68922",
+  "strategy": "manual-commit",
+  "branch": "codex/service-identity-fields",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b7/6d15a68922/0/metadata.json",
+      "transcript": "/b7/6d15a68922/0/full.jsonl",
+      "compact_transcript": "/b7/6d15a68922/0/transcript.jsonl",
+      "content_hash": "/b7/6d15a68922/0/content_hash.txt",
+      "prompt": "/b7/6d15a68922/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 14181,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 88832,
+    "output_tokens": 700,
+    "api_call_count": 5
+  }
+}
