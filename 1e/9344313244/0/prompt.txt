@@ -1,0 +1,53 @@
+Set up automated Cloudflare Pages deployment for StackMap.
+
+Use Cloudflare Pages Direct Upload through Wrangler and GitHub Actions.
+
+Requirements:
+
+1. Add a GitHub Actions workflow at:
+
+   .github/workflows/deploy-cloudflare-pages.yml
+
+2. The workflow should run on:
+   - Pushes to main
+   - Manual workflow dispatch
+
+3. The workflow must:
+   - Check out the repository
+   - Set up the Node.js version required by the project
+   - Run npm ci
+   - Run npm run lint
+   - Run npm test
+   - Run npm run build
+   - Deploy the dist directory with Cloudflare Wrangler
+
+4. Use:
+   - Cloudflare Pages project name: stackmap
+   - Production branch: main
+   - Build output directory: dist
+
+5. Read credentials only from GitHub Actions secrets:
+   - CLOUDFLARE_ACCOUNT_ID
+   - CLOUDFLARE_API_TOKEN
+
+6. Do not place credentials in source code, documentation examples, logs, or committed files.
+
+7. Add scripts/deploy-cloudflare.ps1 that can:
+   - Verify the required environment variables exist
+   - Create the Cloudflare Pages project if it does not exist
+   - Deploy dist to the project
+   - Refuse to continue if lint, tests, or build fail
+   - Be safe to run repeatedly
+
+8. Add scripts/configure-cloudflare-domain.ps1 that:
+   - Accepts ProjectName and DomainName
+   - Uses the Cloudflare Pages API
+   - Adds the custom domain only if it is not already attached
+   - Does not overwrite unrelated DNS records
+   - Stops with a clear error on authentication or permission failure
+
+9. Update README.md with deployment instructions.
+
+10. Do not deploy or create Cloudflare resources yet.
+
+11. Run all safe local tests and show the exact commands I should run for the first deployment.
