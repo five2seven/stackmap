@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Verified Entire checkpoint capture from a Codex CLI session.
+
 ### Added
 
 - First functional local-first StackMap MVP increment
