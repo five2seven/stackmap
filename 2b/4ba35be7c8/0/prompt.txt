@@ -1,0 +1,21 @@
+Update docs/product.md for StackMap.
+
+Add a section titled "Core Experience" with this content:
+
+A user opens StackMap and sees a clear overview of their homelab.
+
+They can add or update a service quickly, even when they do not have every detail available.
+
+For each service, they should be able to understand:
+
+- Where it runs
+- Which ports it uses
+- Where configuration and data are stored
+- Whether it is exposed outside the local network
+- Which other services it depends on
+
+The core value is not only storing information. StackMap should help the user return after days or months and quickly understand how their environment is organized without searching through notes, bookmarks, configuration files, or memory.
+
+Do not add features, screens, architecture decisions, or implementation details yet.
+
+After updating the file, show me the exact diff.
