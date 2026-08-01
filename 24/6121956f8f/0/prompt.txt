@@ -1,0 +1,29 @@
+Inspect the current StackMap workspace and determine why Codex recognizes it as a local folder rather than a Git repository with a remote.
+
+Do not create a new repository and do not modify product code.
+
+Check and report:
+
+1. The current workspace path.
+2. Whether a .git directory exists at that path.
+3. The current Git branch.
+4. The working-tree status.
+5. Existing Git remotes.
+6. Whether the local repository is connected to the intended StackMap GitHub repository.
+7. Whether the folder opened in Codex is the repository root or a parent/child folder.
+8. Whether Entire CLI is installed and enabled for this repository.
+
+Run:
+
+git rev-parse --show-toplevel
+git status
+git branch --show-current
+git remote -v
+entire version
+entire status
+
+If the folder is a valid Git repository but has no remote, stop and report the exact remote command needed. Do not run it yet.
+
+If Codex has opened the wrong directory, identify the correct repository-root path and tell me how to reopen that folder as the project.
+
+Do not initialize Git, create a GitHub repository, commit, push, or change files.
