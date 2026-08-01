@@ -6,6 +6,7 @@ import {
   duplicateContainerNameServiceIds,
   duplicatePortServiceIds,
   filterServices,
+  getPathWarnings,
   missingServiceFields,
 } from './domain/serviceUtils'
 import {
@@ -414,6 +415,7 @@ function App({ repository = defaultRepository }: AppProps) {
             <div className="service-list">
               {visibleServices.map((service) => {
                 const missing = missingServiceFields(service)
+                const pathWarnings = getPathWarnings(service.paths)
                 return (
                   <article className="service-card" key={service.id}>
                     <div className="service-main">
@@ -423,7 +425,7 @@ function App({ repository = defaultRepository }: AppProps) {
                           {service.status}
                         </span>
                         {missing.length > 0 && (
-                          <span className="issue-badge" title={`Missing: ${missing.join(', ')}`}>
+                          <span className="issue-badge">
                             Incomplete
                           </span>
                         )}
@@ -476,16 +478,32 @@ function App({ repository = defaultRepository }: AppProps) {
                           </div>
                         )}
                       </dl>
-                      {(service.configPath ||
-                        service.dataPath ||
-                        service.internalUrl ||
-                        service.applicationUrl) && (
+                      {(service.paths.length > 0 || service.internalUrl || service.applicationUrl) && (
                         <div className="service-details">
                           {service.applicationUrl && <span>{service.applicationUrl}</span>}
                           {service.internalUrl && <span>{service.internalUrl}</span>}
-                          {service.configPath && <span>Config: {service.configPath}</span>}
-                          {service.dataPath && <span>Data: {service.dataPath}</span>}
                         </div>
+                      )}
+                      {service.paths.length > 0 && (
+                        <div className="path-list" aria-label={`${service.name} path mappings`}>
+                          {service.paths.map((path, index) => (
+                            <div className="path-summary" key={path.id}>
+                              <strong>{path.purpose || `Path ${index + 1}`}</strong>
+                              <span>{path.hostPath || '—'} → {path.containerPath || '—'}</span>
+                              {path.readOnly && <span className="read-only-badge">Read-only</span>}
+                              {pathWarnings.incompleteMappingIds.includes(path.id) && (
+                                <span className="path-warning">Mapping {index + 1} is incomplete</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {(pathWarnings.mixedHostPaths || pathWarnings.mixedContainerPaths || pathWarnings.missingConfiguration) && (
+                        <ul className="path-warnings" aria-label={`${service.name} path warnings`}>
+                          {pathWarnings.mixedHostPaths && <li>Host paths mix absolute and relative styles.</li>}
+                          {pathWarnings.mixedContainerPaths && <li>Container paths mix absolute and relative styles.</li>}
+                          {pathWarnings.missingConfiguration && <li>No configuration-purpose mapping recorded.</li>}
+                        </ul>
                       )}
                       {service.dependencyIds.length > 0 && (
                         <div className="service-dependencies">

@@ -1,15 +1,50 @@
-import type { Host, Service, ServiceFilters, ServicePort } from './types'
+import type { Host, PathMapping, Service, ServiceFilters, ServicePort } from './types'
 
 export function missingServiceFields(service: Service): string[] {
   const missing: string[] = []
   if (!service.hostId) missing.push('host')
   if (!service.internalUrl.trim()) missing.push('internal URL')
   if (!service.ports.length) missing.push('ports')
-  if (!service.configPath.trim()) missing.push('configuration path')
-  if (!service.dataPath.trim()) missing.push('data path')
+  if (!hasConfigurationPath(service.paths)) missing.push('configuration path')
   if (!service.network.trim()) missing.push('network')
   if (service.exposure === 'unknown') missing.push('exposure')
   return missing
+}
+
+export type PathStyle = 'absolute' | 'relative'
+
+export interface PathWarnings {
+  incompleteMappingIds: string[]
+  mixedHostPaths: boolean
+  mixedContainerPaths: boolean
+  missingConfiguration: boolean
+}
+
+export function isAbsolutePath(path: string): boolean {
+  const value = path.trim()
+  return value.startsWith('/') || /^[A-Za-z]:[\\/]/.test(value) || value.startsWith('\\\\')
+}
+
+function hasMixedStyles(paths: string[]): boolean {
+  const styles = new Set<PathStyle>(
+    paths.filter((path) => path.trim()).map((path) => (isAbsolutePath(path) ? 'absolute' : 'relative')),
+  )
+  return styles.size > 1
+}
+
+export function hasConfigurationPath(paths: PathMapping[]): boolean {
+  return paths.some((path) => path.purpose.toLowerCase().includes('config'))
+}
+
+export function getPathWarnings(paths: PathMapping[]): PathWarnings {
+  return {
+    incompleteMappingIds: paths
+      .filter((path) => Boolean(path.hostPath.trim()) !== Boolean(path.containerPath.trim()))
+      .map((path) => path.id),
+    mixedHostPaths: hasMixedStyles(paths.map((path) => path.hostPath)),
+    mixedContainerPaths: hasMixedStyles(paths.map((path) => path.containerPath)),
+    missingConfiguration: !hasConfigurationPath(paths),
+  }
 }
 
 function protocolsOverlap(left: ServicePort['protocol'], right: ServicePort['protocol']) {
@@ -78,8 +113,7 @@ export function filterServices(
       service.description,
       service.applicationUrl,
       service.internalUrl,
-      service.configPath,
-      service.dataPath,
+      ...service.paths.flatMap((path) => [path.hostPath, path.containerPath, path.purpose]),
       service.network,
       service.notes,
       service.hostId ? hostNames.get(service.hostId) : '',
@@ -115,8 +149,7 @@ export function createService(name: string): Service {
     status: 'active',
     internalUrl: '',
     ports: [],
-    configPath: '',
-    dataPath: '',
+    paths: [],
     network: '',
     exposure: 'unknown',
     dependencyIds: [],

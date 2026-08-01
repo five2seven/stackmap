@@ -4,10 +4,12 @@ import {
   PORT_PROTOCOLS,
   SERVICE_STATUSES,
   type Host,
+  type PathMapping,
   type Service,
   type ServicePort,
 } from '../domain/types'
 import { createService } from '../domain/serviceUtils'
+import { normalizePaths } from '../domain/pathMappings'
 
 interface ServiceFormProps {
   service?: Service
@@ -20,6 +22,14 @@ interface ServiceFormProps {
 const emptyPort = (): ServicePort => ({
   protocol: 'tcp',
   description: '',
+})
+
+const emptyPath = (): PathMapping => ({
+  id: crypto.randomUUID(),
+  hostPath: '',
+  containerPath: '',
+  purpose: '',
+  readOnly: false,
 })
 
 export function ServiceForm({
@@ -48,6 +58,13 @@ export function ServiceForm({
     )
   }
 
+  function updatePath(id: string, updateValue: Partial<PathMapping>) {
+    update(
+      'paths',
+      draft.paths.map((path) => (path.id === id ? { ...path, ...updateValue } : path)),
+    )
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!draft.name.trim()) {
@@ -66,6 +83,7 @@ export function ServiceForm({
       description: draft.description.trim(),
       applicationUrl: draft.applicationUrl.trim(),
       ports: normalizedPorts,
+      paths: normalizePaths(draft.paths),
       updatedAt: new Date().toISOString(),
     })
   }
@@ -185,24 +203,6 @@ export function ServiceForm({
           </label>
 
           <label className="field">
-            <span>Configuration path</span>
-            <input
-              value={draft.configPath}
-              onChange={(event) => update('configPath', event.target.value)}
-              placeholder="/opt/app/config"
-            />
-          </label>
-
-          <label className="field">
-            <span>Data path</span>
-            <input
-              value={draft.dataPath}
-              onChange={(event) => update('dataPath', event.target.value)}
-              placeholder="/mnt/data/app"
-            />
-          </label>
-
-          <label className="field">
             <span>Docker network</span>
             <input
               value={draft.network}
@@ -250,6 +250,74 @@ export function ServiceForm({
             />
           </label>
         </div>
+
+        <fieldset className="paths-editor">
+          <div className="fieldset-heading">
+            <legend>Path mappings</legend>
+            <button
+              className="button quiet"
+              type="button"
+              onClick={() => update('paths', [...draft.paths, emptyPath()])}
+            >
+              Add path
+            </button>
+          </div>
+          {draft.paths.length === 0 ? (
+            <p className="field-help">No path mappings recorded.</p>
+          ) : (
+            draft.paths.map((path, index) => {
+              const serviceLabel = draft.name.trim() || 'new service'
+              return (
+                <div className="path-row" key={path.id}>
+                  <label className="field">
+                    <span>Host path</span>
+                    <input
+                      aria-label={`${serviceLabel} host path ${index + 1}`}
+                      value={path.hostPath}
+                      onChange={(event) => updatePath(path.id, { hostPath: event.target.value })}
+                      placeholder="/srv/app/config"
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Container path</span>
+                    <input
+                      aria-label={`${serviceLabel} container path ${index + 1}`}
+                      value={path.containerPath}
+                      onChange={(event) => updatePath(path.id, { containerPath: event.target.value })}
+                      placeholder="/config"
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Purpose</span>
+                    <input
+                      aria-label={`${serviceLabel} path purpose ${index + 1}`}
+                      value={path.purpose}
+                      onChange={(event) => updatePath(path.id, { purpose: event.target.value })}
+                      placeholder="Configuration"
+                    />
+                  </label>
+                  <label className="path-read-only">
+                    <input
+                      aria-label={`${serviceLabel} path ${index + 1} read-only`}
+                      type="checkbox"
+                      checked={path.readOnly}
+                      onChange={(event) => updatePath(path.id, { readOnly: event.target.checked })}
+                    />
+                    Read-only
+                  </label>
+                  <button
+                    className="icon-button danger"
+                    type="button"
+                    aria-label={`Remove ${serviceLabel} path ${index + 1}`}
+                    onClick={() => update('paths', draft.paths.filter((item) => item.id !== path.id))}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )
+            })
+          )}
+        </fieldset>
 
         <fieldset className="ports-editor">
           <div className="fieldset-heading">

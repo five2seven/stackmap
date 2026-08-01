@@ -61,8 +61,7 @@ The MVP should allow the user to record the following information for each servi
 - Host or device where it runs
 - Internal hostname or IP address, kept distinct from the application URL
 - Ports
-- Configuration path
-- Data path
+- Zero or more Docker path mappings, each with host path, container path, purpose, and read-only status
 - Docker network
 - External exposure: local only, VPN, reverse proxy, or public
 - Dependencies on other services
@@ -84,6 +83,7 @@ The first useful version of StackMap should include:
 - Filters for status, host, Docker network, and external exposure
 - Detection of duplicate port assignments
 - Detection of duplicate non-retired container names on the same host
+- Warnings for incomplete mappings, mixed path styles, and missing configuration-purpose mappings
 - Clear indication when a service record is incomplete
 - Local storage so the app works without an account or hosted backend
 - JSON export for backup and portability

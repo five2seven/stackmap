@@ -20,9 +20,10 @@ describe('DexieStackMapRepository', () => {
   it('persists records and stores the local schema version', async () => {
     const database = new StackMapDatabase(uniqueDatabaseName())
     const repository = new DexieStackMapRepository(database)
+    expect(database.verno).toBe(4)
     await repository.putService(createService('Persistent service'))
 
-    expect(await repository.getSchemaVersion()).toBe(2)
+    expect(await repository.getSchemaVersion()).toBe(3)
     expect((await repository.getAll()).services[0].name).toBe('Persistent service')
 
     database.close()
@@ -60,18 +61,27 @@ describe('DexieStackMapRepository', () => {
     delete legacyService.dockerImage
     delete legacyService.description
     delete legacyService.applicationUrl
+    delete legacyService.paths
     const legacy = new LegacyDatabase()
     await legacy.services.add(legacyService as unknown as Service)
     legacy.close()
 
     const repository = new DexieStackMapRepository(new StackMapDatabase(name))
-    expect(await repository.getSchemaVersion()).toBe(2)
-    expect((await repository.getAll()).services[0]).toEqual({
-      ...legacyService,
+    expect(await repository.getSchemaVersion()).toBe(3)
+    const migrated = (await repository.getAll()).services[0]
+    const currentWithoutLegacy: Record<string, unknown> = { ...current }
+    delete currentWithoutLegacy.configPath
+    delete currentWithoutLegacy.dataPath
+    expect(migrated).toEqual({
+      ...currentWithoutLegacy,
       containerName: '',
       dockerImage: '',
       description: '',
       applicationUrl: '',
+      paths: [
+        { id: `${current.id}-configuration-path`, hostPath: '/srv/appdata/legacy', containerPath: '', purpose: 'Configuration', readOnly: false },
+        { id: `${current.id}-data-path`, hostPath: '/srv/data/legacy', containerPath: '', purpose: 'Data', readOnly: false },
+      ],
     })
   })
 
@@ -89,5 +99,37 @@ describe('DexieStackMapRepository', () => {
     ).rejects.toThrow()
 
     expect((await repository.getAll()).services.map((service) => service.name)).toEqual(['Keep me'])
+  })
+
+  it('migrates version 3 fixed paths individually and ignores empty values', async () => {
+    const name = uniqueDatabaseName()
+    class VersionThreeDatabase extends Dexie {
+      services!: EntityTable<Service, 'id'>
+      constructor() {
+        super(name)
+        this.version(3).stores({ services: 'id, name, status, hostId, network, exposure, updatedAt' })
+      }
+    }
+    const legacy = new VersionThreeDatabase()
+    const makeLegacy = (id: string, configPath: string, dataPath: string) => {
+      const record: Record<string, unknown> = { ...createService(id), id, configPath, dataPath }
+      delete record.paths
+      return record as unknown as Service
+    }
+    await legacy.services.bulkAdd([
+      makeLegacy('config-only', '/config', ''),
+      makeLegacy('data-only', '', '/data'),
+      makeLegacy('empty', '', ''),
+    ])
+    legacy.close()
+
+    const migrated = (await new DexieStackMapRepository(new StackMapDatabase(name)).getAll()).services
+    expect(migrated.find((service) => service.id === 'config-only')?.paths).toMatchObject([
+      { hostPath: '/config', purpose: 'Configuration', readOnly: false },
+    ])
+    expect(migrated.find((service) => service.id === 'data-only')?.paths).toMatchObject([
+      { hostPath: '/data', purpose: 'Data', readOnly: false },
+    ])
+    expect(migrated.find((service) => service.id === 'empty')?.paths).toEqual([])
   })
 })

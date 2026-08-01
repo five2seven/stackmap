@@ -51,7 +51,7 @@ class MemoryRepository implements StackMapRepository {
   }
 
   async getSchemaVersion() {
-    return 2
+    return 3
   }
 }
 
@@ -264,8 +264,10 @@ describe('StackMap service workflows', () => {
     await user.selectOptions(form.getByLabelText('Host'), host.id)
     await user.type(form.getByLabelText('Internal hostname or IP'), 'http://192.168.1.10:2283')
     await user.selectOptions(form.getByLabelText('External exposure'), 'vpn')
-    await user.type(form.getByLabelText('Configuration path'), '/opt/immich')
-    await user.type(form.getByLabelText('Data path'), '/mnt/photos')
+    await user.click(form.getByRole('button', { name: 'Add path' }))
+    await user.type(form.getByLabelText('Immich host path 1'), '/opt/immich')
+    await user.type(form.getByLabelText('Immich container path 1'), '/config')
+    await user.type(form.getByLabelText('Immich path purpose 1'), 'Configuration')
     await user.type(form.getByLabelText('Docker network'), 'photos')
     await user.click(form.getByLabelText('Postgres'))
     await user.click(form.getByRole('button', { name: 'Add port' }))
@@ -301,6 +303,47 @@ describe('StackMap service workflows', () => {
     expect(repository.data.services[0].ports).toEqual([])
   })
 
+  it('adds, edits, removes, trims, and searches path mappings', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository()
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Add service' }))
+    await user.type(screen.getByLabelText('Service name *'), 'Paths')
+    await user.click(screen.getByRole('button', { name: 'Add path' }))
+    await user.type(screen.getByLabelText('Paths host path 1'), '  /srv/config  ')
+    await user.type(screen.getByLabelText('Paths container path 1'), '/config')
+    await user.type(screen.getByLabelText('Paths path purpose 1'), ' Configuration ')
+    await user.click(screen.getByLabelText('Paths path 1 read-only'))
+    await user.click(screen.getByRole('button', { name: 'Add path' }))
+    await user.type(screen.getByLabelText('Paths host path 2'), 'relative/data')
+    await user.type(screen.getByLabelText('Paths path purpose 2'), 'Media')
+    await user.click(screen.getByRole('button', { name: 'Add path' }))
+    await user.click(screen.getByRole('button', { name: 'Create service' }))
+
+    expect(repository.data.services[0].paths).toHaveLength(2)
+    expect(repository.data.services[0].paths[0]).toMatchObject({ hostPath: '/srv/config', purpose: 'Configuration', readOnly: true })
+    expect(screen.getByText('Read-only')).toBeVisible()
+    expect(screen.getByText('Host paths mix absolute and relative styles.')).toBeVisible()
+    expect(screen.getByText('Mapping 2 is incomplete')).toBeVisible()
+
+    for (const query of ['/srv/config', '/config', 'media']) {
+      const search = screen.getByRole('searchbox', { name: 'Search services' })
+      await user.clear(search)
+      await user.type(search, query)
+      expect(screen.getByRole('heading', { name: 'Paths' })).toBeVisible()
+    }
+
+    await user.clear(screen.getByRole('searchbox', { name: 'Search services' }))
+    await user.click(screen.getByRole('button', { name: 'Edit Paths' }))
+    await user.clear(screen.getByLabelText('Paths path purpose 2'))
+    await user.type(screen.getByLabelText('Paths path purpose 2'), 'Library')
+    await user.click(screen.getByRole('button', { name: 'Remove Paths path 1' }))
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(repository.data.services[0].paths).toHaveLength(1)
+    expect(repository.data.services[0].paths[0].purpose).toBe('Library')
+  })
+
   it('shows persistence failures without closing the service form', async () => {
     const user = userEvent.setup()
     const repository = new MemoryRepository()
@@ -309,9 +352,12 @@ describe('StackMap service workflows', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Add service' }))
     await user.type(screen.getByLabelText('Service name *'), 'Unsaved service')
+    await user.click(screen.getByRole('button', { name: 'Add path' }))
+    await user.type(screen.getByLabelText('Unsaved service host path 1'), '/keep/me')
     await user.click(screen.getByRole('button', { name: 'Create service' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Storage unavailable.')
     expect(screen.getByRole('heading', { name: 'Add service' })).toBeVisible()
+    expect(screen.getByLabelText('Unsaved service host path 1')).toHaveValue('/keep/me')
   })
 })

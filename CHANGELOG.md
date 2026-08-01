@@ -15,6 +15,8 @@
 - Optional service descriptions, container names, Docker images, and application URLs
 - Duplicate container-name warnings for non-retired services on the same host
 - IndexedDB version 3 migration and JSON schema version 2 with version 1 import compatibility
+- Repeatable Docker path mappings with purpose, read-only status, search, display, and initial warnings
+- IndexedDB version 4 legacy-path migration and JSON schema version 3 with version 1 and 2 import compatibility
 - Unit, database, UI behavior, and Playwright coverage for the MVP workflows
 
 ### Fixed

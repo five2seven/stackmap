@@ -8,7 +8,7 @@ describe('JSON import and export', () => {
     const exported = createExport(data, '2026-07-28T12:00:00.000Z')
 
     expect(exported).toEqual({
-      schemaVersion: 2,
+      schemaVersion: 3,
       exportedAt: '2026-07-28T12:00:00.000Z',
       services: data.services,
       hosts: [],
@@ -30,6 +30,9 @@ describe('JSON import and export', () => {
     delete legacyService.dockerImage
     delete legacyService.description
     delete legacyService.applicationUrl
+    delete legacyService.paths
+    legacyService.configPath = '/legacy/config'
+    legacyService.dataPath = '/legacy/data'
     const legacy = {
       schemaVersion: 1,
       exportedAt: '2026-07-28T12:00:00.000Z',
@@ -37,20 +40,33 @@ describe('JSON import and export', () => {
       hosts: [],
     }
 
-    expect(parseImport(JSON.stringify(legacy))).toEqual({
-      ...legacy,
-      schemaVersion: 2,
-      services: [
-        {
-          ...legacyService,
-          containerName: '',
-          dockerImage: '',
-          description: '',
-          applicationUrl: '',
-        },
+    const imported = parseImport(JSON.stringify(legacy))
+    expect(imported.schemaVersion).toBe(3)
+    expect(imported.services[0]).toMatchObject({
+      id: current.id,
+      containerName: '', dockerImage: '', description: '', applicationUrl: '',
+      paths: [
+        { id: `${current.id}-configuration-path`, hostPath: '/legacy/config', containerPath: '', purpose: 'Configuration', readOnly: false },
+        { id: `${current.id}-data-path`, hostPath: '/legacy/data', containerPath: '', purpose: 'Data', readOnly: false },
       ],
     })
+    expect(imported.services[0]).not.toHaveProperty('configPath')
+    expect(imported.services[0]).not.toHaveProperty('dataPath')
     expect(legacy.services[0]).not.toHaveProperty('containerName')
+  })
+
+  it('migrates a version 2 backup to paths without mutating the uploaded object', () => {
+    const current = createService('Schema two')
+    const legacyService: Record<string, unknown> = { ...current, configPath: '/config', dataPath: '' }
+    delete legacyService.paths
+    const legacy = { schemaVersion: 2, exportedAt: '2026-07-28T12:00:00.000Z', services: [legacyService], hosts: [] }
+    const imported = parseImport(JSON.stringify(legacy))
+    expect(imported.schemaVersion).toBe(3)
+    expect(imported.services[0].paths).toEqual([
+      { id: `${current.id}-configuration-path`, hostPath: '/config', containerPath: '', purpose: 'Configuration', readOnly: false },
+    ])
+    expect(legacy.services[0]).toHaveProperty('configPath')
+    expect(legacy.services[0]).not.toHaveProperty('paths')
   })
 
   it('preserves identity fields in a current-version round trip', () => {
@@ -60,6 +76,7 @@ describe('JSON import and export', () => {
       dockerImage: 'example/current:1',
       description: 'Current description',
       applicationUrl: 'https://current.example.test',
+      paths: [{ id: 'config', hostPath: '/srv/config', containerPath: '/config', purpose: 'Configuration', readOnly: true }],
     }
     const exported = createExport({ services: [service], hosts: [] }, '2026-07-28T12:00:00.000Z')
     expect(parseImport(JSON.stringify(exported)).services[0]).toEqual(service)
@@ -76,6 +93,15 @@ describe('JSON import and export', () => {
       ).toThrow('One or more service records are invalid.')
     },
   )
+
+  it('rejects malformed and duplicate current path mappings', () => {
+    const malformed = { ...createService('Malformed'), paths: [{ id: 'path' }] }
+    expect(() => parseImport(JSON.stringify(createExport({ services: [malformed as never], hosts: [] })))).toThrow('malformed path mappings')
+
+    const path = { id: 'same', hostPath: '/host', containerPath: '/container', purpose: 'Data', readOnly: false }
+    const duplicate = { ...createService('Duplicate paths'), paths: [path, { ...path }] }
+    expect(() => parseImport(JSON.stringify(createExport({ services: [duplicate], hosts: [] })))).toThrow('duplicate path-mapping IDs')
+  })
 
   it('preserves host and dependency reference validation', () => {
     const orphanedHost = { ...createService('Orphaned host'), hostId: 'missing-host' }

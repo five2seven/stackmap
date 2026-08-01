@@ -44,7 +44,7 @@ The exported file should include:
 - Export timestamp
 - All StackMap records required to restore the app
 
-The current export schema is version 2. The import boundary validates current records and migrates valid version 1 services in memory by adding empty optional identity fields without mutating the uploaded object.
+The current JSON export schema is version 3. The import boundary validates current path mappings, migrates valid version 1 services by adding empty identity fields and generalized paths, and migrates valid version 2 `configPath` and `dataPath` fields into generalized paths. Uploaded objects are not mutated.
 
 The architecture should allow future migration if cloud synchronization is added later.
 
@@ -89,4 +89,4 @@ Use Playwright for focused browser workflows that cover IndexedDB persistence an
 - Ensure import validation does not blindly trust uploaded JSON
 - Keep deployment compatible with static hosting on Cloudflare Pages
 
-Dexie database version 3 migrates existing service records by adding empty container name, Docker image, description, and application URL fields while preserving all prior data.
+Dexie database version 3 added service identity fields. Dexie database version 4 converts non-empty legacy `configPath` and `dataPath` values into path mappings and removes the legacy fields from current records without changing timestamps. IndexedDB versions describe on-device storage upgrades; JSON schema versions independently describe portable backup formats.
