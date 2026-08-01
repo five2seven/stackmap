@@ -1,0 +1,97 @@
+Update docs/architecture.md for StackMap.
+
+Document the initial MVP architecture using these decisions:
+
+## Application Type
+
+StackMap is a local-first single-page web application.
+
+## Frontend
+
+Use:
+
+- React
+- TypeScript
+- Vite
+
+The interface should be responsive and work well on desktop and tablet-sized screens. Mobile support is secondary for the MVP.
+
+## Data Storage
+
+Use IndexedDB for local application data.
+
+Do not use localStorage for the primary dataset because StackMap will store structured records and may grow beyond simple key-value data.
+
+Use a small IndexedDB wrapper library if it improves reliability and maintainability. Prefer a lightweight, established option.
+
+## Backend
+
+The MVP will not have a hosted backend.
+
+Do not add:
+
+- Supabase
+- Firebase
+- Server-side APIs
+- User accounts
+- Cloud synchronization
+
+## Data Portability
+
+Support JSON export and import.
+
+The exported file should include:
+
+- A schema version
+- Export timestamp
+- All StackMap records required to restore the app
+
+The architecture should allow future migration if cloud synchronization is added later.
+
+## Hosting
+
+The proof-of-concept frontend will be hosted on Cloudflare Pages.
+
+The intended public URL is:
+
+stackmap.rareobjectlabs.app
+
+The source repository is:
+
+five2seven/stackmap
+
+## Privacy
+
+All user-created StackMap data remains in the user’s browser for the MVP.
+
+The hosted application files are public, but the user’s homelab records are not uploaded to StackMap servers.
+
+Clearly document that browser data can be lost if the user clears site data or changes browsers without exporting a backup.
+
+## Testing
+
+Use:
+
+- Vitest for unit and component tests
+- Testing Library for UI behavior
+- Build validation through npm run build
+
+End-to-end testing may be added later if the workflow becomes complex enough to justify it.
+
+## Architecture Constraints
+
+- Keep the MVP local-first
+- Do not add a backend without an explicit architecture decision
+- Do not store credentials or secrets
+- Keep data access separate from UI components
+- Version the local data schema
+- Preserve backward compatibility where practical
+- Ensure import validation does not blindly trust uploaded JSON
+- Keep deployment compatible with static hosting on Cloudflare Pages
+
+Do not define the full database schema or build application features yet.
+
+After updating the file:
+
+1. Show me the exact diff.
+2. Do not modify any other file.
