@@ -8,7 +8,7 @@ import {
   type StackMapExport,
 } from './types'
 
-export const CURRENT_SCHEMA_VERSION = 1
+export const CURRENT_SCHEMA_VERSION = 2
 
 const isString = (value: unknown): value is string => typeof value === 'string'
 const isNonEmptyString = (value: unknown): value is string =>
@@ -24,12 +24,15 @@ function hasExactKeys(value: Record<string, unknown>, keys: string[]) {
   return Object.keys(value).every((key) => keys.includes(key))
 }
 
-export function isService(value: unknown): value is Service {
+function isServiceShape(value: unknown, schemaVersion: 1 | 2): boolean {
   if (!value || typeof value !== 'object') return false
   const service = value as Record<string, unknown>
   const keys = [
     'id',
     'name',
+    ...(schemaVersion === 2
+      ? ['containerName', 'dockerImage', 'description', 'applicationUrl']
+      : []),
     'status',
     'hostId',
     'internalUrl',
@@ -48,6 +51,11 @@ export function isService(value: unknown): value is Service {
     hasExactKeys(service, keys) &&
     isNonEmptyString(service.id) &&
     isNonEmptyString(service.name) &&
+    (schemaVersion === 1 ||
+      (isString(service.containerName) &&
+        isString(service.dockerImage) &&
+        isString(service.description) &&
+        isString(service.applicationUrl))) &&
     SERVICE_STATUSES.includes(service.status as Service['status']) &&
     isOptionalString(service.hostId) &&
     isString(service.internalUrl) &&
@@ -82,6 +90,10 @@ export function isService(value: unknown): value is Service {
   )
 }
 
+export function isService(value: unknown): value is Service {
+  return isServiceShape(value, 2)
+}
+
 export function isHost(value: unknown): value is Host {
   if (!value || typeof value !== 'object') return false
   const host = value as Record<string, unknown>
@@ -113,13 +125,19 @@ export function validateImport(value: unknown): StackMapExport {
   }
 
   const data = value as Record<string, unknown>
-  if (data.schemaVersion !== CURRENT_SCHEMA_VERSION) {
-    throw new Error(`Unsupported schema version. Expected version ${CURRENT_SCHEMA_VERSION}.`)
+  if (data.schemaVersion !== 1 && data.schemaVersion !== CURRENT_SCHEMA_VERSION) {
+    throw new Error(
+      `Unsupported schema version. Expected version 1 or ${CURRENT_SCHEMA_VERSION}.`,
+    )
   }
   if (!isString(data.exportedAt) || Number.isNaN(Date.parse(data.exportedAt))) {
     throw new Error('The export timestamp is missing or invalid.')
   }
-  if (!Array.isArray(data.services) || !data.services.every(isService)) {
+  const schemaVersion = data.schemaVersion as 1 | 2
+  if (
+    !Array.isArray(data.services) ||
+    !data.services.every((service) => isServiceShape(service, schemaVersion))
+  ) {
     throw new Error('One or more service records are invalid.')
   }
   if (!Array.isArray(data.hosts) || !data.hosts.every(isHost)) {
@@ -134,9 +152,28 @@ export function validateImport(value: unknown): StackMapExport {
   if (data.services.some((service) => service.hostId && !hostIds.has(service.hostId))) {
     throw new Error('A service references a host that is not included in the import.')
   }
-  if (data.services.some((service) => service.dependencyIds.some((id) => !serviceIds.has(id)))) {
+  if (
+    data.services.some((service) =>
+      service.dependencyIds.some((id: string) => !serviceIds.has(id)),
+    )
+  ) {
     throw new Error('A service dependency is not included in the import.')
   }
 
-  return data as unknown as StackMapExport
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    exportedAt: data.exportedAt,
+    services: data.services.map((service) => {
+      const current = service as unknown as Service
+      if (schemaVersion === 2) return { ...current }
+      return {
+        ...current,
+        containerName: '',
+        dockerImage: '',
+        description: '',
+        applicationUrl: '',
+      }
+    }),
+    hosts: data.hosts.map((host) => ({ ...host })),
+  }
 }

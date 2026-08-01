@@ -54,9 +54,12 @@ The core value is not only storing information. StackMap should help the user re
 The MVP should allow the user to record the following information for each service:
 
 - Service name
+- Optional description
+- Optional container name and Docker image
+- Optional application URL for the user-facing address
 - Status: active, planned, paused, or retired
 - Host or device where it runs
-- Internal URL or IP address
+- Internal hostname or IP address, kept distinct from the application URL
 - Ports
 - Configuration path
 - Data path
@@ -80,6 +83,7 @@ The first useful version of StackMap should include:
 - Search across service names, hosts, ports, paths, networks, and notes
 - Filters for status, host, Docker network, and external exposure
 - Detection of duplicate port assignments
+- Detection of duplicate non-retired container names on the same host
 - Clear indication when a service record is incomplete
 - Local storage so the app works without an account or hosted backend
 - JSON export for backup and portability

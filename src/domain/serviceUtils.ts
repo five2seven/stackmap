@@ -44,6 +44,24 @@ export function duplicatePortServiceIds(services: Service[]): Set<string> {
   return duplicateIds
 }
 
+export function duplicateContainerNameServiceIds(services: Service[]): Set<string> {
+  const duplicateIds = new Set<string>()
+  const assignments = new Map<string, string[]>()
+
+  services.forEach((service) => {
+    const containerName = service.containerName.trim().toLowerCase()
+    if (!service.hostId || !containerName || service.status === 'retired') return
+    const key = `${service.hostId}\u0000${containerName}`
+    assignments.set(key, [...(assignments.get(key) ?? []), service.id])
+  })
+
+  assignments.forEach((ids) => {
+    if (ids.length > 1) ids.forEach((id) => duplicateIds.add(id))
+  })
+
+  return duplicateIds
+}
+
 export function filterServices(
   services: Service[],
   hosts: Host[],
@@ -55,6 +73,10 @@ export function filterServices(
   return services.filter((service) => {
     const searchable = [
       service.name,
+      service.containerName,
+      service.dockerImage,
+      service.description,
+      service.applicationUrl,
       service.internalUrl,
       service.configPath,
       service.dataPath,
@@ -86,6 +108,10 @@ export function createService(name: string): Service {
   return {
     id: crypto.randomUUID(),
     name: name.trim(),
+    containerName: '',
+    dockerImage: '',
+    description: '',
+    applicationUrl: '',
     status: 'active',
     internalUrl: '',
     ports: [],

@@ -12,6 +12,9 @@
 - Duplicate host-port conflict warnings and incomplete-record indicators
 - Versioned JSON export plus validated, confirmed JSON import
 - Responsive desktop and tablet interface with clear empty states
+- Optional service descriptions, container names, Docker images, and application URLs
+- Duplicate container-name warnings for non-retired services on the same host
+- IndexedDB version 3 migration and JSON schema version 2 with version 1 import compatibility
 - Unit, database, UI behavior, and Playwright coverage for the MVP workflows
 
 ### Fixed

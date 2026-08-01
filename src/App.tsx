@@ -3,6 +3,7 @@ import './App.css'
 import { parseImport, serializeExport } from './data/backup'
 import { repository as defaultRepository, type StackMapRepository } from './data/database'
 import {
+  duplicateContainerNameServiceIds,
   duplicatePortServiceIds,
   filterServices,
   missingServiceFields,
@@ -75,6 +76,10 @@ function App({ repository = defaultRepository }: AppProps) {
     [services, hosts, filters],
   )
   const conflictIds = useMemo(() => duplicatePortServiceIds(services), [services])
+  const containerConflictIds = useMemo(
+    () => duplicateContainerNameServiceIds(services),
+    [services],
+  )
   const networks = useMemo(
     () => [...new Set(services.map((service) => service.network).filter(Boolean))].sort(),
     [services],
@@ -278,6 +283,10 @@ function App({ repository = defaultRepository }: AppProps) {
             <strong>{conflictIds.size}</strong>
             <span>Port conflicts</span>
           </div>
+          <div className={containerConflictIds.size ? 'summary-warning' : ''}>
+            <strong>{containerConflictIds.size}</strong>
+            <span>Container conflicts</span>
+          </div>
         </section>
 
         <section className="workspace" aria-labelledby="services-title">
@@ -421,7 +430,13 @@ function App({ repository = defaultRepository }: AppProps) {
                         {conflictIds.has(service.id) && (
                           <span className="conflict-badge">Host-port conflict</span>
                         )}
+                        {containerConflictIds.has(service.id) && (
+                          <span className="conflict-badge">Container-name conflict</span>
+                        )}
                       </div>
+                      {service.description && (
+                        <p className="service-description">{service.description}</p>
+                      )}
                       <dl className="service-facts">
                         <div>
                           <dt>Host</dt>
@@ -448,9 +463,25 @@ function App({ repository = defaultRepository }: AppProps) {
                           <dt>Exposure</dt>
                           <dd>{service.exposure}</dd>
                         </div>
+                        {service.containerName && (
+                          <div>
+                            <dt>Container</dt>
+                            <dd>{service.containerName}</dd>
+                          </div>
+                        )}
+                        {service.dockerImage && (
+                          <div>
+                            <dt>Image</dt>
+                            <dd>{service.dockerImage}</dd>
+                          </div>
+                        )}
                       </dl>
-                      {(service.configPath || service.dataPath || service.internalUrl) && (
+                      {(service.configPath ||
+                        service.dataPath ||
+                        service.internalUrl ||
+                        service.applicationUrl) && (
                         <div className="service-details">
+                          {service.applicationUrl && <span>{service.applicationUrl}</span>}
                           {service.internalUrl && <span>{service.internalUrl}</span>}
                           {service.configPath && <span>Config: {service.configPath}</span>}
                           {service.dataPath && <span>Data: {service.dataPath}</span>}

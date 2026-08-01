@@ -25,6 +25,10 @@ export interface ServicePort {
 export interface Service {
   id: string
   name: string
+  containerName: string
+  dockerImage: string
+  description: string
+  applicationUrl: string
   status: ServiceStatus
   hostId?: string
   internalUrl: string
@@ -67,4 +71,3 @@ export interface ServiceFilters {
   network: string | 'all'
   exposure: Exposure | 'all'
 }
-
