@@ -1,0 +1,74 @@
+<recommended_plugins>
+Here is a list of plugins that are available but not installed.
+
+- Atlassian Rovo (atlassian-rovo@openai-curated-remote)
+- Box (box@openai-curated-remote)
+- Figma (figma@openai-curated-remote)
+- Gmail (gmail@openai-curated-remote)
+- Outlook Calendar (outlook-calendar@openai-curated-remote)
+- Outlook Email (outlook-email@openai-curated-remote)
+- SharePoint (sharepoint@openai-curated-remote)
+- Slack (slack@openai-curated-remote)
+- Teams (teams@openai-curated-remote)
+</recommended_plugins>
+
+# AGENTS.md instructions for C:\Code\Projects\APP-StackMap
+
+<INSTRUCTIONS>
+# Agent Guidance
+
+This repository is the reusable frontend starter for `StackMap`.
+
+## Working agreement
+
+- Keep the application frontend-only unless the product architecture explicitly changes.
+- Use React, TypeScript, and Vite; preserve strict TypeScript checks.
+- Prefer small, accessible components and plain CSS over unnecessary dependencies.
+- Keep product behavior out of the starter. Add features only when requirements call for them.
+- Never expose secrets in client code or commit local environment files.
+- Update documentation when architecture or project conventions change.
+- Treat Porkbun registration, Cloudflare DNS, Cloudflare Pages hosting, and GitHub source control as external deployment concerns; do not configure or create those resources without explicit authorization.
+- Use `stackmap.rareobjectlabs.app` as the default POC domain unless the instantiated project specifies a different `stackmap.rareobjectlabs.app`.
+
+## Required validation
+
+Before completing a code change, run:
+
+```powershell
+npm run lint
+npm test
+npm run build
+```
+
+Add or update Vitest tests for behavior changes. Keep generated files such as `dist` and `coverage` out of version control.
+
+## Template placeholders
+
+Until bootstrap substitution runs, app-specific values use:
+
+- `StackMap`
+- `stackmap`
+- `APP-StackMap`
+- `A local-first homelab planning application`
+- `stackmap.rareobjectlabs.app`
+
+## Deployment convention
+
+- Registrar: Porkbun
+- DNS provider: Cloudflare
+- POC hosting: Cloudflare Pages
+- Source control: GitHub
+- Umbrella domain: `rareobjectlabs.app`
+- Default POC domain: `stackmap.rareobjectlabs.app`
+
+This is documentation metadata only. Do not add provider-specific application code to implement it.
+
+</INSTRUCTIONS>
+
+<environment_context>
+  <cwd>C:\Code\Projects\APP-StackMap</cwd>
+  <shell>powershell</shell>
+  <current_date>2026-07-28</current_date>
+  <timezone>America/Chicago</timezone>
+  <filesystem><workspace_roots><root>C:\Code\Projects\APP-StackMap</root><root>C:\Users\rae\.codex\visualizations\2026\07\28\019fab20-4a1e-70e3-a467-a29016081e71</root></workspace_roots><permission_profile type="disabled"><file_system type="unrestricted" /></permission_profile></filesystem>
+</environment_context>
