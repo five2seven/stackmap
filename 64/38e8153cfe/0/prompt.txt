@@ -1,0 +1,24 @@
+Update docs/product.md for StackMap.
+
+Add a section titled "Primary User" with this content:
+
+StackMap is initially designed for technically capable homelab hobbyists who enjoy self-hosting, experimenting with software, and building their own infrastructure.
+
+The primary user is comfortable with tools such as Docker, Docker Compose, Plex, Jellyfin, Sonarr, Radarr, Home Assistant, Portainer, Tailscale, and similar self-hosted applications. They may work in technology professionally, but they are not necessarily software developers or infrastructure engineers.
+
+They typically have limited free time and several partially completed projects. Their homelab has grown gradually, and important information may be spread across configuration files, browser bookmarks, notes, spreadsheets, screenshots, and memory.
+
+They may understand the value of documentation but are unlikely to maintain a system that requires extensive setup or frequent administrative work.
+
+StackMap should therefore be:
+
+- Fast to begin using
+- Useful with incomplete information
+- Easy to update
+- Easy to understand after a long absence
+- Structured without demanding perfect documentation
+- Helpful for both active services and unfinished plans
+
+Do not add features, architecture decisions, or implementation details yet.
+
+After updating the file, show me the exact diff.
