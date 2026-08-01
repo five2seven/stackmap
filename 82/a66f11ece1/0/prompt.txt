@@ -1,0 +1,177 @@
+Build the first functional StackMap MVP increment.
+
+Use the existing product, architecture, and decision documents as the source of truth:
+
+- docs/product.md
+- docs/architecture.md
+- docs/decisions.md
+- AGENTS.md
+
+Do not broaden the scope beyond those documents.
+
+## Goal
+
+Create the first usable local-first StackMap application where a user can:
+
+- View a list of services
+- Add a service
+- Edit a service
+- Retire a service
+- Permanently delete a service after confirmation
+- Search services
+- Filter services
+- See duplicate host-port conflicts
+- See which records are incomplete
+- Export all data to JSON
+- Import validated JSON data
+
+## Technical requirements
+
+Use the existing:
+
+- React
+- TypeScript
+- Vite
+- Vitest
+- Testing Library
+- ESLint
+
+Add a lightweight IndexedDB wrapper if needed. Prefer Dexie unless there is a clear reason not to.
+
+Do not add:
+
+- Backend services
+- Authentication
+- Cloud synchronization
+- React Router unless the interface genuinely requires multiple routes
+- Docker discovery
+- Monitoring
+- Payments
+- AI features
+- Server-side code
+
+## Application structure
+
+Keep data access separate from UI components.
+
+Create clear modules for:
+
+- Types and enums
+- IndexedDB access
+- Schema versioning
+- Import and export
+- Duplicate-port detection
+- Search and filtering
+- Reusable form components where appropriate
+
+## Initial interface
+
+Create a responsive application with:
+
+- Header showing StackMap
+- Service count summary
+- Search field
+- Filters for status, host, network, and exposure
+- Service list or table
+- Add service action
+- Add/edit service form
+- Clear empty state
+- Duplicate-port warnings
+- Incomplete-record indicators
+- Import and export controls
+
+Do not create placeholder navigation.
+
+## Service form
+
+Support all MVP service fields from docs/decisions.md.
+
+Only service name is required.
+
+The user must be able to save incomplete records.
+
+Ports must support multiple entries.
+
+Dependencies must reference other services.
+
+Host assignment must be optional.
+
+## Hosts
+
+Provide the minimum host management needed to:
+
+- Add a host
+- Edit a host
+- Assign a service to a host
+- Prevent deleting a host that is still referenced by a service
+
+Do not create a separate complex host-management system.
+
+## Import and export
+
+Export JSON containing:
+
+- schemaVersion
+- exportedAt
+- services
+- hosts
+
+Validate imported data before replacing existing data.
+
+Before replacing data:
+
+- Show a summary of what will be imported
+- Require confirmation
+- Do not silently accept malformed or incompatible data
+
+## Testing
+
+Add tests for at least:
+
+- Creating a service with only a name
+- Editing a service
+- Retiring a service
+- Deleting a service after confirmation
+- Adding and assigning a host
+- Preventing deletion of a referenced host
+- Duplicate port detection
+- Search and filtering
+- Incomplete-record detection
+- JSON export shape
+- Valid import
+- Rejection of invalid import data
+
+Run:
+
+- npm run lint
+- npm test
+- npm run build
+
+## Documentation
+
+Update:
+
+- README.md with local setup and current functionality
+- CHANGELOG.md with this MVP increment
+- docs/architecture.md only if implementation required a meaningful architecture decision
+- docs/decisions.md only if implementation required a new product or data-model decision
+
+Do not rewrite the product scope.
+
+## Delivery
+
+Work in small, reviewable stages.
+
+Before editing, summarize the planned file changes.
+
+After implementation, report:
+
+- Files changed
+- Features completed
+- Tests added
+- Test results
+- Build result
+- Any compromises or unresolved issues
+- Anything that should be reviewed manually
+
+Do not commit or push until I review the completed changes.
