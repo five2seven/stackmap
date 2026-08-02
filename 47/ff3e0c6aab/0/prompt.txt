@@ -1,0 +1,53 @@
+Clean up and merge the completed StackMap service identity branch.
+
+Current branch:
+codex/service-identity-fields
+
+Tasks:
+
+1. Confirm the working tree is clean and the branch matches origin/codex/service-identity-fields.
+2. Remove only this temporary line from CHANGELOG.md:
+
+- Verified Entire checkpoint capture from a Codex CLI session.
+
+3. Commit the cleanup with:
+
+Remove temporary Entire integration test note
+
+4. Push the feature branch.
+5. Run:
+
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+
+6. Review the full feature-branch diff against origin/main for:
+   - correctness
+   - migration safety
+   - schema-version compatibility
+   - unrelated changes
+   - secrets or generated artifacts
+   - test coverage
+
+7. If there are no blocking or important findings:
+   - switch to main
+   - pull origin/main using fast-forward only
+   - merge codex/service-identity-fields with a normal merge commit
+   - use this merge commit message:
+
+Merge service identity fields and container-name validation
+
+- push main to origin
+
+8. Do not delete the feature branch yet.
+9. Do not begin another feature.
+
+Report:
+- cleanup commit
+- Entire checkpoint
+- validation results
+- review findings
+- merge commit
+- push result
+- final Git status
