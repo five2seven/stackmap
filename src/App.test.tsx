@@ -389,6 +389,24 @@ describe('StackMap service workflows', () => {
     expect(screen.getByText('Service has no assigned host.')).toBeVisible()
   })
 
+  it('does not render a service as also using its own conflicting port', async () => {
+    const user = userEvent.setup()
+    const host: Host = { id: 'host-1', name: 'NAS', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: '2026-08-02T12:00:00.000Z', updatedAt: '2026-08-02T12:00:00.000Z' }
+    const overlapping = {
+      ...serviceNamed('Alpha'),
+      hostId: host.id,
+      ports: [
+        { hostPort: 8080, containerPort: 80, protocol: 'tcp' as const, description: '' },
+        { hostPort: 8080, containerPort: 81, protocol: 'both' as const, description: '' },
+      ],
+    }
+    render(<App repository={new MemoryRepository({ services: [overlapping], hosts: [host] })} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Port Map' }))
+    expect(screen.getAllByText(/Conflict: 8080\//)).toHaveLength(2)
+    expect(screen.queryByText(/also used by Alpha/)).not.toBeInTheDocument()
+  })
+
   it('filters Port Map hosts and preserves the filter after editing a service', async () => {
     const user = userEvent.setup()
     const timestamp = '2026-08-02T12:00:00.000Z'

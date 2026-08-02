@@ -114,7 +114,8 @@ export function PortMapView({
                       <span className="port-assignment-notes" role="cell" data-label="Issues">
                         {assignment.conflict && (
                           <span className="conflict-detail" role="status">
-                            Conflict: {assignment.hostPort}/{assignment.protocol} on {assignment.hostName}; also used by {[...new Set(assignment.conflictingServiceNames)].join(', ')}.
+                            Conflict: {assignment.hostPort}/{assignment.protocol} on {assignment.hostName}
+                            {assignment.conflictingServiceNames.length > 0 && `; also used by ${assignment.conflictingServiceNames.join(', ')}`}.
                           </span>
                         )}
                         {assignment.hostPort === undefined && <span>Host port is missing.</span>}

@@ -54,6 +54,27 @@ describe('derived Port Map', () => {
     expect(assignments.find((item) => item.serviceName === 'Other host')?.conflict).toBe(false)
   })
 
+  it('keeps same-service conflicts while listing each different service only once', () => {
+    const assignments = derivePortMap([
+      service('Primary', 'alpha', [
+        { hostPort: 8080, protocol: 'tcp', description: '' },
+        { hostPort: 8080, protocol: 'both', description: '' },
+      ]),
+      service('Other', 'alpha', [
+        { hostPort: 8080, protocol: 'tcp', description: '' },
+        { hostPort: 8080, protocol: 'both', description: '' },
+      ]),
+    ], hosts)[0].assignments
+
+    const primaryAssignments = assignments.filter((assignment) => assignment.serviceName === 'Primary')
+    expect(primaryAssignments.every((assignment) => assignment.conflict)).toBe(true)
+    expect(primaryAssignments.map((assignment) => assignment.conflictingServiceNames)).toEqual([
+      ['Other'],
+      ['Other'],
+    ])
+    expect(assignments.find((assignment) => assignment.serviceName === 'Other')?.conflictingServiceNames).toEqual(['Primary'])
+  })
+
   it.each([
     ['service name', 'media', 'Media'],
     ['host name', 'alpha host', 'Media'],

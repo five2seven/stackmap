@@ -71,8 +71,18 @@ export function derivePortMap(
       ) {
         assignment.conflict = true
         candidate.conflict = true
-        assignment.conflictingServiceNames.push(candidate.serviceName)
-        candidate.conflictingServiceNames.push(assignment.serviceName)
+        if (
+          assignment.serviceId !== candidate.serviceId &&
+          !assignment.conflictingServiceNames.includes(candidate.serviceName)
+        ) {
+          assignment.conflictingServiceNames.push(candidate.serviceName)
+        }
+        if (
+          candidate.serviceId !== assignment.serviceId &&
+          !candidate.conflictingServiceNames.includes(assignment.serviceName)
+        ) {
+          candidate.conflictingServiceNames.push(assignment.serviceName)
+        }
       }
     })
   })
