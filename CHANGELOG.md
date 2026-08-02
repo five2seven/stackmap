@@ -2,7 +2,6 @@
 
 ## Unreleased
 
-- Verified Entire checkpoint capture from a Codex CLI session.
 
 ### Added
 
