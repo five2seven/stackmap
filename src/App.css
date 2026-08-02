@@ -137,7 +137,7 @@ main {
 
 .summary-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 0 0 1.5rem;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -263,6 +263,12 @@ textarea {
 .service-title-row h3 {
   margin: 0 0.25rem 0 0;
   font-size: 1.05rem;
+}
+
+.service-description {
+  margin-bottom: 0.8rem;
+  color: var(--muted);
+  font-size: 0.86rem;
 }
 
 .status-badge,
@@ -609,6 +615,18 @@ footer {
 
   .summary-strip > div:nth-child(-n + 2) {
     border-bottom: 1px solid var(--border);
+  }
+
+  .summary-strip > div:nth-child(4) {
+    border-right: 0;
+  }
+
+  .summary-strip > div:nth-child(n + 3) {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .summary-strip > div:last-child {
+    border-bottom: 0;
   }
 
   .filters,

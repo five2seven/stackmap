@@ -29,6 +29,26 @@ export class StackMapDatabase extends Dexie {
           .table<StackMapMetadata, 'key'>('metadata')
           .put({ key: 'schemaVersion', value: CURRENT_SCHEMA_VERSION })
       })
+    this.version(3)
+      .stores({
+        services: 'id, name, status, hostId, network, exposure, updatedAt',
+        hosts: 'id, name, type, updatedAt',
+        metadata: 'key',
+      })
+      .upgrade(async (transaction) => {
+        await transaction
+          .table<Service, 'id'>('services')
+          .toCollection()
+          .modify((service) => {
+            service.containerName ??= ''
+            service.dockerImage ??= ''
+            service.description ??= ''
+            service.applicationUrl ??= ''
+          })
+        await transaction
+          .table<StackMapMetadata, 'key'>('metadata')
+          .put({ key: 'schemaVersion', value: CURRENT_SCHEMA_VERSION })
+      })
   }
 }
 

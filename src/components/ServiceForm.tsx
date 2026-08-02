@@ -61,6 +61,10 @@ export function ServiceForm({
     await onSave({
       ...draft,
       name: draft.name.trim(),
+      containerName: draft.containerName.trim(),
+      dockerImage: draft.dockerImage.trim(),
+      description: draft.description.trim(),
+      applicationUrl: draft.applicationUrl.trim(),
       ports: normalizedPorts,
       updatedAt: new Date().toISOString(),
     })
@@ -87,6 +91,34 @@ export function ServiceForm({
               value={draft.name}
               onChange={(event) => update('name', event.target.value)}
               placeholder="e.g. Jellyfin"
+            />
+          </label>
+
+          <label className="field field-wide">
+            <span>Description</span>
+            <textarea
+              value={draft.description}
+              onChange={(event) => update('description', event.target.value)}
+              rows={2}
+              placeholder="What this service does"
+            />
+          </label>
+
+          <label className="field">
+            <span>Container name</span>
+            <input
+              value={draft.containerName}
+              onChange={(event) => update('containerName', event.target.value)}
+              placeholder="jellyfin"
+            />
+          </label>
+
+          <label className="field">
+            <span>Docker image</span>
+            <input
+              value={draft.dockerImage}
+              onChange={(event) => update('dockerImage', event.target.value)}
+              placeholder="jellyfin/jellyfin:latest"
             />
           </label>
 
@@ -120,11 +152,21 @@ export function ServiceForm({
           </label>
 
           <label className="field">
-            <span>Internal URL or IP</span>
+            <span>Internal hostname or IP</span>
             <input
               value={draft.internalUrl}
               onChange={(event) => update('internalUrl', event.target.value)}
               placeholder="http://192.168.1.20:8096"
+            />
+          </label>
+
+          <label className="field">
+            <span>Application URL</span>
+            <input
+              type="url"
+              value={draft.applicationUrl}
+              onChange={(event) => update('applicationUrl', event.target.value)}
+              placeholder="https://media.example.com"
             />
           </label>
 

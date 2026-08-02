@@ -51,7 +51,7 @@ class MemoryRepository implements StackMapRepository {
   }
 
   async getSchemaVersion() {
-    return 1
+    return 2
   }
 }
 
@@ -93,6 +93,72 @@ describe('StackMap service workflows', () => {
 
     expect(await screen.findByRole('heading', { level: 3, name: 'Plex Media' })).toBeInTheDocument()
     await waitFor(() => expect(repository.data.services[0].name).toBe('Plex Media'))
+  })
+
+  it('creates, displays, edits, and searches service identity fields', async () => {
+    const user = userEvent.setup()
+    const repository = new MemoryRepository()
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Add service' }))
+    await user.type(screen.getByLabelText('Service name *'), 'Media')
+    await user.type(screen.getByLabelText('Description'), '  Family library  ')
+    await user.type(screen.getByLabelText('Container name'), '  jellyfin  ')
+    await user.type(screen.getByLabelText('Docker image'), '  jellyfin/jellyfin:latest  ')
+    await user.type(screen.getByLabelText('Application URL'), 'https://media.example.test')
+    await user.click(screen.getByRole('button', { name: 'Create service' }))
+
+    expect(repository.data.services[0]).toMatchObject({
+      description: 'Family library',
+      containerName: 'jellyfin',
+      dockerImage: 'jellyfin/jellyfin:latest',
+      applicationUrl: 'https://media.example.test',
+    })
+    expect(screen.getByText('Family library')).toBeVisible()
+    expect(screen.getByText('jellyfin/jellyfin:latest')).toBeVisible()
+
+    for (const query of ['jellyfin', 'JELLYFIN/JELLYFIN', 'family library', 'media.example.test']) {
+      const search = screen.getByRole('searchbox', { name: 'Search services' })
+      await user.clear(search)
+      await user.type(search, query)
+      expect(screen.getByRole('heading', { name: 'Media' })).toBeVisible()
+    }
+
+    await user.clear(screen.getByRole('searchbox', { name: 'Search services' }))
+    await user.click(screen.getByRole('button', { name: 'Edit Media' }))
+    const description = screen.getByLabelText('Description')
+    await user.clear(description)
+    await user.type(description, 'Updated description')
+    const containerName = screen.getByLabelText('Container name')
+    await user.clear(containerName)
+    await user.type(containerName, 'updated-container')
+    const dockerImage = screen.getByLabelText('Docker image')
+    await user.clear(dockerImage)
+    await user.type(dockerImage, 'example/updated:2')
+    const applicationUrl = screen.getByLabelText('Application URL')
+    await user.clear(applicationUrl)
+    await user.type(applicationUrl, 'https://updated.example.test')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByText('Updated description')).toBeVisible()
+    expect(repository.data.services[0]).toMatchObject({
+      description: 'Updated description',
+      containerName: 'updated-container',
+      dockerImage: 'example/updated:2',
+      applicationUrl: 'https://updated.example.test',
+    })
+  })
+
+  it('shows container-name conflicts and affected-service count', async () => {
+    const hostId = 'host-1'
+    const services = [
+      { ...serviceNamed('One'), hostId, containerName: ' App ' },
+      { ...serviceNamed('Two'), hostId, containerName: 'app' },
+    ]
+    render(<App repository={new MemoryRepository({ services, hosts: [] })} />)
+
+    expect(await screen.findAllByText('Container-name conflict')).toHaveLength(2)
+    const summary = screen.getByRole('region', { name: 'Service summary' })
+    expect(within(summary).getByText('Container conflicts').previousElementSibling).toHaveTextContent('2')
   })
 
   it('retires a service', async () => {
@@ -196,7 +262,7 @@ describe('StackMap service workflows', () => {
     const form = within(editor as HTMLElement)
     await user.type(form.getByLabelText('Service name *'), 'Immich')
     await user.selectOptions(form.getByLabelText('Host'), host.id)
-    await user.type(form.getByLabelText('Internal URL or IP'), 'http://192.168.1.10:2283')
+    await user.type(form.getByLabelText('Internal hostname or IP'), 'http://192.168.1.10:2283')
     await user.selectOptions(form.getByLabelText('External exposure'), 'vpn')
     await user.type(form.getByLabelText('Configuration path'), '/opt/immich')
     await user.type(form.getByLabelText('Data path'), '/mnt/photos')

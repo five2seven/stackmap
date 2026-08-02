@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createService,
+  duplicateContainerNameServiceIds,
   duplicatePortServiceIds,
   filterServices,
   missingServiceFields,
@@ -16,6 +17,38 @@ const filters: ServiceFilters = {
 }
 
 describe('service utilities', () => {
+  it('detects duplicate container names only for non-retired services on the same host', () => {
+    const service = (id: string, hostId: string | undefined, containerName: string, status = 'active') => ({
+      ...createService(id),
+      id,
+      hostId,
+      containerName,
+      status: status as ReturnType<typeof createService>['status'],
+    })
+    const services = [
+      service('first', 'host-1', ' Jellyfin '),
+      service('second', 'host-1', 'jELLYfin'),
+      service('third', 'host-1', 'JELLYFIN'),
+      service('other-host', 'host-2', 'jellyfin'),
+      service('blank', 'host-1', '   '),
+      service('no-host', undefined, 'jellyfin'),
+      service('retired', 'host-1', 'jellyfin', 'retired'),
+      service('retired-two', 'host-1', 'jellyfin', 'retired'),
+    ]
+
+    expect([...duplicateContainerNameServiceIds(services)].sort()).toEqual([
+      'first',
+      'second',
+      'third',
+    ])
+    expect(duplicateContainerNameServiceIds([services[0]])).toEqual(new Set())
+  })
+
+  it('ignores container-name matches across different hosts', () => {
+    const first = { ...createService('First'), id: 'first', hostId: 'one', containerName: 'app' }
+    const second = { ...createService('Second'), id: 'second', hostId: 'two', containerName: 'app' }
+    expect(duplicateContainerNameServiceIds([first, second])).toEqual(new Set())
+  })
   it('detects duplicate host ports on the same host and overlapping protocols', () => {
     const first = {
       ...createService('First'),
@@ -69,6 +102,10 @@ describe('service utilities', () => {
       network: 'media',
       exposure: 'vpn' as const,
       notes: 'Family library',
+      containerName: 'plex-app',
+      dockerImage: 'linuxserver/plex',
+      description: 'Movies at home',
+      applicationUrl: 'https://plex.example.test',
       ports: [{ hostPort: 32400, protocol: 'tcp' as const, description: '' }],
     }
     const homeAssistant = { ...createService('Home Assistant'), id: 'home-assistant' }
@@ -87,6 +124,9 @@ describe('service utilities', () => {
     expect(
       filterServices([plex, homeAssistant], [host], { ...filters, status: 'planned' }),
     ).toEqual([])
+    for (const query of ['plex-app', 'LINUXSERVER/PLEX', 'movies at home', 'plex.example.test']) {
+      expect(filterServices([plex, homeAssistant], [host], { ...filters, query })).toEqual([plex])
+    }
   })
 
   it('identifies incomplete records while allowing them to exist', () => {

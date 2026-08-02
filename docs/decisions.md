@@ -48,6 +48,10 @@ Fields:
 
 - id
 - name
+- containerName
+- dockerImage
+- description
+- applicationUrl
 - status
 - hostId
 - internalUrl
@@ -79,6 +83,8 @@ Fields:
 ### Field Behavior
 
 - Only service name is required when creating a service.
+- Container name, Docker image, description, and application URL are optional.
+- Application URL represents the address opened by a user; internalUrl remains the internal hostname or IP.
 - Host assignment is optional.
 - A service may use multiple ports.
 - A service may depend on multiple other services.
@@ -134,6 +140,7 @@ Protocol values:
 - Keep migration logic separate from UI components.
 - Future schema changes should migrate existing data where practical.
 - Import files must be validated before replacing local data.
+- JSON schema version 2 accepts and migrates valid version 1 backups.
 
 ### Deletion Behavior
 
@@ -144,6 +151,8 @@ Protocol values:
 ### Rationale
 
 This model keeps the MVP simple while still supporting duplicate-port detection, filtering, dependencies, incomplete records, and future migration.
+
+Non-retired services with matching trimmed, case-insensitive container names on the same host are flagged as conflicts. Blank names, unassigned services, cross-host matches, and retired services are ignored.
 
 ## New decision template
 
