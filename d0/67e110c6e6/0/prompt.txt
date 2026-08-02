@@ -1,0 +1,317 @@
+# StackMap Review and Merge: Generalized Docker Path Mappings
+
+Review the completed branch:
+
+codex/generalized-path-mappings
+
+Work only in:
+
+C:\Code\Projects\APP-StackMap
+
+Do not begin any new feature work.
+
+## 1. Repository checks
+
+Before reviewing:
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch remote references.
+4. Confirm the current feature branch matches:
+   origin/codex/generalized-path-mappings
+5. Confirm local main matches origin/main.
+6. Confirm Entire is enabled and available.
+7. Run:
+
+where.exe entire
+entire version
+entire status
+
+Stop if the repository is not clean or synchronized.
+
+## 2. Review scope
+
+Review commit:
+
+7266c346480c56b9b88b503292193396769bec3b
+
+Compare the complete branch diff against origin/main.
+
+Verify the implementation includes:
+
+- Reusable PathMapping model
+- Service.paths array
+- Removal of fixed current-model configPath/dataPath usage
+- IndexedDB version 4 migration
+- Legacy config/data path conversion
+- Timestamp preservation
+- JSON schema version 3
+- Import compatibility for schema versions 1, 2, and 3
+- Repeatable path editor
+- Add, edit, and remove behavior
+- Read-only state
+- Stable path IDs
+- Blank-row removal
+- Partial-row support
+- Path display on service cards
+- Search by host path, container path, and purpose
+- Incomplete-mapping warning
+- Mixed host-path style warning
+- Mixed container-path style warning
+- Missing configuration-purpose warning
+- Test coverage
+- Documentation updates
+
+## 3. Safety review
+
+Pay particular attention to:
+
+- Data loss during IndexedDB migration
+- Duplicate migrated path mappings
+- Changed timestamps
+- Uploaded backup-object mutation
+- Incorrect schema migration order
+- Schema 1 or 2 imports losing service identity fields
+- Duplicate path IDs being accepted
+- Malformed current-version paths being accepted
+- Blank rows being persisted
+- Stable IDs changing during normal edits
+- Partial rows being discarded unexpectedly
+- Windows path classification
+- UNC path classification
+- Unix path classification
+- False mixed-style warnings
+- Existing search regressions
+- Existing port or container-name warning regressions
+- Existing import validation being weakened
+- Accessibility regressions
+- Unrelated changes
+- Generated artifacts, secrets, or local files
+
+## 4. Run validation
+
+Run:
+
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+
+Do not change files during the review.
+
+If validation fails, stop and report the failure. Do not merge.
+
+## 5. Findings
+
+Report findings under:
+
+- Blocking
+- Important
+- Minor
+- No issue
+
+Then give exactly one recommendation:
+
+- Ready to merge
+- Ready to merge with minor follow-up
+- Changes required before merge
+
+## 6. Merge only if ready
+
+If and only if the recommendation is:
+
+Ready to merge
+
+then:
+
+1. Switch to main.
+2. Pull origin/main using fast-forward only.
+3. Merge codex/generalized-path-mappings with a normal merge commit.
+4. Use this exact merge commit message:
+
+Merge generalized Docker path mappings
+
+5. Push main to origin.
+6. Do not delete the feature branch yet.
+7. Do not begin another feature.
+
+If the recommendation is anything else, do not merge.
+
+## Required final report
+
+Report:
+
+1. Initial Git state
+2. Entire status
+3. Branch synchronization state
+4. Diff summary
+5. Blocking findings
+6. Important findings
+7. Minor findings
+8. Migration review
+9. Import/export compatibility review
+10. Path-classification review
+11. UI and accessibility review
+12. Test-coverage review
+13. Validation results
+14. Final recommendation
+15. Whether the branch was merged
+16. Merge commit ID, if created
+17. Push result
+18. Final branch
+19. Final working-tree status
+20. Whether main matches origin/main
+21. Confirmation that no new feature work was started
+
+---
+
+# StackMap Fix Task: Path Import Validation and Fieldset Accessibility
+
+Work only in:
+
+C:\Code\Projects\APP-StackMap
+
+Current branch:
+
+codex/generalized-path-mappings
+
+Do not create a new branch.
+
+Preserve the existing frontend-only, local-first architecture. Do not add dependencies or unrelated features.
+
+## 1. Preconditions
+
+Before changing anything:
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch remote references.
+4. Confirm the current branch matches:
+   origin/codex/generalized-path-mappings
+5. Confirm local main still matches origin/main.
+6. Confirm Entire is enabled and available.
+
+Stop if the repository is not clean or synchronized.
+
+## 2. Fix blank imported path mappings
+
+Current schema-version-3 imports accept a path mapping when:
+
+- id is nonblank
+- field types are valid
+- hostPath is blank
+- containerPath is blank
+- purpose is blank
+
+This conflicts with the normal editor behavior, which discards completely blank rows before storage.
+
+Update current-version import validation so a path mapping is rejected when all three text fields are blank after trimming:
+
+- hostPath
+- containerPath
+- purpose
+
+Requirements:
+
+- `readOnly` alone must not make an otherwise blank mapping valid.
+- Whitespace-only values must count as blank.
+- Partially completed mappings must remain valid.
+- A mapping with only hostPath must remain valid.
+- A mapping with only containerPath must remain valid.
+- A mapping with only purpose must remain valid.
+- Version 1 and version 2 migration behavior must remain unchanged.
+- Do not mutate uploaded backup objects.
+- Preserve exact-shape validation, duplicate path-ID checks, reference validation, and atomic replacement.
+
+Use a clear import error message that identifies the invalid blank path mapping.
+
+## 3. Add tests
+
+Add focused tests covering:
+
+- Schema-version-3 import rejects a path mapping with blank hostPath, containerPath, and purpose.
+- Whitespace-only values are rejected.
+- `readOnly: true` does not make an otherwise blank mapping valid.
+- A hostPath-only mapping is accepted.
+- A containerPath-only mapping is accepted.
+- A purpose-only mapping is accepted.
+- Existing schema-version-1 and schema-version-2 migration tests continue passing.
+- Existing malformed-path and duplicate path-ID tests continue passing.
+- Atomic replacement remains unchanged after rejection.
+
+Do not broadly rewrite the import test suite.
+
+## 4. Fix fieldset and legend structure
+
+In the repeatable path editor, ensure each `<legend>` is a direct child of its related `<fieldset>`.
+
+Requirements:
+
+- Preserve the current visible layout as closely as possible.
+- Preserve contextual accessible labels for each row.
+- Preserve add, edit, remove, read-only, and warning behavior.
+- Do not redesign the form.
+- Update CSS only as needed to maintain the layout.
+
+Add or update a component test that confirms the path-mapping group has an accessible fieldset name.
+
+## 5. Validation
+
+Run:
+
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+
+Fix only failures caused by this task.
+
+Do not weaken tests or suppress warnings.
+
+## 6. Diff review
+
+Before committing:
+
+1. Review the complete diff.
+2. Confirm every changed file relates directly to these two review findings.
+3. Confirm no dependencies or lockfiles changed.
+4. Confirm no generated files, screenshots, traces, secrets, or local artifacts are staged.
+5. Confirm Entire configuration was not modified.
+
+## 7. Commit and push
+
+Commit with this exact message:
+
+Fix path import validation and fieldset semantics
+
+Push the current branch:
+
+codex/generalized-path-mappings
+
+Do not merge into main.
+
+Allow Entire to associate the session with the commit normally.
+
+## Required completion report
+
+Report:
+
+1. Initial Git state
+2. Entire status
+3. Files modified
+4. Blank-mapping validation change
+5. Import error behavior
+6. Fieldset and legend accessibility change
+7. Tests added or updated
+8. Lint result
+9. Test result
+10. Build result
+11. End-to-end result
+12. Commit ID
+13. Entire checkpoint ID
+14. Push result
+15. Final working-tree status
+16. Confirmation that the branch is ready for re-review
+17. Confirmation that no unrelated functionality was added
+
+Do not begin another feature.

@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "d067e110c6e6",
+  "strategy": "manual-commit",
+  "branch": "codex/generalized-path-mappings",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "e2e/stackmap.spec.ts",
+    "src/App.css",
+    "src/App.test.tsx",
+    "src/components/ServiceForm.tsx",
+    "src/data/backup.test.ts",
+    "src/domain/schema.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d0/67e110c6e6/0/metadata.json",
+      "transcript": "/d0/67e110c6e6/0/full.jsonl",
+      "compact_transcript": "/d0/67e110c6e6/0/transcript.jsonl",
+      "content_hash": "/d0/67e110c6e6/0/content_hash.txt",
+      "prompt": "/d0/67e110c6e6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 153146,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2329856,
+    "output_tokens": 13110,
+    "api_call_count": 43
+  }
+}
