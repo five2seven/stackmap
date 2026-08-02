@@ -495,6 +495,48 @@ describe('StackMap service workflows', () => {
     expect(screen.getAllByText('Service warning: no configuration-purpose mapping recorded.').length).toBeGreaterThan(0)
   })
 
+  it('preserves stored host paths and gives every path group one valid unique accessible label', async () => {
+    const user = userEvent.setup()
+    const timestamp = '2026-08-02T12:00:00.000Z'
+    const hosts: Host[] = [
+      { id: 'host one', name: 'Host one', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+      { id: 'host:two', name: 'Host two', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+    ]
+    const services: Service[] = [
+      { ...serviceNamed('Alpha'), hostId: 'host one', paths: [{ id: 'alpha-path', hostPath: '/Data Folder', containerPath: '/alpha', purpose: '', readOnly: false }] },
+      { ...serviceNamed('Beta'), hostId: 'host one', paths: [{ id: 'beta-path', hostPath: ' /data folder ', containerPath: '/beta', purpose: '', readOnly: false }] },
+      { ...serviceNamed('Windows'), hostId: 'host one', paths: [{ id: 'windows-path', hostPath: String.raw`C:\Media Files`, containerPath: '/media', purpose: '', readOnly: false }] },
+      { ...serviceNamed('Gamma'), hostId: 'host:two', paths: [{ id: 'gamma-path', hostPath: '/DATA FOLDER', containerPath: '/gamma', purpose: '', readOnly: false }] },
+      { ...serviceNamed('Loose'), paths: [{ id: 'missing-path', hostPath: '', containerPath: '/loose', purpose: '', readOnly: false }] },
+    ]
+    const { container } = render(<App repository={new MemoryRepository({ services, hosts })} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Path Map' }))
+
+    const alphaRow = screen.getByRole('row', { name: /Alpha, host path \/Data Folder/ })
+    const betaRow = screen.getByRole('row', { name: /Beta, host path \/data folder/ })
+    expect(within(alphaRow).getByRole('cell', { name: /\/Data Folder/ })).toHaveTextContent('/Data Folderabsolute')
+    expect(within(betaRow).getByRole('cell', { name: /\/data folder/ }).textContent).toBe(' /data folder absolute')
+    expect(within(alphaRow).getByRole('cell', { name: /\/alpha/ })).toBeVisible()
+    expect(within(betaRow).getByRole('cell', { name: /\/beta/ })).toBeVisible()
+    expect(screen.getByText('Shared with Beta')).toBeVisible()
+    expect(screen.getByText('Shared with Alpha')).toBeVisible()
+    const windowsRow = screen.getByRole('row', { name: /Windows, host path C:\\Media Files/ })
+    expect(within(windowsRow).getByRole('cell', { name: /C:\\Media Files/ })).toBeVisible()
+    expect(screen.getByRole('row', { name: /Loose, host path missing/ })).toHaveTextContent('Missing')
+
+    const pathGroups = [...container.querySelectorAll<HTMLElement>('.path-group')]
+    const labelledBy = pathGroups.map((group) => group.getAttribute('aria-labelledby'))
+    expect(labelledBy).toHaveLength(4)
+    expect(new Set(labelledBy).size).toBe(labelledBy.length)
+    labelledBy.forEach((id) => {
+      expect(id).toBeTruthy()
+      expect(id).not.toMatch(/\s/)
+      expect(container.querySelectorAll(`[id="${id}"]`)).toHaveLength(1)
+    })
+    expect(screen.getByRole('region', { name: 'Host path missing' })).toBeVisible()
+  })
+
   it('filters and searches Path Map, then returns from save and cancel with focus restored', async () => {
     const user = userEvent.setup()
     const timestamp = '2026-08-02T12:00:00.000Z'

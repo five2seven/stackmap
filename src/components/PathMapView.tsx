@@ -1,7 +1,10 @@
+import { useId } from 'react'
 import {
   derivePathMap,
   UNASSIGNED_PATH_HOST_FILTER,
   type PathAssignment,
+  type PathGroup,
+  type PathHostGroup,
 } from '../domain/pathMap'
 import type { Host, Service } from '../domain/types'
 
@@ -30,6 +33,90 @@ function AssignmentIssues({ assignment }: { assignment: PathAssignment }) {
       {assignment.mixedContainerPaths && <span>Service warning: container paths mix absolute and relative styles.</span>}
       {assignment.missingConfiguration && <span>Service warning: no configuration-purpose mapping recorded.</span>}
     </div>
+  )
+}
+
+function PathGroupSection({
+  hostGroup,
+  pathGroup,
+  services,
+  onEditService,
+}: {
+  hostGroup: PathHostGroup
+  pathGroup: PathGroup
+  services: Service[]
+  onEditService: (service: Service) => void
+}) {
+  const headingId = useId()
+
+  return (
+    <section className="path-group" aria-labelledby={headingId}>
+      <div className="path-group-heading">
+        <h4 id={headingId}>{pathGroup.name}</h4>
+        <span>{pathGroup.assignments.length} {pathGroup.assignments.length === 1 ? 'mapping' : 'mappings'}</span>
+      </div>
+      <div className="path-map-table" role="table" aria-label={`${hostGroup.name}, ${pathGroup.name} mappings`}>
+        <div className="path-map-header" role="row">
+          <span role="columnheader">Host path</span><span role="columnheader">Container path</span>
+          <span role="columnheader">Service</span><span role="columnheader">Host</span>
+          <span role="columnheader">Purpose</span><span role="columnheader">Access</span>
+          <span role="columnheader">Status</span><span role="columnheader">Actions</span>
+        </div>
+        {pathGroup.assignments.map((assignment) => (
+          <div
+            className={`path-map-assignment${assignment.incomplete ? ' path-map-incomplete' : ''}${assignment.sharedHostPath ? ' path-map-shared' : ''}`}
+            role="row"
+            aria-label={`${assignment.serviceName}, host path ${assignment.hostPath.trim() || 'missing'}, container path ${assignment.containerPath.trim() || 'missing'}, ${assignment.readOnly ? 'read-only' : 'writable'}`}
+            key={assignment.id}
+          >
+            <span className="path-map-value" role="cell" data-label="Host path">{assignment.hostPath || 'Missing'}{assignment.hostPathStyle && <small>{assignment.hostPathStyle}</small>}</span>
+            <span className="path-map-value" role="cell" data-label="Container path">{assignment.containerPath || 'Missing'}{assignment.containerPathStyle && <small>{assignment.containerPathStyle}</small>}</span>
+            <span role="cell" data-label="Service"><strong>{assignment.serviceName}</strong></span>
+            <span role="cell" data-label="Host">{assignment.hostName}</span>
+            <span role="cell" data-label="Purpose">{assignment.purpose || 'Not specified'}</span>
+            <span role="cell" data-label="Access"><span className={assignment.readOnly ? 'read-only-badge' : 'writable-badge'}>{assignment.readOnly ? 'Read-only' : 'Writable'}</span></span>
+            <span role="cell" data-label="Status"><span className={`status-badge status-${assignment.serviceStatus}`}>{assignment.serviceStatus}</span></span>
+            <span role="cell" data-label="Actions"><button className="text-button" type="button" onClick={() => onEditService(services.find((service) => service.id === assignment.serviceId)!)} aria-label={`Edit service ${assignment.serviceName}`}>Edit service</button></span>
+            <span className="path-map-details" role="cell" data-label="Details">
+              {assignment.hostPathStyle && <span>Host path style: {assignment.hostPathStyle}.</span>}
+              <AssignmentIssues assignment={assignment} />
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function PathHostGroupSection({
+  hostGroup,
+  services,
+  onEditService,
+}: {
+  hostGroup: PathHostGroup
+  services: Service[]
+  onEditService: (service: Service) => void
+}) {
+  const headingId = useId()
+
+  return (
+    <section className="path-host-group" aria-labelledby={headingId}>
+      <div className="path-host-heading">
+        <h3 id={headingId}>{hostGroup.name}</h3>
+        <span>{hostGroup.pathGroups.length} {hostGroup.pathGroups.length === 1 ? 'host path' : 'host paths'}</span>
+      </div>
+      <div className="path-groups">
+        {hostGroup.pathGroups.map((pathGroup) => (
+          <PathGroupSection
+            hostGroup={hostGroup}
+            key={pathGroup.id}
+            pathGroup={pathGroup}
+            services={services}
+            onEditService={onEditService}
+          />
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -101,50 +188,12 @@ export function PathMapView({
       ) : (
         <div className="path-host-groups">
           {groups.map((hostGroup) => (
-            <section className="path-host-group" key={hostGroup.id} aria-labelledby={`path-host-${hostGroup.id}`}>
-              <div className="path-host-heading">
-                <h3 id={`path-host-${hostGroup.id}`}>{hostGroup.name}</h3>
-                <span>{hostGroup.pathGroups.length} {hostGroup.pathGroups.length === 1 ? 'host path' : 'host paths'}</span>
-              </div>
-              <div className="path-groups">
-                {hostGroup.pathGroups.map((pathGroup) => (
-                  <section className="path-group" key={pathGroup.id} aria-labelledby={`path-group-${hostGroup.id}-${pathGroup.id}`}>
-                    <div className="path-group-heading">
-                      <h4 id={`path-group-${hostGroup.id}-${pathGroup.id}`}>{pathGroup.name}</h4>
-                      <span>{pathGroup.assignments.length} {pathGroup.assignments.length === 1 ? 'mapping' : 'mappings'}</span>
-                    </div>
-                    <div className="path-map-table" role="table" aria-label={`${hostGroup.name}, ${pathGroup.name} mappings`}>
-                      <div className="path-map-header" role="row">
-                        <span role="columnheader">Container path</span><span role="columnheader">Service</span>
-                        <span role="columnheader">Host</span><span role="columnheader">Purpose</span>
-                        <span role="columnheader">Access</span><span role="columnheader">Status</span>
-                        <span role="columnheader">Actions</span>
-                      </div>
-                      {pathGroup.assignments.map((assignment) => (
-                        <div
-                          className={`path-map-assignment${assignment.incomplete ? ' path-map-incomplete' : ''}${assignment.sharedHostPath ? ' path-map-shared' : ''}`}
-                          role="row"
-                          aria-label={`${assignment.serviceName}, host path ${assignment.hostPath.trim() || 'missing'}, container path ${assignment.containerPath.trim() || 'missing'}, ${assignment.readOnly ? 'read-only' : 'writable'}`}
-                          key={assignment.id}
-                        >
-                          <span role="cell" data-label="Container path">{assignment.containerPath || 'Missing'}{assignment.containerPathStyle && <small>{assignment.containerPathStyle}</small>}</span>
-                          <span role="cell" data-label="Service"><strong>{assignment.serviceName}</strong></span>
-                          <span role="cell" data-label="Host">{assignment.hostName}</span>
-                          <span role="cell" data-label="Purpose">{assignment.purpose || 'Not specified'}</span>
-                          <span role="cell" data-label="Access"><span className={assignment.readOnly ? 'read-only-badge' : 'writable-badge'}>{assignment.readOnly ? 'Read-only' : 'Writable'}</span></span>
-                          <span role="cell" data-label="Status"><span className={`status-badge status-${assignment.serviceStatus}`}>{assignment.serviceStatus}</span></span>
-                          <span role="cell" data-label="Actions"><button className="text-button" type="button" onClick={() => onEditService(services.find((service) => service.id === assignment.serviceId)!)} aria-label={`Edit service ${assignment.serviceName}`}>Edit service</button></span>
-                          <span className="path-map-details" role="cell" data-label="Details">
-                            {assignment.hostPathStyle && <span>Host path style: {assignment.hostPathStyle}.</span>}
-                            <AssignmentIssues assignment={assignment} />
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                ))}
-              </div>
-            </section>
+            <PathHostGroupSection
+              hostGroup={hostGroup}
+              key={hostGroup.id}
+              services={services}
+              onEditService={onEditService}
+            />
           ))}
         </div>
       )}
