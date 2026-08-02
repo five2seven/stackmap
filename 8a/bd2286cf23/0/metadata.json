@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "8abd2286cf23",
+  "session_id": "019fc464-cac4-7883-b583-7ddba36731b7",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-02T21:38:01.4565165Z",
+  "branch": "codex/port-map-view",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "src/App.test.tsx",
+    "src/components/PortMapView.tsx",
+    "src/domain/portMap.test.ts",
+    "src/domain/portMap.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "19677927e3b6",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 70753,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1110528,
+    "output_tokens": 5375,
+    "api_call_count": 26
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-02T21:38:01.3539402Z",
+    "agent_lines": 53,
+    "agent_removed": 3,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 53,
+    "total_lines_changed": 56,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}

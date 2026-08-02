@@ -1,0 +1,140 @@
+# Files mentioned by the user:
+
+## # StackMap Review and Merge: Dedicated Port Map View Review the completed branc…: C:\Users\rae\.codex/attachments/f1e2b39f-4622-494f-8606-9ad74e16265d/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# StackMap Fix Task: Exclude Same-Service Port Mappings from Conflict Details
+
+Work only in:
+
+C:\Code\Projects\APP-StackMap
+
+Current branch:
+
+codex/port-map-view
+
+Do not create a new branch.
+
+Preserve the existing frontend-only, local-first architecture. Do not add dependencies, schema changes, or unrelated features.
+
+## 1. Preconditions
+
+Before changing anything:
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch remote references.
+4. Confirm the current branch matches:
+   origin/codex/port-map-view
+5. Confirm local main still matches origin/main.
+6. Confirm Entire is enabled and available.
+
+Stop if the repository is not clean or synchronized.
+
+## 2. Fix same-service conflict details
+
+The current Port Map can show a service as conflicting with itself when two port mappings on that same service overlap.
+
+Example:
+
+- Service A has host port 8080/TCP
+- Service A also has host port 8080/both
+
+The assignments may still be considered conflicting according to the existing assignment-level conflict policy, but the conflict detail for either row must not say that the same service is “also using” the port.
+
+Update the derived Port Map conflict-detail logic so:
+
+- `conflictingServiceNames` never includes the current assignment’s own service name.
+- Same-service overlapping mappings do not produce a self-referential “also used by” message.
+- Conflicts involving a different service continue to list that other service.
+- If both same-service and cross-service overlaps exist, only the other service names are listed.
+- Duplicate service names in the detail list are deduplicated.
+- The existing assignment conflict state and assignment-based conflict count remain unchanged unless the current implementation requires a narrowly scoped correction.
+- Same-host and protocol-overlap semantics remain unchanged.
+- Cross-host behavior remains unchanged.
+- Retired-service behavior remains unchanged.
+
+Do not redesign the overall conflict model.
+
+## 3. Tests
+
+Add focused regression coverage for:
+
+- Two overlapping mappings on the same service do not list that service in `conflictingServiceNames`.
+- A same-service overlap still follows the existing assignment conflict-state policy.
+- A mapping that overlaps with both another mapping from the same service and a different service lists only the different service.
+- Duplicate mappings from another service do not create duplicate names in the conflict-detail list.
+- Existing cross-service conflict tests continue passing.
+- Existing same-port-on-different-host tests continue passing.
+- Existing protocol-overlap tests continue passing.
+
+Add or update a component test proving the rendered conflict detail never says the service is also used by itself.
+
+Do not broadly rewrite the Port Map test suite.
+
+## 4. Validation
+
+Run:
+
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+
+Fix only failures caused by this task.
+
+Do not weaken or remove assertions.
+
+## 5. Diff review
+
+Before committing:
+
+1. Review the complete diff.
+2. Confirm every changed file is directly related to this defect and its tests.
+3. Confirm no dependency, lockfile, schema, documentation, or Entire configuration changes occurred unless a brief changelog correction is genuinely required.
+4. Confirm no generated artifacts, screenshots, traces, secrets, or local files are staged.
+5. Run:
+
+git diff --check
+
+## 6. Commit and push
+
+Commit with this exact message:
+
+Fix self-referential Port Map conflict details
+
+Push the current branch:
+
+codex/port-map-view
+
+Do not merge into main.
+
+Allow Entire to associate the session with the commit normally.
+
+## Required completion report
+
+Report:
+
+1. Initial Git state
+2. Entire status
+3. Files modified
+4. Conflict-detail logic change
+5. Whether assignment conflict-state behavior changed
+6. Tests added or updated
+7. Lint result
+8. Test result
+9. Build result
+10. End-to-end result
+11. Commit ID
+12. Entire checkpoint ID
+13. Push result
+14. Final working-tree status
+15. Confirmation that the branch is ready for re-review
+16. Confirmation that no unrelated functionality was added
+
+Do not begin another feature.
