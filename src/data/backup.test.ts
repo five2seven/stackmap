@@ -103,6 +103,35 @@ describe('JSON import and export', () => {
     expect(() => parseImport(JSON.stringify(createExport({ services: [duplicate], hosts: [] })))).toThrow('duplicate path-mapping IDs')
   })
 
+  it.each([
+    ['empty values', { hostPath: '', containerPath: '', purpose: '', readOnly: false }],
+    ['whitespace-only values', { hostPath: ' ', containerPath: '\t', purpose: '\n', readOnly: false }],
+    ['read-only without content', { hostPath: '', containerPath: '', purpose: '', readOnly: true }],
+  ])('rejects blank current path mappings with %s', (_label, values) => {
+    const service = {
+      ...createService('Blank path'),
+      paths: [{ id: 'blank-path', ...values }],
+    }
+
+    expect(() =>
+      parseImport(JSON.stringify(createExport({ services: [service], hosts: [] }))),
+    ).toThrow('blank path mapping')
+  })
+
+  it.each([
+    ['hostPath', { hostPath: '/host', containerPath: '', purpose: '' }],
+    ['containerPath', { hostPath: '', containerPath: '/container', purpose: '' }],
+    ['purpose', { hostPath: '', containerPath: '', purpose: 'Configuration' }],
+  ])('accepts a current path mapping with only %s', (_label, values) => {
+    const path = { id: 'partial-path', ...values, readOnly: false }
+    const service = { ...createService('Partial path'), paths: [path] }
+
+    expect(
+      parseImport(JSON.stringify(createExport({ services: [service], hosts: [] }))).services[0]
+        .paths,
+    ).toEqual([path])
+  })
+
   it('preserves host and dependency reference validation', () => {
     const orphanedHost = { ...createService('Orphaned host'), hostId: 'missing-host' }
     expect(() =>

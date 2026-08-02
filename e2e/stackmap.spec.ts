@@ -193,6 +193,43 @@ test('rejects malformed and incompatible imports without replacing data', async 
   await expect(page.getByRole('alert')).toContainText('not valid JSON')
   await expect(serviceCard(page, 'Keep existing')).toBeVisible()
 
+  const timestamp = '2026-07-28T12:00:00.000Z'
+  await page.getByLabel('Choose JSON backup').setInputFiles({
+    name: 'blank-path.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        schemaVersion: 3,
+        exportedAt: timestamp,
+        services: [
+          {
+            id: 'blank-path-service',
+            name: 'Blank path service',
+            containerName: '',
+            dockerImage: '',
+            description: '',
+            applicationUrl: '',
+            status: 'active',
+            internalUrl: '',
+            ports: [],
+            paths: [
+              { id: 'blank-path', hostPath: ' ', containerPath: '', purpose: '', readOnly: true },
+            ],
+            network: '',
+            exposure: 'unknown',
+            dependencyIds: [],
+            notes: '',
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          },
+        ],
+        hosts: [],
+      }),
+    ),
+  })
+  await expect(page.getByRole('alert')).toContainText('blank path mapping')
+  await expect(serviceCard(page, 'Keep existing')).toBeVisible()
+
   await page.getByLabel('Choose JSON backup').setInputFiles({
     name: 'incompatible.json',
     mimeType: 'application/json',

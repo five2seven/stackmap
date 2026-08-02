@@ -252,8 +252,8 @@ export function ServiceForm({
         </div>
 
         <fieldset className="paths-editor">
+          <legend>Path mappings</legend>
           <div className="fieldset-heading">
-            <legend>Path mappings</legend>
             <button
               className="button quiet"
               type="button"

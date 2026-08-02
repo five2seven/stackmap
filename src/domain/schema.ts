@@ -26,7 +26,7 @@ function hasExactKeys(value: Record<string, unknown>, keys: string[]) {
   return Object.keys(value).every((key) => keys.includes(key))
 }
 
-function isPathMapping(value: unknown): value is PathMapping {
+function isPathMappingShape(value: unknown): value is PathMapping {
   if (!value || typeof value !== 'object') return false
   const path = value as Record<string, unknown>
   return (
@@ -36,6 +36,13 @@ function isPathMapping(value: unknown): value is PathMapping {
     isString(path.containerPath) &&
     isString(path.purpose) &&
     typeof path.readOnly === 'boolean'
+  )
+}
+
+function isPathMapping(value: unknown): value is PathMapping {
+  return (
+    isPathMappingShape(value) &&
+    Boolean(value.hostPath.trim() || value.containerPath.trim() || value.purpose.trim())
   )
 }
 
@@ -159,10 +166,23 @@ export function validateImport(value: unknown): StackMapExport {
     data.services.some((service) => {
       if (!service || typeof service !== 'object') return false
       const paths = (service as Record<string, unknown>).paths
-      return !Array.isArray(paths) || !paths.every(isPathMapping)
+      return !Array.isArray(paths) || !paths.every(isPathMappingShape)
     })
   ) {
     throw new Error('One or more service records contain malformed path mappings.')
+  }
+  if (
+    schemaVersion === 3 &&
+    data.services.some((service) => {
+      if (!service || typeof service !== 'object') return false
+      const paths = (service as Record<string, unknown>).paths
+      return (
+        Array.isArray(paths) &&
+        paths.some((path) => isPathMappingShape(path) && !isPathMapping(path))
+      )
+    })
+  ) {
+    throw new Error('One or more service records contain a blank path mapping.')
   }
   if (!data.services.every((service) => isServiceShape(service, schemaVersion))) {
     throw new Error('One or more service records are invalid.')

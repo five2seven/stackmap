@@ -456,6 +456,11 @@ textarea {
   margin-bottom: 0.8rem;
 }
 
+.paths-editor > .fieldset-heading {
+  justify-content: flex-end;
+  margin-top: -2rem;
+}
+
 .port-row {
   display: grid;
   grid-template-columns: 0.8fr 0.8fr 0.75fr 1.5fr auto;

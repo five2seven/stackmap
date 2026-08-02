@@ -310,6 +310,7 @@ describe('StackMap service workflows', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Add service' }))
     await user.type(screen.getByLabelText('Service name *'), 'Paths')
+    expect(screen.getByRole('group', { name: 'Path mappings' })).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Add path' }))
     await user.type(screen.getByLabelText('Paths host path 1'), '  /srv/config  ')
     await user.type(screen.getByLabelText('Paths container path 1'), '/config')
