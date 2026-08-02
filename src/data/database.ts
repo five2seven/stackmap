@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { CURRENT_SCHEMA_VERSION } from '../domain/schema'
+import { migrateLegacyPaths } from '../domain/pathMappings'
 import type { Host, Service, StackMapData } from '../domain/types'
 
 interface StackMapMetadata {
@@ -44,6 +45,27 @@ export class StackMapDatabase extends Dexie {
             service.dockerImage ??= ''
             service.description ??= ''
             service.applicationUrl ??= ''
+          })
+        await transaction
+          .table<StackMapMetadata, 'key'>('metadata')
+          .put({ key: 'schemaVersion', value: CURRENT_SCHEMA_VERSION })
+      })
+    this.version(4)
+      .stores({
+        services: 'id, name, status, hostId, network, exposure, updatedAt',
+        hosts: 'id, name, type, updatedAt',
+        metadata: 'key',
+      })
+      .upgrade(async (transaction) => {
+        await transaction
+          .table<Record<string, unknown>, 'id'>('services')
+          .toCollection()
+          .modify((service) => {
+            const configPath = typeof service.configPath === 'string' ? service.configPath : ''
+            const dataPath = typeof service.dataPath === 'string' ? service.dataPath : ''
+            service.paths = migrateLegacyPaths(String(service.id), { configPath, dataPath })
+            delete service.configPath
+            delete service.dataPath
           })
         await transaction
           .table<StackMapMetadata, 'key'>('metadata')

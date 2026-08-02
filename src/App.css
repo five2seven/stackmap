@@ -404,14 +404,16 @@ textarea {
 }
 
 .dependency-field,
-.ports-editor {
+.ports-editor,
+.paths-editor {
   margin: 0;
   border: 0;
   padding: 0;
 }
 
 .dependency-field legend,
-.ports-editor legend {
+.ports-editor legend,
+.paths-editor legend {
   margin-bottom: 0.35rem;
   color: var(--muted);
   font-size: 0.75rem;
@@ -440,7 +442,8 @@ textarea {
   min-height: 0;
 }
 
-.ports-editor {
+.ports-editor,
+.paths-editor {
   margin-top: 1.2rem;
   padding-top: 1.2rem;
   border-top: 1px solid var(--border);
@@ -451,6 +454,11 @@ textarea {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.8rem;
+}
+
+.paths-editor > .fieldset-heading {
+  justify-content: flex-end;
+  margin-top: -2rem;
 }
 
 .port-row {
@@ -464,6 +472,24 @@ textarea {
 .port-row .icon-button {
   min-height: 2.65rem;
 }
+
+.path-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 0.9fr auto auto;
+  align-items: end;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+
+.path-read-only { display: flex; align-items: center; gap: 0.4rem; min-height: 2.65rem; font-size: 0.8rem; font-weight: 700; }
+.path-read-only input { width: auto; min-height: 0; }
+.path-list, .path-warnings { display: grid; gap: 0.35rem; margin-top: 0.75rem; }
+.path-summary { display: flex; flex-wrap: wrap; gap: 0.35rem 0.65rem; font-size: 0.78rem; overflow-wrap: anywhere; }
+.path-summary strong { min-width: 7rem; }
+.read-only-badge, .path-warning { font-weight: 700; }
+.read-only-badge { color: var(--accent-dark); }
+.path-warning, .path-warnings { color: var(--warning); }
+.path-warnings { padding-left: 1.2rem; font-size: 0.78rem; }
 
 .form-actions {
   margin-top: 1.3rem;
@@ -646,6 +672,8 @@ footer {
     border-bottom: 1px solid var(--border);
   }
 
+  .path-row { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
+
   .port-description {
     grid-column: 1 / -1;
   }
@@ -661,6 +689,7 @@ footer {
 }
 
 @media (max-width: 32rem) {
+  .path-row { grid-template-columns: 1fr; }
   .site-header {
     padding-top: 1.5rem;
   }

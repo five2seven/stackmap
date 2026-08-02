@@ -56,8 +56,7 @@ Fields:
 - hostId
 - internalUrl
 - ports
-- configPath
-- dataPath
+- paths
 - network
 - exposure
 - dependencyIds
@@ -87,6 +86,7 @@ Fields:
 - Application URL represents the address opened by a user; internalUrl remains the internal hostname or IP.
 - Host assignment is optional.
 - A service may use multiple ports.
+- A service may have zero or more path mappings. Each mapping has a stable ID, host path, container path, purpose, and read-only flag.
 - A service may depend on multiple other services.
 - Incomplete records are valid.
 - Planned, paused, and retired services remain visible unless filtered out.
@@ -141,6 +141,8 @@ Protocol values:
 - Future schema changes should migrate existing data where practical.
 - Import files must be validated before replacing local data.
 - JSON schema version 2 accepts and migrates valid version 1 backups.
+- JSON schema version 3 accepts versions 1 and 2, converts legacy fixed paths in memory, and exports only generalized paths.
+- IndexedDB version 4 performs the corresponding local-record migration; database and backup schema versions are independent.
 
 ### Deletion Behavior
 
@@ -153,6 +155,8 @@ Protocol values:
 This model keeps the MVP simple while still supporting duplicate-port detection, filtering, dependencies, incomplete records, and future migration.
 
 Non-retired services with matching trimmed, case-insensitive container names on the same host are flagged as conflicts. Blank names, unassigned services, cross-host matches, and retired services are ignored.
+
+Path warnings identify incomplete host/container pairs, mixed absolute and relative host or container styles, and missing purposes containing `config`. Path normalization and cross-service shared-path checks remain out of scope.
 
 ## New decision template
 

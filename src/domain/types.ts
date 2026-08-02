@@ -22,6 +22,14 @@ export interface ServicePort {
   description: string
 }
 
+export interface PathMapping {
+  id: string
+  hostPath: string
+  containerPath: string
+  purpose: string
+  readOnly: boolean
+}
+
 export interface Service {
   id: string
   name: string
@@ -33,8 +41,7 @@ export interface Service {
   hostId?: string
   internalUrl: string
   ports: ServicePort[]
-  configPath: string
-  dataPath: string
+  paths: PathMapping[]
   network: string
   exposure: Exposure
   dependencyIds: string[]

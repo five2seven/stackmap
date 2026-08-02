@@ -62,8 +62,14 @@ test('manages complete service, host, conflicts, search, filters, retirement, an
   await editor.locator('label').filter({ hasText: /^Host/ }).locator('select').selectOption({ label: 'nas-01' })
   await editor.getByLabel('Internal hostname or IP').fill('http://192.168.1.10:8096')
   await editor.getByLabel('External exposure').selectOption('vpn')
-  await editor.getByLabel('Configuration path').fill('/opt/jellyfin/config')
-  await editor.getByLabel('Data path').fill('/mnt/media')
+  await editor.getByRole('button', { name: 'Add path' }).click()
+  await editor.getByLabel('Jellyfin host path 1').fill('/opt/jellyfin/config')
+  await editor.getByLabel('Jellyfin container path 1').fill('/config')
+  await editor.getByLabel('Jellyfin path purpose 1').fill('Configuration')
+  await editor.getByRole('button', { name: 'Add path' }).click()
+  await editor.getByLabel('Jellyfin host path 2').fill('/mnt/media')
+  await editor.getByLabel('Jellyfin container path 2').fill('/media')
+  await editor.getByLabel('Jellyfin path purpose 2').fill('Data')
   await editor.getByLabel('Docker network').fill('media')
   await editor.getByLabel('Postgres').check()
   await editor.getByRole('button', { name: 'Add port' }).click()
@@ -130,7 +136,7 @@ test('exports data and imports it only after preview confirmation', async ({ pag
   const exported = JSON.parse(await (await import('node:fs/promises')).readFile(await download.path(), 'utf8'))
 
   expect(exported).toMatchObject({
-    schemaVersion: 2,
+    schemaVersion: 3,
     services: [expect.objectContaining({ name: 'Exported service' })],
     hosts: [],
   })
@@ -142,7 +148,10 @@ test('exports data and imports it only after preview confirmation', async ({ pag
     name: 'Imported service',
     createdAt: '2026-07-28T12:00:00.000Z',
     updatedAt: '2026-07-28T12:00:00.000Z',
+    configPath: '/legacy/config',
+    dataPath: '',
   }
+  delete importedService.paths
   const importPayload = JSON.stringify({
     schemaVersion: 2,
     exportedAt: '2026-07-28T12:00:00.000Z',
@@ -182,6 +191,43 @@ test('rejects malformed and incompatible imports without replacing data', async 
     buffer: Buffer.from('{'),
   })
   await expect(page.getByRole('alert')).toContainText('not valid JSON')
+  await expect(serviceCard(page, 'Keep existing')).toBeVisible()
+
+  const timestamp = '2026-07-28T12:00:00.000Z'
+  await page.getByLabel('Choose JSON backup').setInputFiles({
+    name: 'blank-path.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        schemaVersion: 3,
+        exportedAt: timestamp,
+        services: [
+          {
+            id: 'blank-path-service',
+            name: 'Blank path service',
+            containerName: '',
+            dockerImage: '',
+            description: '',
+            applicationUrl: '',
+            status: 'active',
+            internalUrl: '',
+            ports: [],
+            paths: [
+              { id: 'blank-path', hostPath: ' ', containerPath: '', purpose: '', readOnly: true },
+            ],
+            network: '',
+            exposure: 'unknown',
+            dependencyIds: [],
+            notes: '',
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          },
+        ],
+        hosts: [],
+      }),
+    ),
+  })
+  await expect(page.getByRole('alert')).toContainText('blank path mapping')
   await expect(serviceCard(page, 'Keep existing')).toBeVisible()
 
   await page.getByLabel('Choose JSON backup').setInputFiles({
@@ -246,4 +292,35 @@ test('persists identity fields and flags duplicate container names per host', as
   await expect(serviceCard(page, 'First')).toContainText('example/first:1')
   await expect(serviceCard(page, 'First')).toContainText('First description')
   await expect(serviceCard(page, 'First')).toContainText('https://first.example.test')
+})
+
+test('persists, edits, warns, and searches generalized path mappings', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Add service' }).click()
+  const editor = page.getByRole('region', { name: 'Add service' })
+  await editor.getByLabel('Service name *').fill('Path service')
+  await editor.getByRole('button', { name: 'Add path' }).click()
+  await editor.getByLabel('Path service host path 1').fill('/srv/config')
+  await editor.getByLabel('Path service container path 1').fill('/config')
+  await editor.getByLabel('Path service path purpose 1').fill('Configuration')
+  await editor.getByLabel('Path service path 1 read-only').check()
+  await editor.getByRole('button', { name: 'Add path' }).click()
+  await editor.getByLabel('Path service host path 2').fill('/srv/media')
+  await editor.getByLabel('Path service container path 2').fill('/media')
+  await editor.getByLabel('Path service path purpose 2').fill('Media')
+  await editor.getByRole('button', { name: 'Create service' }).click()
+  await expect(serviceCard(page, 'Path service')).toBeVisible()
+
+  await page.reload()
+  const card = serviceCard(page, 'Path service')
+  await expect(card).toContainText('/srv/config → /config')
+  await expect(card.getByText('Read-only')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Edit Path service' }).click()
+  const edit = page.getByRole('region', { name: 'Edit Path service' })
+  await edit.getByLabel('Path service host path 2').fill('media/relative')
+  await edit.getByRole('button', { name: 'Save changes' }).click()
+  await expect(card.getByText('Host paths mix absolute and relative styles.')).toBeVisible()
+  await page.getByRole('searchbox', { name: 'Search services' }).fill('media/relative')
+  await expect(card).toBeVisible()
 })
