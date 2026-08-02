@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "bc5796a9291d",
+  "strategy": "manual-commit",
+  "branch": "codex/port-map-view",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "CHANGELOG.md",
+    "README.md",
+    "docs/architecture.md",
+    "docs/decisions.md",
+    "docs/product.md",
+    "e2e/stackmap.spec.ts",
+    "src/App.css",
+    "src/App.test.tsx",
+    "src/App.tsx",
+    "src/components/PortMapView.tsx",
+    "src/domain/portMap.test.ts",
+    "src/domain/portMap.ts",
+    "src/domain/serviceUtils.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/bc/5796a9291d/0/metadata.json",
+      "transcript": "/bc/5796a9291d/0/full.jsonl",
+      "compact_transcript": "/bc/5796a9291d/0/transcript.jsonl",
+      "content_hash": "/bc/5796a9291d/0/content_hash.txt",
+      "prompt": "/bc/5796a9291d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 146540,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2373120,
+    "output_tokens": 15865,
+    "api_call_count": 31
+  }
+}
