@@ -388,3 +388,75 @@ test('maps, filters, conflicts, and edits persisted ports by host', async ({ pag
   await expect(page.locator('.port-host-group').filter({ has: page.getByRole('heading', { name: 'host-one' }) })).toContainText('900')
   await expect(page.locator('.port-host-group').filter({ has: page.getByRole('heading', { name: 'host-two' }) })).toContainText('Gamma')
 })
+
+test('groups, shares, filters, searches, and edits persisted paths by host', async ({ page }) => {
+  await page.goto('/')
+  await addHost(page, 'path-host-one')
+  await page.getByRole('button', { name: 'Close' }).click()
+  await addHost(page, 'path-host-two')
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  const addPathService = async (
+    name: string,
+    host: string,
+    paths: Array<{ hostPath: string; containerPath: string; purpose: string; readOnly?: boolean }>,
+  ) => {
+    await page.getByRole('button', { name: 'Add service' }).click()
+    const editor = page.getByRole('region', { name: 'Add service' })
+    await editor.getByLabel('Service name *').fill(name)
+    await editor.locator('label').filter({ hasText: /^Host/ }).locator('select').selectOption({ label: host })
+    for (const [index, mapping] of paths.entries()) {
+      await editor.getByRole('button', { name: 'Add path' }).click()
+      if (mapping.hostPath) await editor.getByLabel(`${name} host path ${index + 1}`).fill(mapping.hostPath)
+      if (mapping.containerPath) await editor.getByLabel(`${name} container path ${index + 1}`).fill(mapping.containerPath)
+      if (mapping.purpose) await editor.getByLabel(`${name} path purpose ${index + 1}`).fill(mapping.purpose)
+      if (mapping.readOnly) await editor.getByLabel(`${name} path ${index + 1} read-only`).check()
+    }
+    await editor.getByRole('button', { name: 'Create service' }).click()
+  }
+
+  await addPathService('Path Alpha', 'path-host-one', [
+    { hostPath: '/srv/shared', containerPath: '/media', purpose: 'Media library', readOnly: true },
+    { hostPath: '/srv/config', containerPath: '/config', purpose: 'Configuration' },
+    { hostPath: '', containerPath: '/incomplete', purpose: 'Incomplete data' },
+  ])
+  await addPathService('Path Beta', 'path-host-one', [
+    { hostPath: ' /SRV/SHARED ', containerPath: '/library', purpose: 'Library' },
+  ])
+  await addPathService('Path Gamma', 'path-host-two', [
+    { hostPath: '/srv/shared', containerPath: '/different-host', purpose: 'Remote media' },
+  ])
+
+  await page.getByRole('button', { name: 'Path Map' }).click()
+  const hostOne = page.locator('.path-host-group').filter({ has: page.getByRole('heading', { name: 'path-host-one' }) })
+  const hostTwo = page.locator('.path-host-group').filter({ has: page.getByRole('heading', { name: 'path-host-two' }) })
+  await expect(hostOne.getByRole('heading', { name: '/srv/shared' })).toBeVisible()
+  await expect(hostOne.getByRole('heading', { name: 'Host path missing' })).toBeVisible()
+  await expect(hostOne.getByText('Shared with Path Beta')).toBeVisible()
+  await expect(hostOne.getByText('Read-only')).toBeVisible()
+  await expect(hostOne.getByText('Host path is missing.')).toBeVisible()
+  await expect(hostTwo.getByText('Shared with', { exact: false })).toHaveCount(0)
+
+  await page.getByLabel('Filter Path Map by host').selectOption({ label: 'path-host-one' })
+  await expect(hostOne).toBeVisible()
+  await expect(hostTwo).toHaveCount(0)
+  const search = page.getByRole('searchbox', { name: 'Search Path Map' })
+  await search.fill('/srv/config')
+  await expect(hostOne.getByRole('heading', { name: '/srv/config' })).toBeVisible()
+  await search.fill('media library')
+  await expect(hostOne.getByRole('heading', { name: '/srv/shared' })).toBeVisible()
+
+  await hostOne.getByRole('button', { name: 'Edit service Path Alpha' }).click()
+  const editor = page.getByRole('region', { name: 'Edit Path Alpha' })
+  await editor.getByLabel('Path Alpha container path 2').fill('/config-updated')
+  await editor.getByRole('button', { name: 'Save changes' }).click()
+  await expect(page.getByRole('heading', { name: 'Path Map' })).toBeVisible()
+  await expect(page.getByLabel('Filter Path Map by host')).toHaveValue(/.+/)
+  await search.fill('/config-updated')
+  await expect(hostOne).toContainText('/config-updated')
+
+  await page.reload()
+  await page.getByRole('button', { name: 'Path Map' }).click()
+  await expect(page.locator('.path-host-group').filter({ has: page.getByRole('heading', { name: 'path-host-one' }) })).toContainText('/config-updated')
+  await expect(page.locator('.path-host-group').filter({ has: page.getByRole('heading', { name: 'path-host-two' }) })).toContainText('Path Gamma')
+})

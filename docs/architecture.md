@@ -52,6 +52,8 @@ The architecture should allow future migration if cloud synchronization is added
 
 The Port Map is a read-only projection built in memory from existing `Service`, `Host`, and service-port records. It groups and sorts assignments, applies search and host filtering, and derives assignment-level conflict relationships without writing a second dataset or changing the IndexedDB or JSON schemas. Editing routes back through the existing service form and repository.
 
+The Path Map follows the same projection pattern over existing generalized `PathMapping` records. It groups by host and a conservative trimmed, case-insensitive host-path key, derives same-host cross-service sharing, and reuses the existing path-warning utility. Stored path values are never normalized or mutated, and editing uses the existing service form and repository. No database or backup-schema migration is required.
+
 ## Hosting
 
 The proof-of-concept frontend will be hosted on Cloudflare Pages.
