@@ -361,4 +361,86 @@ describe('StackMap service workflows', () => {
     expect(screen.getByRole('heading', { name: 'Add service' })).toBeVisible()
     expect(screen.getByLabelText('Unsaved service host path 1')).toHaveValue('/keep/me')
   })
+
+  it('defaults to Services and switches accessibly to grouped Port Map assignments', async () => {
+    const user = userEvent.setup()
+    const host: Host = { id: 'host-1', name: 'NAS', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: '2026-08-02T12:00:00.000Z', updatedAt: '2026-08-02T12:00:00.000Z' }
+    const services = [
+      { ...serviceNamed('Alpha'), hostId: host.id, ports: [{ hostPort: 80, containerPort: 8080, protocol: 'tcp' as const, description: '' }] },
+      { ...serviceNamed('Beta'), hostId: host.id, ports: [{ hostPort: 80, protocol: 'both' as const, description: '' }] },
+      { ...serviceNamed('Loose'), ports: [{ containerPort: 3000, protocol: 'unknown' as const, description: '' }] },
+    ]
+    render(<App repository={new MemoryRepository({ services, hosts: [host] })} />)
+
+    const servicesSwitch = await screen.findByRole('button', { name: 'Services' })
+    const portMapSwitch = screen.getByRole('button', { name: 'Port Map' })
+    expect(servicesSwitch).toHaveAttribute('aria-pressed', 'true')
+    expect(portMapSwitch).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('heading', { name: 'Services' })).toBeVisible()
+
+    await user.click(portMapSwitch)
+    expect(portMapSwitch).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('heading', { name: 'Port Map' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'NAS' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Unassigned host' })).toBeVisible()
+    expect(screen.getByText(/also used by Beta/)).toBeVisible()
+    expect(screen.getByText('Host port is missing.')).toBeVisible()
+    expect(screen.getByText('Protocol is unknown.')).toBeVisible()
+    expect(screen.getByText('Service has no assigned host.')).toBeVisible()
+  })
+
+  it('filters Port Map hosts and preserves the filter after editing a service', async () => {
+    const user = userEvent.setup()
+    const timestamp = '2026-08-02T12:00:00.000Z'
+    const hosts: Host[] = [
+      { id: 'one', name: 'Host one', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+      { id: 'two', name: 'Host two', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+    ]
+    const repository = new MemoryRepository({
+      hosts,
+      services: [
+        { ...serviceNamed('One'), hostId: 'one', ports: [{ hostPort: 10, containerPort: 10, protocol: 'tcp', description: '' }] },
+        { ...serviceNamed('Two'), hostId: 'two', ports: [{ hostPort: 20, containerPort: 20, protocol: 'udp', description: '' }] },
+      ],
+    })
+    render(<App repository={repository} />)
+    await user.click(await screen.findByRole('button', { name: 'Port Map' }))
+    const filter = screen.getByLabelText('Filter Port Map by host')
+    await user.selectOptions(filter, 'one')
+    expect(screen.getByRole('heading', { name: 'Host one' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Host two' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Edit service One' }))
+    const name = screen.getByLabelText('Service name *')
+    await user.clear(name)
+    await user.type(name, 'One updated')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByRole('heading', { name: 'Port Map' })).toBeVisible()
+    expect(filter).toHaveValue('one')
+    expect(screen.getByText('One updated')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Port Map' })).toHaveFocus()
+  })
+
+  it('shows Port Map empty states for no services, no ports, and a host without assignments', async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App repository={new MemoryRepository()} />)
+    await user.click(await screen.findByRole('button', { name: 'Port Map' }))
+    expect(screen.getByRole('heading', { name: 'No services yet' })).toBeVisible()
+    unmount()
+
+    const timestamp = '2026-08-02T12:00:00.000Z'
+    const hosts: Host[] = [
+      { id: 'one', name: 'Host one', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+      { id: 'two', name: 'Host two', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+    ]
+    const second = render(<App repository={new MemoryRepository({ services: [serviceNamed('No ports')], hosts })} />)
+    await user.click(await screen.findByRole('button', { name: 'Port Map' }))
+    expect(screen.getByRole('heading', { name: 'No port mappings yet' })).toBeVisible()
+    second.unmount()
+
+    render(<App repository={new MemoryRepository({ services: [{ ...serviceNamed('Mapped'), hostId: 'one', ports: [{ hostPort: 1, protocol: 'tcp', description: '' }] }], hosts })} />)
+    await user.click(await screen.findByRole('button', { name: 'Port Map' }))
+    await user.selectOptions(screen.getByLabelText('Filter Port Map by host'), 'two')
+    expect(screen.getByRole('heading', { name: 'No ports for this host' })).toBeVisible()
+  })
 })

@@ -324,3 +324,67 @@ test('persists, edits, warns, and searches generalized path mappings', async ({ 
   await page.getByRole('searchbox', { name: 'Search services' }).fill('media/relative')
   await expect(card).toBeVisible()
 })
+
+test('maps, filters, conflicts, and edits persisted ports by host', async ({ page }) => {
+  await page.goto('/')
+  await addHost(page, 'host-one')
+  await page.getByRole('button', { name: 'Close' }).click()
+  await addHost(page, 'host-two')
+  await page.getByRole('button', { name: 'Close' }).click()
+
+  const addPortService = async (
+    name: string,
+    host: string,
+    ports: Array<{ host: string; container: string; protocol: 'tcp' | 'udp' | 'both' }>,
+  ) => {
+    await page.getByRole('button', { name: 'Add service' }).click()
+    const editor = page.getByRole('region', { name: 'Add service' })
+    await editor.getByLabel('Service name *').fill(name)
+    await editor.locator('label').filter({ hasText: /^Host/ }).locator('select').selectOption({ label: host })
+    for (const [index, port] of ports.entries()) {
+      await editor.getByRole('button', { name: 'Add port' }).click()
+      await editor.getByLabel(`Host port ${index + 1}`).fill(port.host)
+      await editor.getByLabel(`Container port ${index + 1}`).fill(port.container)
+      await editor.getByLabel(`Protocol ${index + 1}`).selectOption(port.protocol)
+    }
+    await editor.getByRole('button', { name: 'Create service' }).click()
+  }
+
+  await addPortService('Alpha', 'host-one', [
+    { host: '9000', container: '90', protocol: 'tcp' },
+    { host: '8000', container: '80', protocol: 'tcp' },
+  ])
+  await addPortService('Beta', 'host-one', [
+    { host: '8000', container: '8080', protocol: 'both' },
+  ])
+  await addPortService('Gamma', 'host-two', [
+    { host: '8000', container: '3000', protocol: 'tcp' },
+  ])
+
+  await page.getByRole('button', { name: 'Port Map' }).click()
+  const hostOne = page.locator('.port-host-group').filter({ has: page.getByRole('heading', { name: 'host-one' }) })
+  const hostTwo = page.locator('.port-host-group').filter({ has: page.getByRole('heading', { name: 'host-two' }) })
+  await expect(hostOne).toBeVisible()
+  await expect(hostTwo).toBeVisible()
+  await expect(hostOne.locator('.port-assignment').nth(0)).toContainText('8000')
+  await expect(hostOne.locator('.port-assignment').nth(1)).toContainText('8000')
+  await expect(hostOne.locator('.port-assignment').nth(2)).toContainText('9000')
+  await expect(hostOne.getByText(/also used by Beta/)).toBeVisible()
+  await expect(hostTwo.getByText('Conflict:', { exact: false })).toHaveCount(0)
+
+  await page.getByLabel('Filter Port Map by host').selectOption({ label: 'host-one' })
+  await expect(hostOne).toBeVisible()
+  await expect(hostTwo).toHaveCount(0)
+  await hostOne.getByRole('button', { name: 'Edit service Alpha' }).first().click()
+  const editor = page.getByRole('region', { name: 'Edit Alpha' })
+  await editor.getByLabel('Container port 1').fill('900')
+  await editor.getByRole('button', { name: 'Save changes' }).click()
+  await expect(page.getByRole('heading', { name: 'Port Map' })).toBeVisible()
+  await expect(page.getByLabel('Filter Port Map by host')).toHaveValue(/.+/)
+  await expect(hostOne).toContainText('900')
+
+  await page.reload()
+  await page.getByRole('button', { name: 'Port Map' }).click()
+  await expect(page.locator('.port-host-group').filter({ has: page.getByRole('heading', { name: 'host-one' }) })).toContainText('900')
+  await expect(page.locator('.port-host-group').filter({ has: page.getByRole('heading', { name: 'host-two' }) })).toContainText('Gamma')
+})

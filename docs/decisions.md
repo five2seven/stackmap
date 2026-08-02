@@ -158,6 +158,12 @@ Non-retired services with matching trimmed, case-insensitive container names on 
 
 Path warnings identify incomplete host/container pairs, mixed absolute and relative host or container styles, and missing purposes containing `config`. Path normalization and cross-service shared-path checks remain out of scope.
 
+### Derived Port Map
+
+The Port Map is derived rather than persisted, so service ports retain one source of truth and no database migration is required. Assignments are grouped by host, with hostless services in an Unassigned host group; valid host ports sort numerically before incomplete entries. Search covers service name, container name, Docker image, host name, host port, container port, and protocol. The host filter and edit-from-map workflow remain local UI state.
+
+Conflict relationships reuse the existing rules: matching host ports conflict only on the same assigned host when protocols overlap; `both` overlaps TCP and UDP, while `unknown` overlaps only `unknown`. The existing policy includes retired services. The displayed count is explicitly the number of affected assignments. Network/protocol filters, recommendations, and automated reassignment remain out of scope.
+
 ## New decision template
 
 Copy this section for future decisions:

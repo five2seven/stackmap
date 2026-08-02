@@ -76,11 +76,13 @@ The user should be able to save incomplete information and return later to add m
 The first useful version of StackMap should include:
 
 - A service list showing all documented services
+- A dedicated Port Map grouped by host, including an Unassigned host group, host filtering, conflict details, and edit-from-map actions
 - The ability to add a service
 - The ability to edit a service
 - The ability to delete or retire a service
 - Search across service names, hosts, ports, paths, networks, and notes
 - Filters for status, host, Docker network, and external exposure
+- Port Map search across service identity, host, host port, container port, and protocol
 - Detection of duplicate port assignments
 - Detection of duplicate non-retired container names on the same host
 - Warnings for incomplete mappings, mixed path styles, and missing configuration-purpose mappings
@@ -90,6 +92,8 @@ The first useful version of StackMap should include:
 - JSON import for restore or migration
 
 The MVP should prioritize fast entry, clear organization, and useful warnings over visual complexity.
+
+The Port Map preserves incomplete entries and identifies missing host ports, container ports, protocols, and host assignments. It intentionally does not provide network or protocol filters, port recommendations, or automatic conflict resolution.
 
 ## MVP Non-Goals
 

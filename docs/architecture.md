@@ -48,6 +48,10 @@ The current JSON export schema is version 3. The import boundary validates curre
 
 The architecture should allow future migration if cloud synchronization is added later.
 
+## Derived Views
+
+The Port Map is a read-only projection built in memory from existing `Service`, `Host`, and service-port records. It groups and sorts assignments, applies search and host filtering, and derives assignment-level conflict relationships without writing a second dataset or changing the IndexedDB or JSON schemas. Editing routes back through the existing service form and repository.
+
 ## Hosting
 
 The proof-of-concept frontend will be hosted on Cloudflare Pages.

@@ -25,6 +25,7 @@ Vite prints the local development URL after startup.
 - Record optional container names, Docker images, descriptions, application URLs, internal hostnames or IPs, hosts, repeatable Docker path mappings, networks, exposure, dependencies, notes, and multiple ports
 - Add and edit hosts, assign services to them, and protect referenced hosts from deletion
 - Search services and filter by status, host, Docker network, and exposure
+- Switch to a dedicated Port Map grouped by host, filter it by host, inspect exact conflict relationships, and edit services from an assignment
 - Identify incomplete service records, initial path-mapping issues, duplicate host-port assignments, and duplicate active container names on the same host
 - Export the complete local dataset to a versioned JSON backup
 - Validate and review JSON imports before replacing local data
@@ -32,6 +33,8 @@ Vite prints the local development URL after startup.
 Only a service name is required when creating a record. Incomplete records are intentionally supported.
 
 The application URL is the address a user opens to reach the application. The internal hostname or IP records the service's internal network address. Container-name conflicts are reported only for non-retired services assigned to the same host; comparison ignores case and surrounding whitespace.
+
+The Port Map is derived from the current service and host records and does not duplicate data in IndexedDB. It groups every port entry by assigned host, places hostless services under **Unassigned host**, sorts numeric host ports first, and searches service identity, host, port, and protocol fields. Conflict details follow the existing same-host protocol-overlap rules, including retired services. Current filters are limited to host and search; the map does not recommend or reassign ports.
 
 ## Local data and backups
 
