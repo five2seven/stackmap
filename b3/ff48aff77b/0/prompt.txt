@@ -1,0 +1,174 @@
+# StackMap Final Review and Merge: Generalized Docker Path Mappings
+
+Review the completed branch:
+
+codex/generalized-path-mappings
+
+Work only in:
+
+C:\Code\Projects\APP-StackMap
+
+Do not begin any new feature work.
+
+## 1. Repository checks
+
+Before reviewing:
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch remote references.
+4. Confirm the current feature branch matches:
+   origin/codex/generalized-path-mappings
+5. Confirm local main matches origin/main.
+6. Confirm Entire is enabled and available.
+7. Run:
+
+where.exe entire
+entire version
+entire status
+
+Stop if the repository is not clean or synchronized.
+
+## 2. Review scope
+
+Review the complete branch diff against origin/main, including:
+
+- 7266c346480c56b9b88b503292193396769bec3b
+- 4bc28a2c171c6ab907e45fddfd1eb3bf9c1be29f
+
+Verify the implementation includes:
+
+- Reusable PathMapping model
+- Service.paths array
+- Removal of fixed current-model configPath/dataPath usage
+- IndexedDB version 4 migration
+- Legacy config/data path conversion
+- Timestamp preservation
+- JSON schema version 3
+- Import compatibility for schema versions 1, 2, and 3
+- Repeatable path editor
+- Add, edit, and remove behavior
+- Read-only state
+- Stable path IDs
+- Blank-row removal
+- Partial-row support
+- Path display on service cards
+- Search by host path, container path, and purpose
+- Incomplete-mapping warning
+- Mixed host-path style warning
+- Mixed container-path style warning
+- Missing configuration-purpose warning
+- Rejection of semantically blank schema-v3 path mappings
+- Accessible fieldset and legend structure
+- Complete test coverage
+- Documentation updates
+
+## 3. Safety review
+
+Pay particular attention to:
+
+- Data loss during IndexedDB migration
+- Duplicate migrated path mappings
+- Changed timestamps
+- Uploaded backup-object mutation
+- Incorrect schema migration order
+- Schema 1 or 2 imports losing service identity fields
+- Duplicate path IDs being accepted
+- Malformed current-version paths being accepted
+- Completely blank current-version mappings being accepted
+- readOnly making a blank mapping valid
+- Blank rows being persisted
+- Stable IDs changing during normal edits
+- Partial rows being discarded unexpectedly
+- Windows path classification
+- UNC path classification
+- Unix path classification
+- False mixed-style warnings
+- Existing search regressions
+- Existing port or container-name warning regressions
+- Existing import validation being weakened
+- Fieldset and legend accessibility
+- Unrelated changes
+- Generated artifacts, secrets, or local files
+
+## 4. Run validation
+
+Run:
+
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+
+Do not change files during the review.
+
+If the first Playwright run fails only with a transient Windows ERR_NO_BUFFER_SPACE or WebSocket resource exhaustion error:
+
+1. Confirm no code or test files changed.
+2. Rerun the unchanged Playwright suite once.
+3. Report both results.
+4. Treat it as blocking only if it reproduces consistently or indicates a product/test defect.
+
+For any other failure, stop and report it. Do not merge.
+
+## 5. Findings
+
+Report findings under:
+
+- Blocking
+- Important
+- Minor
+- No issue
+
+Then give exactly one recommendation:
+
+- Ready to merge
+- Ready to merge with minor follow-up
+- Changes required before merge
+
+## 6. Merge only if ready
+
+If and only if the recommendation is:
+
+Ready to merge
+
+then:
+
+1. Switch to main.
+2. Pull origin/main using fast-forward only.
+3. Merge codex/generalized-path-mappings with a normal merge commit.
+4. Use this exact merge commit message:
+
+Merge generalized Docker path mappings
+
+5. Push main to origin.
+6. Do not delete the feature branch yet.
+7. Do not begin another feature.
+
+If the recommendation is anything else, do not merge.
+
+## Required final report
+
+Report:
+
+1. Initial Git state
+2. Entire status
+3. Branch synchronization state
+4. Diff summary
+5. Blocking findings
+6. Important findings
+7. Minor findings
+8. Migration review
+9. Import/export compatibility review
+10. Path-classification review
+11. UI and accessibility review
+12. Test-coverage review
+13. Validation results
+14. Final recommendation
+15. Whether the branch was merged
+16. Merge commit ID, if created
+17. Push result
+18. Final branch
+19. Final working-tree status
+20. Whether main matches origin/main
+21. Confirmation that no new feature work was started
