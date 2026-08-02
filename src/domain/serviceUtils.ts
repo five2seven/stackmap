@@ -47,7 +47,7 @@ export function getPathWarnings(paths: PathMapping[]): PathWarnings {
   }
 }
 
-function protocolsOverlap(left: ServicePort['protocol'], right: ServicePort['protocol']) {
+export function portProtocolsOverlap(left: ServicePort['protocol'], right: ServicePort['protocol']) {
   if (left === 'unknown' || right === 'unknown') return left === right
   return left === 'both' || right === 'both' || left === right
 }
@@ -67,7 +67,7 @@ export function duplicatePortServiceIds(services: Service[]): Set<string> {
       if (
         assignment.service.hostId === candidate.service.hostId &&
         assignment.port.hostPort === candidate.port.hostPort &&
-        protocolsOverlap(assignment.port.protocol, candidate.port.protocol) &&
+        portProtocolsOverlap(assignment.port.protocol, candidate.port.protocol) &&
         (assignment.service.id !== candidate.service.id ||
           assignment.portIndex !== candidate.portIndex)
       ) {

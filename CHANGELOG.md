@@ -17,6 +17,7 @@
 - IndexedDB version 3 migration and JSON schema version 2 with version 1 import compatibility
 - Repeatable Docker path mappings with purpose, read-only status, search, display, and initial warnings
 - IndexedDB version 4 legacy-path migration and JSON schema version 3 with version 1 and 2 import compatibility
+- Dedicated responsive Port Map with host grouping, Unassigned host handling, host filtering, searchable assignments, conflict relationships, incomplete-state details, and edit-from-map actions
 - Unit, database, UI behavior, and Playwright coverage for the MVP workflows
 
 ### Fixed

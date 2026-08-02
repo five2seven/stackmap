@@ -19,7 +19,9 @@ import {
 } from './domain/types'
 import { HostManager } from './components/HostManager'
 import { ImportReview } from './components/ImportReview'
+import { PortMapView } from './components/PortMapView'
 import { ServiceForm } from './components/ServiceForm'
+import { UNASSIGNED_HOST_FILTER } from './domain/portMap'
 
 const DEFAULT_FILTERS: ServiceFilters = {
   query: '',
@@ -43,7 +45,11 @@ function App({ repository = defaultRepository }: AppProps) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [activeView, setActiveView] = useState<'services' | 'port-map'>('services')
+  const [portMapHostFilter, setPortMapHostFilter] = useState('all')
   const importInput = useRef<HTMLInputElement>(null)
+  const portMapViewButton = useRef<HTMLButtonElement>(null)
+  const returnFocusToPortMap = useRef(false)
 
   async function refresh() {
     const data = await repository.getAll()
@@ -72,6 +78,13 @@ function App({ repository = defaultRepository }: AppProps) {
     }
   }, [repository])
 
+  useEffect(() => {
+    if (!editingService && returnFocusToPortMap.current) {
+      returnFocusToPortMap.current = false
+      portMapViewButton.current?.focus()
+    }
+  }, [editingService])
+
   const visibleServices = useMemo(
     () => filterServices(services, hosts, filters),
     [services, hosts, filters],
@@ -90,6 +103,12 @@ function App({ repository = defaultRepository }: AppProps) {
     () => new Map(services.map((service) => [service.id, service.name])),
     [services],
   )
+  const effectivePortMapHostFilter =
+    portMapHostFilter === 'all' ||
+    portMapHostFilter === UNASSIGNED_HOST_FILTER ||
+    hosts.some((host) => host.id === portMapHostFilter)
+      ? portMapHostFilter
+      : 'all'
 
   async function saveService(service: Service): Promise<boolean> {
     try {
@@ -103,6 +122,11 @@ function App({ repository = defaultRepository }: AppProps) {
       setError(caught instanceof Error ? caught.message : 'The service could not be saved.')
       return false
     }
+  }
+
+  function editServiceFromPortMap(service: Service) {
+    returnFocusToPortMap.current = true
+    setEditingService(service)
   }
 
   async function retireService(service: Service) {
@@ -222,6 +246,25 @@ function App({ repository = defaultRepository }: AppProps) {
       </header>
 
       <main>
+        <nav className="view-switcher" aria-label="Primary views">
+          <button
+            className="view-switch"
+            type="button"
+            aria-pressed={activeView === 'services'}
+            onClick={() => setActiveView('services')}
+          >
+            Services
+          </button>
+          <button
+            ref={portMapViewButton}
+            className="view-switch"
+            type="button"
+            aria-pressed={activeView === 'port-map'}
+            onClick={() => setActiveView('port-map')}
+          >
+            Port Map
+          </button>
+        </nav>
         {message && (
           <div className="notice success" role="status">
             {message}
@@ -267,6 +310,8 @@ function App({ repository = defaultRepository }: AppProps) {
           />
         )}
 
+        {activeView === 'services' ? (
+          <>
         <section className="summary-strip" aria-label="Service summary">
           <div>
             <strong>{services.length}</strong>
@@ -550,6 +595,18 @@ function App({ repository = defaultRepository }: AppProps) {
             </div>
           )}
         </section>
+          </>
+        ) : (
+          <PortMapView
+            services={services}
+            hosts={hosts}
+            query={filters.query}
+            hostFilter={effectivePortMapHostFilter}
+            onQueryChange={(query) => setFilters({ ...filters, query })}
+            onHostFilterChange={setPortMapHostFilter}
+            onEditService={editServiceFromPortMap}
+          />
+        )}
       </main>
 
       <footer>
