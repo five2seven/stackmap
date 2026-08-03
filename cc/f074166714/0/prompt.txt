@@ -1,0 +1,31 @@
+## README copy-and-paste Compose examples
+
+The GitHub README must include complete Docker Compose examples that users can copy into a new `compose.yaml` file.
+
+### A. End-user image example
+
+Document the intended public-image deployment format, even if registry publishing is not part of this task.
+
+Use a clearly marked placeholder until the image is actually published:
+
+```yaml
+services:
+  stackmap:
+    image: ghcr.io/five2seven/stackmap:latest
+    container_name: stackmap
+    ports:
+- "${STACKMAP_PORT:-8088}:8080"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+- /tmp
+- /var/cache/nginx
+- /var/run
+    security_opt:
+- no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
