@@ -20,6 +20,13 @@ Use this precedence: explicit current user instruction; actual repository state 
 - Confirm Entire is enabled before changes and allow its hooks to associate implementation and fix commits. Report the resulting checkpoint ID.
 - Commit only after validation passes. Push the feature branch, but merge only in a separate review-and-merge task using a normal merge commit. Leave feature branches intact unless explicitly instructed otherwise.
 
+## Workflow phases
+
+- **Implementation:** Start from clean `main` synchronized with `origin/main`, then create or safely reuse the task branch from `docs/current-task.md`. Implement only the active task, run required validation, commit and push the branch, and open a pull request into `main`. Do not merge, advance the plan, or begin another task.
+- **Review:** Review the completed branch or pull request against `origin/main` without modifying files during the initial review. Report Blocking, Important, Minor, and No issue findings. Merge only with a Ready to merge recommendation and a normal merge commit; do not edit planning documents directly on `main` or begin another implementation task.
+- **Fix:** Stay on the existing feature branch and address only recorded review findings, adding focused regression coverage when applicable. Run required validation, commit and push the fix, and return the branch for re-review without merging or advancing the plan.
+- **Planning advancement:** Begin only after the implementation branch is reviewed and merged. Start from clean, synchronized `main`, then use a separate planning branch and pull request to update only the migration plan, current-task document, and checklist records required by the completed task. Record implementation and merge commits, Entire checkpoint, validation, limitations, and datastore authority. Mark the next task Ready only when dependencies are complete and no unresolved decision blocks it; otherwise leave it Blocked and record why. Never make planning commits directly on `main` or implement the next task in this phase.
+
 ## Validation and review
 
 For application changes, run `npm run lint`, `npm test`, and `npm run build`. Run `npm run test:e2e` when frontend behavior, persistence, deployment behavior, or production workflows change. When Docker is available, validate tasks affecting the image, Compose, runtime, volumes, health, upgrades, or persistence. Always run `git diff --check`. Never weaken tests merely to make them pass.
