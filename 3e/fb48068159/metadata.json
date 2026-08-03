@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3efb48068159",
+  "strategy": "manual-commit",
+  "branch": "codex/inventory-api",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "server/app.ts",
+    "server/inventory-api.test.ts",
+    "server/inventory-api.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3e/fb48068159/0/metadata.json",
+      "transcript": "/3e/fb48068159/0/full.jsonl",
+      "compact_transcript": "/3e/fb48068159/0/transcript.jsonl",
+      "content_hash": "/3e/fb48068159/0/content_hash.txt",
+      "prompt": "/3e/fb48068159/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 65926,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2897664,
+    "output_tokens": 16109,
+    "api_call_count": 34
+  }
+}

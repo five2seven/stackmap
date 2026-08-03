@@ -1,0 +1,242 @@
+Fix only the single PR #4 review finding on the existing branch:
+
+codex/advance-sqlite-plan-task-2
+
+Repository:
+
+C:\Code\Projects\APP-StackMap
+
+Do not create a new branch.
+Do not merge PR #4.
+Do not begin Task 3.
+Do not advance any other planning content.
+
+## Preconditions
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch and prune origin.
+4. Confirm codex/advance-sqlite-plan-task-2 matches origin/codex/advance-sqlite-plan-task-2.
+5. Confirm local main matches origin/main.
+6. Confirm Entire is enabled and available.
+7. Confirm PR #4 remains open.
+8. Confirm the current PR head is:
+   ea7357761650a64bf035fcaf5865b6f202bd2cb3
+
+Stop if the repository is not clean or synchronized.
+
+## Required fix
+
+Update only:
+
+docs/current-task.md
+
+In Task 3 acceptance criteria, change the sensitive-information prohibition so it explicitly says that API responses must not expose:
+
+- raw SQLite errors
+- SQL
+- stack traces
+- filesystem paths
+- secrets
+
+Do not broaden or rewrite the rest of the acceptance criteria.
+
+## Scope boundaries
+
+Do not modify:
+
+- docs/sqlite-migration-plan.md
+- docs/release-checklist.md
+- AGENTS.md
+- README.md
+- docs/architecture.md
+- docs/decisions.md
+- application code
+- server code
+- tests
+- Docker files
+- workflows
+- dependencies
+- lockfiles
+- Entire configuration
+
+If another file appears necessary, stop and report why instead of broadening scope.
+
+## Consistency review
+
+After editing, confirm:
+
+- Task 3 remains the only Ready task.
+- Tasks 4 through 10 remain Blocked.
+- IndexedDB remains production-authoritative.
+- Task 3 scope and exclusions remain unchanged.
+- The four reusable prompts remain unchanged.
+- No Task 3 implementation work was started.
+
+## Validation
+
+Run:
+
+git diff --check
+
+If an existing Markdown lint command exists, run it.
+
+Do not install new tooling.
+
+## Diff review
+
+Before committing:
+
+1. Confirm docs/current-task.md is the only modified file.
+2. Confirm the only substantive change is adding “secrets” to the sensitive-information prohibition.
+3. Confirm no implementation, dependency, lockfile, workflow, generated, secret, or Entire files changed.
+
+## Commit and push
+
+Commit with:
+
+Clarify Task 3 secret exposure criteria
+
+Push to:
+
+codex/advance-sqlite-plan-task-2
+
+Allow Entire to associate the commit normally.
+
+Update PR #4 if needed.
+
+Do not merge PR #4.
+
+## Required completion report
+
+Report:
+
+1. Initial Git state
+2. Entire status
+3. Files modified
+4. Acceptance-criteria change
+5. Consistency result
+6. Validation result
+7. Commit ID
+8. Entire checkpoint ID
+9. Push result
+10. PR update result
+11. Final working-tree status
+12. Confirmation that PR #4 is ready for re-review
+13. Confirmation that Task 3 was not started
+14. Confirmation that no unrelated functionality was added
+
+Stop after pushing the fix.
+
+---
+
+# Files mentioned by the user:
+
+## Review and merge StackMap planning PR #4 according to AGENTS.md. Repository: C:…: C:\Users\rae\.codex/attachments/2646c297-22c5-4ea4-ac72-5c4414d38b2f/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+Continue the active StackMap migration task defined in AGENTS.md and docs/current-task.md.
+
+Implement only Task 3.
+
+Follow all repository instructions for Git safety, Entire checkpoint tracking, scope control, validation, documentation, data safety, and pull request creation.
+
+Task 3:
+
+Complete inventory API
+
+Expected branch:
+
+codex/inventory-api
+
+Critical boundaries:
+
+- IndexedDB remains authoritative for all production inventory.
+- Do not connect the React frontend to the API.
+- Do not change production UI behavior.
+- Do not add CORS.
+- Do not add authentication or user accounts.
+- Do not change JSON backup or restore behavior.
+- Do not begin Task 4.
+- Do not advance the migration plan.
+- Do not merge the pull request.
+
+Required implementation scope:
+
+- Versioned Fastify routes under /api/v1
+- Host list, get, create, update, and delete
+- Service list, get, create, update, and delete
+- Complete nested ports
+- Complete nested paths
+- Complete dependencies
+- Inventory revision metadata
+- Optimistic concurrency using expected revision values
+- Request validation before repository mutation
+- Safe and stable error mapping
+- 404 responses for missing records
+- 409 responses for stale revisions
+- Safe responses for invalid references and validation failures
+- Transactional integration with the existing SQLite repository
+- Stable response contracts
+- Deterministic ordering
+- Route tests
+- API integration tests
+- Failure-path tests
+- Concurrency tests
+- Referential-integrity tests
+
+Security and error-handling requirements:
+
+- Do not expose raw SQLite errors.
+- Do not expose SQL.
+- Do not expose stack traces.
+- Do not expose filesystem paths.
+- Do not expose secrets.
+- Do not expose internal implementation details unnecessarily.
+- Preserve request IDs in safe error responses.
+- Preserve SPA fallback for non-API routes.
+- Do not add cross-origin support.
+
+Datastore authority requirements:
+
+- IndexedDB remains the sole authoritative production inventory datastore.
+- The new API may read and write SQLite, but the production React UI must not use it.
+- No production inventory cutover occurs in Task 3.
+- No split-brain production behavior is introduced.
+
+When complete:
+
+1. Run all validation required by AGENTS.md and docs/current-task.md.
+2. Review the full diff against origin/main.
+3. Confirm no unrelated files, generated artifacts, secrets, frontend changes, dependency changes, lockfile changes, Docker changes, workflow changes, or configuration changes were introduced unless explicitly required by Task 3.
+4. Commit the completed task.
+5. Push codex/inventory-api.
+6. Open a pull request into main.
+7. Include in the pull request description:
+   - Task name and goal
+   - Scope implemented
+   - Explicit exclusions
+   - Files created and modified
+   - Route inventory
+   - Request and response contracts
+   - Validation behavior
+   - Error mapping
+   - Optimistic-concurrency behavior
+   - Referential-integrity behavior
+   - Transaction behavior
+   - Datastore-authority state
+   - Validation commands and results
+   - Known limitations
+   - Implementation commit ID
+   - Entire checkpoint ID
+   - Confirmation that no frontend cutover, UI, backup/restore, IndexedDB migration, Dexie removal, CORS, authentication, accounts, demo, Task 4, or unrelated work was added
+8. Do not merge.
+9. Do not advance the migration plan.
+10. Do not begin another task.
+
+Stop after opening the pull request.
