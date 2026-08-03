@@ -1,0 +1,46 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "634ba1dbfd2e",
+  "strategy": "manual-commit",
+  "branch": "codex/sqlite-foundation",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".dockerignore",
+    ".github/workflows/publish-container.yml",
+    ".gitignore",
+    "Dockerfile",
+    "README.md",
+    "compose.yaml",
+    "docker/nginx.conf",
+    "docker/security-headers.conf",
+    "eslint.config.js",
+    "package.json",
+    "playwright.config.ts",
+    "server/app.test.ts",
+    "server/app.ts",
+    "server/config.test.ts",
+    "server/config.ts",
+    "server/database.test.ts",
+    "server/database.ts",
+    "server/index.ts",
+    "tsconfig.json",
+    "tsconfig.server.json",
+    "vite.config.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/63/4ba1dbfd2e/0/metadata.json",
+      "transcript": "/63/4ba1dbfd2e/0/full.jsonl",
+      "compact_transcript": "/63/4ba1dbfd2e/0/transcript.jsonl",
+      "content_hash": "/63/4ba1dbfd2e/0/content_hash.txt",
+      "prompt": "/63/4ba1dbfd2e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 146394,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5761280,
+    "output_tokens": 24272,
+    "api_call_count": 95
+  }
+}

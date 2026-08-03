@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "634ba1dbfd2e",
+  "session_id": "019fc884-61fc-7e40-8451-f5f15efab13a",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-03T17:00:01.7826205Z",
+  "branch": "codex/sqlite-foundation",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".dockerignore",
+    ".github/workflows/publish-container.yml",
+    ".gitignore",
+    "Dockerfile",
+    "README.md",
+    "compose.yaml",
+    "docker/nginx.conf",
+    "docker/security-headers.conf",
+    "eslint.config.js",
+    "package.json",
+    "playwright.config.ts",
+    "server/app.test.ts",
+    "server/app.ts",
+    "server/config.test.ts",
+    "server/config.ts",
+    "server/database.test.ts",
+    "server/database.ts",
+    "server/index.ts",
+    "tsconfig.json",
+    "tsconfig.server.json",
+    "vite.config.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "251b578a4c79",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 146394,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 5761280,
+    "output_tokens": 24272,
+    "api_call_count": 95
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-03T17:00:01.7167434Z",
+    "agent_lines": 468,
+    "agent_removed": 65,
+    "human_added": 1661,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2129,
+    "total_lines_changed": 2205,
+    "agent_percentage": 24.17233560090703,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
