@@ -8,11 +8,9 @@
     ".dockerignore",
     ".github/workflows/publish-container.yml",
     "CHANGELOG.md",
-    "Dockerfile",
     "README.md",
     "compose.yaml",
     "docker/nginx.conf",
-    "docker/security-headers.conf",
     "docs/architecture.md",
     "docs/decisions.md",
     "docs/product.md",
@@ -28,10 +26,10 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 88078,
+    "input_tokens": 91135,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 2002944,
-    "output_tokens": 14838,
-    "api_call_count": 41
+    "cache_read_tokens": 2155008,
+    "output_tokens": 15578,
+    "api_call_count": 43
   }
 }

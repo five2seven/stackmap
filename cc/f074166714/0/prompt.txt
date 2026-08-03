@@ -29,3 +29,61 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+---
+
+## Portainer Stack deployment
+
+The primary self-hosted deployment experience should support Portainer’s Stack web editor.
+
+StackMap must publish or prepare for publication of a Docker image at:
+
+ghcr.io/five2seven/stackmap
+
+The README must contain a complete Portainer Stack example that users can paste directly into:
+
+Portainer → Stacks → Add stack → Web editor
+
+Use the actual internal port, writable temporary paths, health check, and runtime requirements established by the Docker implementation.
+
+The intended example should resemble:
+
+```yaml
+services:
+  stackmap:
+    image: ghcr.io/five2seven/stackmap:latest
+    container_name: stackmap
+    ports:
+- "${STACKMAP_PORT:-8088}:8080"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+- /tmp
+- /var/cache/nginx
+- /var/run
+    security_opt:
+- no-new-privileges:true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:8080/"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+---
+
+# Files mentioned by the user:
+
+## No. That was an omission. The Portainer-specific requirements, GHCR publishing,…: C:\Users\rae\.codex/attachments/35db4389-dbdf-4378-9d6e-f74d98d47aa4/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
