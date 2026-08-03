@@ -1,21 +1,22 @@
 import { buildApp } from './app.js'
 import { loadConfig } from './config.js'
 import { openDatabase } from './database.js'
+import { createShutdownHandler } from './shutdown.js'
 
 const config = loadConfig()
 const database = openDatabase(config.databasePath)
 const app = await buildApp({ database, staticRoot: config.staticRoot, logger: true })
 
-let shuttingDown = false
-async function shutdown(signal: NodeJS.Signals): Promise<void> {
-  if (shuttingDown) return
-  shuttingDown = true
-  app.log.info({ signal }, 'graceful shutdown started')
-  await app.close()
+const shutdown = createShutdownHandler({ app })
+const handleSignal = (signal: NodeJS.Signals) => {
+  void shutdown(signal).catch(() => {
+    app.log.error('graceful shutdown failed')
+    process.exitCode = 1
+  })
 }
 
-process.once('SIGINT', () => void shutdown('SIGINT'))
-process.once('SIGTERM', () => void shutdown('SIGTERM'))
+process.once('SIGINT', () => handleSignal('SIGINT'))
+process.once('SIGTERM', () => handleSignal('SIGTERM'))
 
 try {
   await app.listen({ host: config.host, port: config.port })

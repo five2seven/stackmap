@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -6,20 +7,31 @@ import Database from 'better-sqlite3'
 export interface Migration {
   version: number
   name: string
+  checksum: string
   apply: (connection: Database.Database) => void
+}
+
+const bootstrapSchemaSql = `
+  CREATE TABLE application_metadata (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  ) STRICT;
+`
+const bootstrapFingerprint = `${bootstrapSchemaSql}
+INSERT application_metadata installation_id from randomUUID
+INSERT application_metadata created_at from ISO timestamp`
+
+export function migrationChecksum(version: number, name: string, definition: string): string {
+  return createHash('sha256').update(`${version}\0${name}\0${definition}`).digest('hex')
 }
 
 const migrations: readonly Migration[] = [
   {
     version: 1,
     name: 'bootstrap infrastructure metadata',
+    checksum: migrationChecksum(1, 'bootstrap infrastructure metadata', bootstrapFingerprint),
     apply(connection: Database.Database) {
-      connection.exec(`
-        CREATE TABLE application_metadata (
-          key TEXT PRIMARY KEY,
-          value TEXT NOT NULL
-        ) STRICT;
-      `)
+      connection.exec(bootstrapSchemaSql)
       const insert = connection.prepare(
         'INSERT INTO application_metadata (key, value) VALUES (?, ?)',
       )
@@ -31,7 +43,7 @@ const migrations: readonly Migration[] = [
 
 export interface StackMapDatabase {
   connection: Database.Database
-  close: () => void
+  checkpointAndClose: () => void
   installationId: () => string
   schemaVersion: () => number
 }
@@ -42,6 +54,7 @@ export function openDatabase(filename: string): StackMapDatabase {
 
   try {
     connection.pragma('journal_mode = WAL')
+    connection.pragma('synchronous = NORMAL')
     connection.pragma('foreign_keys = ON')
     connection.pragma('busy_timeout = 5000')
     runMigrations(connection)
@@ -52,7 +65,10 @@ export function openDatabase(filename: string): StackMapDatabase {
 
   return {
     connection,
-    close: () => connection.close(),
+    checkpointAndClose: () => {
+      connection.pragma('wal_checkpoint(TRUNCATE)')
+      connection.close()
+    },
     installationId: () =>
       connection
         .prepare("SELECT value FROM application_metadata WHERE key = 'installation_id'")
@@ -71,12 +87,14 @@ export function runMigrations(
     CREATE TABLE IF NOT EXISTS schema_migrations (
       version INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
+      checksum TEXT NOT NULL,
       applied_at TEXT NOT NULL
     ) STRICT;
   `)
-  const applied = new Set(
-    connection.prepare('SELECT version FROM schema_migrations').pluck().all() as number[],
-  )
+  const appliedRows = connection
+    .prepare('SELECT version, checksum FROM schema_migrations ORDER BY version')
+    .all() as Array<{ version: number; checksum: string }>
+  const applied = new Set(appliedRows.map(({ version }) => version))
   const knownVersions = new Set(pendingMigrations.map((migration) => migration.version))
   const unknownVersions = [...applied].filter((version) => !knownVersions.has(version))
   if (unknownVersions.length > 0) {
@@ -84,14 +102,25 @@ export function runMigrations(
       `Database contains unsupported migration version(s): ${unknownVersions.join(', ')}`,
     )
   }
+  const migrationsByVersion = new Map(
+    pendingMigrations.map((migration) => [migration.version, migration]),
+  )
+  for (const appliedMigration of appliedRows) {
+    const currentMigration = migrationsByVersion.get(appliedMigration.version)
+    if (currentMigration && currentMigration.checksum !== appliedMigration.checksum) {
+      throw new Error(`Checksum mismatch for migration version ${appliedMigration.version}`)
+    }
+  }
 
   for (const migration of pendingMigrations) {
     if (applied.has(migration.version)) continue
     connection.transaction(() => {
       migration.apply(connection)
       connection
-        .prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)')
-        .run(migration.version, migration.name, new Date().toISOString())
+        .prepare(
+          'INSERT INTO schema_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)',
+        )
+        .run(migration.version, migration.name, migration.checksum, new Date().toISOString())
     })()
   }
 }

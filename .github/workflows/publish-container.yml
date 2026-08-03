@@ -65,7 +65,8 @@ jobs:
           test -n "$css_path"
           curl --fail --silent --show-error "http://127.0.0.1:8088${asset_path}" --output /dev/null
           curl --fail --silent --show-error "http://127.0.0.1:8088${css_path}" --output /dev/null
-          curl --fail --silent --show-error http://127.0.0.1:8088/services/example | grep --quiet '<div id="root"></div>'
+          curl --fail --silent --show-error http://127.0.0.1:8088/services/example --output /tmp/stackmap-fallback.html
+          grep --quiet '<div id="root"></div>' /tmp/stackmap-fallback.html
           test "$(docker inspect --format='{{.Config.User}}' stackmap-validation)" = "10001:10001"
           test -w "$config_directory/stackmap.db"
 
@@ -82,7 +83,9 @@ jobs:
           persisted_id="$(curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta | node -e "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).installationId))")"
           test "$persisted_id" = "$installation_id"
           docker stop --time 10 stackmap-validation >/dev/null
-          docker logs stackmap-validation 2>&1 | grep --quiet 'graceful shutdown started'
+          docker logs stackmap-validation > /tmp/stackmap-container.log 2>&1
+          grep --quiet 'graceful shutdown started' /tmp/stackmap-container.log
+          grep --quiet 'graceful shutdown completed' /tmp/stackmap-container.log
 
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push'
