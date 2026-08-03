@@ -1,0 +1,74 @@
+Continue the active StackMap migration task defined in AGENTS.md and docs/current-task.md.
+
+Implement only Task 2.
+
+Follow all repository instructions for Git safety, Entire checkpoint tracking, scope control, validation, documentation, data safety, and pull request creation.
+
+Task 2:
+
+Complete normalized SQLite schema and repository
+
+Expected branch:
+
+codex/sqlite-domain-repository
+
+Critical boundaries:
+
+- IndexedDB remains authoritative for all production inventory.
+- Do not add HTTP inventory API routes.
+- Do not connect the React frontend to SQLite.
+- Do not change production UI behavior.
+- Do not begin Task 3.
+- Do not advance the migration plan.
+- Do not merge the pull request.
+
+When complete:
+
+1. Run all validation required by AGENTS.md and docs/current-task.md.
+2. Review the full diff against origin/main.
+3. Confirm no unrelated files, generated artifacts, secrets, dependency changes, lockfile changes, workflow changes, or configuration changes were introduced unless explicitly required by Task 2.
+4. Commit the completed task.
+5. Push codex/sqlite-domain-repository.
+6. Open a pull request into main.
+7. Include in the pull request description:
+   - Task name and goal
+   - Scope implemented
+   - Explicit exclusions
+   - Files created and modified
+   - Database schema changes
+   - Migration behavior from the Task 1 database
+   - Repository methods and transaction behavior
+   - Foreign-key and delete behavior
+   - Optimistic-concurrency behavior
+   - Data-safety impact
+   - Datastore-authority state
+   - Validation commands and results
+   - Known limitations
+   - Implementation commit ID
+   - Entire checkpoint ID
+   - Confirmation that no API, frontend cutover, UI, backup/restore, IndexedDB migration, Dexie removal, demo, or Task 3 work was added
+8. Do not merge.
+9. Do not advance the migration plan.
+10. Do not begin another task.
+
+Stop after opening the pull request.
+
+---
+
+# Files mentioned by the user:
+
+## Review and merge StackMap PR #3 according to AGENTS.md and docs/current-task.md…: C:\Users\rae\.codex/attachments/ea10e72a-4502-4d41-9454-dcf1a6e1e81b/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Fix only the PR #3 review findings on the existing branch: codex/sqlite-domain-…: C:\Users\rae\.codex/attachments/14deadfe-24e2-48b7-9561-e23cd48a0746/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:

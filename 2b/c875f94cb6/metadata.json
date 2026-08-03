@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "2bc875f94cb6",
+  "strategy": "manual-commit",
+  "branch": "codex/sqlite-domain-repository",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "server/repository.test.ts",
+    "server/repository.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/2b/c875f94cb6/0/metadata.json",
+      "transcript": "/2b/c875f94cb6/0/full.jsonl",
+      "compact_transcript": "/2b/c875f94cb6/0/transcript.jsonl",
+      "content_hash": "/2b/c875f94cb6/0/content_hash.txt",
+      "prompt": "/2b/c875f94cb6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 63702,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6907648,
+    "output_tokens": 11603,
+    "api_call_count": 45
+  }
+}
