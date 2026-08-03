@@ -30,13 +30,13 @@ describe('server application', () => {
     expect((await app.inject('/health')).json()).toEqual({
       status: 'ok',
       applicationVersion: '0.0.0',
-      databaseSchemaVersion: 1,
+      databaseSchemaVersion: 2,
       datastoreAuthority: 'indexeddb',
     })
     expect((await app.inject('/api/v1/meta')).json()).toMatchObject({
       application: 'stackmap',
       datastoreAuthority: 'indexeddb',
-      schemaVersion: 1,
+      schemaVersion: 2,
     })
     await app.close()
   })

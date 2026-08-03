@@ -21,11 +21,85 @@ const bootstrapFingerprint = `${bootstrapSchemaSql}
 INSERT application_metadata installation_id from randomUUID
 INSERT application_metadata created_at from ISO timestamp`
 
+const inventorySchemaSql = `
+  CREATE TABLE hosts (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('physical', 'virtual-machine', 'container-host', 'nas', 'other', 'unknown')),
+    ip_address TEXT NOT NULL,
+    operating_system TEXT NOT NULL,
+    notes TEXT NOT NULL,
+    revision INTEGER NOT NULL CHECK (revision >= 1),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  ) STRICT;
+
+  CREATE TABLE services (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    container_name TEXT NOT NULL,
+    docker_image TEXT NOT NULL,
+    description TEXT NOT NULL,
+    application_url TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('active', 'planned', 'paused', 'retired')),
+    host_id TEXT REFERENCES hosts(id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    internal_url TEXT NOT NULL,
+    network TEXT NOT NULL,
+    exposure TEXT NOT NULL CHECK (exposure IN ('local', 'vpn', 'reverse-proxy', 'public', 'unknown')),
+    notes TEXT NOT NULL,
+    revision INTEGER NOT NULL CHECK (revision >= 1),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  ) STRICT;
+
+  CREATE TABLE service_ports (
+    id TEXT NOT NULL,
+    service_id TEXT NOT NULL REFERENCES services(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    position INTEGER NOT NULL CHECK (position >= 0),
+    host_port INTEGER CHECK (host_port BETWEEN 1 AND 65535),
+    container_port INTEGER CHECK (container_port BETWEEN 1 AND 65535),
+    protocol TEXT NOT NULL CHECK (protocol IN ('tcp', 'udp', 'both', 'unknown')),
+    description TEXT NOT NULL,
+    CHECK (host_port IS NOT NULL OR container_port IS NOT NULL),
+    PRIMARY KEY (service_id, id),
+    UNIQUE (service_id, position)
+  ) STRICT;
+
+  CREATE TABLE service_paths (
+    id TEXT NOT NULL,
+    service_id TEXT NOT NULL REFERENCES services(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    position INTEGER NOT NULL CHECK (position >= 0),
+    host_path TEXT NOT NULL,
+    container_path TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    read_only INTEGER NOT NULL CHECK (read_only IN (0, 1)),
+    CHECK (length(trim(host_path)) > 0 OR length(trim(container_path)) > 0 OR length(trim(purpose)) > 0),
+    PRIMARY KEY (service_id, id),
+    UNIQUE (service_id, position)
+  ) STRICT;
+
+  CREATE TABLE service_dependencies (
+    service_id TEXT NOT NULL REFERENCES services(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    dependency_id TEXT NOT NULL REFERENCES services(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    position INTEGER NOT NULL CHECK (position >= 0),
+    PRIMARY KEY (service_id, dependency_id),
+    UNIQUE (service_id, position),
+    CHECK (service_id <> dependency_id)
+  ) STRICT;
+
+  CREATE INDEX services_host_id_idx ON services(host_id);
+  CREATE INDEX service_ports_service_id_idx ON service_ports(service_id);
+  CREATE INDEX service_paths_service_id_idx ON service_paths(service_id);
+  CREATE INDEX service_dependencies_dependency_id_idx ON service_dependencies(dependency_id);
+`
+const inventoryFingerprint = `${inventorySchemaSql}
+INSERT application_metadata inventory_revision 0`
+
 export function migrationChecksum(version: number, name: string, definition: string): string {
   return createHash('sha256').update(`${version}\0${name}\0${definition}`).digest('hex')
 }
 
-const migrations: readonly Migration[] = [
+export const databaseMigrations: readonly Migration[] = [
   {
     version: 1,
     name: 'bootstrap infrastructure metadata',
@@ -37,6 +111,17 @@ const migrations: readonly Migration[] = [
       )
       insert.run('installation_id', randomUUID())
       insert.run('created_at', new Date().toISOString())
+    },
+  },
+  {
+    version: 2,
+    name: 'normalized inventory schema',
+    checksum: migrationChecksum(2, 'normalized inventory schema', inventoryFingerprint),
+    apply(connection: Database.Database) {
+      connection.exec(inventorySchemaSql)
+      connection
+        .prepare('INSERT INTO application_metadata (key, value) VALUES (?, ?)')
+        .run('inventory_revision', '0')
     },
   },
 ] as const
@@ -81,7 +166,7 @@ export function openDatabase(filename: string): StackMapDatabase {
 
 export function runMigrations(
   connection: Database.Database,
-  pendingMigrations: readonly Migration[] = migrations,
+  pendingMigrations: readonly Migration[] = databaseMigrations,
 ): void {
   connection.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (

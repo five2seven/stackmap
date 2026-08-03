@@ -4,7 +4,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import Database from 'better-sqlite3'
-import { migrationChecksum, openDatabase, runMigrations } from './database.js'
+import {
+  databaseMigrations,
+  migrationChecksum,
+  openDatabase,
+  runMigrations,
+} from './database.js'
 
 const temporaryDirectories: string[] = []
 afterEach(() => {
@@ -14,18 +19,60 @@ afterEach(() => {
 })
 
 describe('openDatabase', () => {
-  it('bootstraps only infrastructure tables with required pragmas', () => {
+  it('bootstraps the complete normalized schema with required pragmas', () => {
     const database = openDatabase(':memory:')
     const tables = database.connection
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
       .pluck()
       .all()
-    expect(tables).toEqual(['application_metadata', 'schema_migrations'])
+    expect(tables).toEqual([
+      'application_metadata',
+      'hosts',
+      'schema_migrations',
+      'service_dependencies',
+      'service_paths',
+      'service_ports',
+      'services',
+    ])
     expect(database.connection.pragma('foreign_keys', { simple: true })).toBe(1)
     expect(database.connection.pragma('synchronous', { simple: true })).toBe(1)
-    expect(database.schemaVersion()).toBe(1)
+    expect(database.schemaVersion()).toBe(2)
     expect(database.installationId()).toMatch(/^[0-9a-f-]{36}$/)
     database.checkpointAndClose()
+  })
+
+  it('migrates a Task 1 database forward without replacing its metadata', () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'stackmap-upgrade-'))
+    temporaryDirectories.push(directory)
+    const filename = path.join(directory, 'stackmap.db')
+    const taskOneConnection = new Database(filename)
+    runMigrations(taskOneConnection, databaseMigrations.slice(0, 1))
+    const installationId = taskOneConnection
+      .prepare("SELECT value FROM application_metadata WHERE key = 'installation_id'")
+      .pluck()
+      .get()
+    const createdAt = taskOneConnection
+      .prepare("SELECT value FROM application_metadata WHERE key = 'created_at'")
+      .pluck()
+      .get()
+    taskOneConnection.close()
+
+    const upgraded = openDatabase(filename)
+    expect(upgraded.schemaVersion()).toBe(2)
+    expect(upgraded.installationId()).toBe(installationId)
+    expect(
+      upgraded.connection
+        .prepare("SELECT value FROM application_metadata WHERE key = 'created_at'")
+        .pluck()
+        .get(),
+    ).toBe(createdAt)
+    expect(
+      upgraded.connection
+        .prepare("SELECT value FROM application_metadata WHERE key = 'inventory_revision'")
+        .pluck()
+        .get(),
+    ).toBe('0')
+    upgraded.checkpointAndClose()
   })
 
   it('stores the migration checksum and accepts it when reopened', () => {
@@ -95,6 +142,34 @@ describe('openDatabase', () => {
         .get(),
     ).toBeUndefined()
     expect(connection.prepare('SELECT COUNT(*) FROM schema_migrations').pluck().get()).toBe(0)
+    connection.close()
+  })
+
+  it('rolls back the complete inventory schema if its migration fails', () => {
+    const connection = new Database(':memory:')
+    runMigrations(connection, databaseMigrations.slice(0, 1))
+    const inventoryMigration = databaseMigrations[1]
+    expect(() =>
+      runMigrations(connection, [
+        databaseMigrations[0],
+        {
+          ...inventoryMigration,
+          apply(database) {
+            inventoryMigration.apply(database)
+            throw new Error('inventory migration failed')
+          },
+        },
+      ]),
+    ).toThrow('inventory migration failed')
+    expect(
+      connection.prepare("SELECT name FROM sqlite_master WHERE name = 'services'").get(),
+    ).toBeUndefined()
+    expect(connection.prepare('SELECT MAX(version) FROM schema_migrations').pluck().get()).toBe(1)
+    expect(
+      connection
+        .prepare("SELECT value FROM application_metadata WHERE key = 'inventory_revision'")
+        .get(),
+    ).toBeUndefined()
     connection.close()
   })
 
