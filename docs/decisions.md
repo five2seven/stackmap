@@ -172,13 +172,25 @@ A non-empty host path is informationally shared only when more than one distinct
 
 ## ADR-005: Stateless self-hosted container
 
-**Status:** Accepted
+**Status:** Superseded by ADR-006
 
 **Context:** Homelab users need an image-based Portainer deployment that does not require cloning or building the repository, while StackMap remains a frontend-only local-first application.
 
 **Decision:** Publish the compiled Vite application as `ghcr.io/five2seven/stackmap` in a non-root nginx container on port `8080`. Support Portainer through a copy-and-paste Stack definition and developers through a repository `compose.yaml`. Keep the root filesystem read-only with only nginx's `/tmp` runtime path writable. Do not add an application-data volume, backend, or server-side database. Inventory remains in browser IndexedDB and JSON export remains the backup mechanism.
 
 **Consequences:** Container recreation and image upgrades at an unchanged URL normally preserve browser-local inventory, but Docker volumes cannot back it up. Each browser and origin has independent data; changing hostname, IP address, protocol, or port may show an empty inventory. Reverse proxies terminate TLS and must preserve a stable canonical URL. GHCR publishing is independent of the existing Cloudflare Pages deployment.
+
+## ADR-006: Durable self-hosted SQLite application
+
+**Status:** Accepted
+
+**Date:** 2026-08-03
+
+**Context:** StackMap is intended to behave like a durable self-hosted Docker application. The browser-origin storage selected by ADR-005 does not support normal Docker and NAS backups, shared multi-browser or multi-device access, resilience to browser-data clearing or URL changes, reliable long-term operation, or the expected `/config` volume model.
+
+**Decision:** Move StackMap to a Node.js and TypeScript server using Fastify and SQLite at `/config/stackmap.db`. Keep a single-container self-hosted deployment, with browser clients using a same-origin API. Retain the React frontend. Retain IndexedDB temporarily only as the source for an explicit legacy migration; it will not remain a normal primary datastore after the coordinated cutover.
+
+**Consequences:** A backend and persistent application-data bind mount are required. Cloudflare Pages can no longer represent the full production product. Database migrations, bind-mount permissions, backup procedures, and upgrade compatibility become product responsibilities. The React UI and most domain behavior can remain. Existing IndexedDB users require an explicit, data-safe migration path.
 
 ## New decision template
 
