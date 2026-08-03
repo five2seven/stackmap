@@ -1,0 +1,60 @@
+Continue the active StackMap migration task defined in AGENTS.md and docs/current-task.md.
+
+Implement only that task.
+
+Follow all repository instructions in AGENTS.md, including:
+
+- Git safety
+- Entire checkpoint tracking
+- Validation requirements
+- Scope limits
+- Documentation rules
+- Data-safety requirements
+- Separate implementation and review phases
+
+When implementation is complete:
+
+1. Run all validation required by AGENTS.md and docs/current-task.md.
+2. Review the full diff against origin/main.
+3. Confirm no unrelated files, generated artifacts, secrets, dependency changes, lockfile changes, or configuration changes were introduced unless explicitly required by the active task.
+4. Commit the completed task.
+5. Push the feature branch.
+6. Open a pull request into main.
+7. Do not merge the pull request.
+8. Do not begin the next migration task.
+
+The pull request description must include:
+
+- Task name
+- Goal
+- Scope implemented
+- Explicit exclusions
+- Files created
+- Files modified
+- Architecture or schema impact
+- Data-safety impact
+- Migration behavior
+- Validation commands executed
+- Lint result
+- Unit and component test result
+- Build result
+- End-to-end result, when required
+- Docker validation result, when required
+- Known limitations
+- Implementation commit ID
+- Entire checkpoint ID
+- Confirmation that no unrelated work was added
+
+Use the pull request title specified by docs/current-task.md when one exists. Otherwise use a concise title matching the active task.
+
+Stop after opening the pull request.
+
+---
+
+# Files mentioned by the user:
+
+## # StackMap Task: Establish Persistent Codex Migration Workflow Work in: C:\Code…: C:\Users\rae\.codex/attachments/3f56a6b7-650c-4442-a54e-4abf07deed76/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
