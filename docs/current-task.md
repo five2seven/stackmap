@@ -56,7 +56,7 @@ IndexedDB remains authoritative for all production inventory during Task 3. The 
 - Stale revisions return conflict responses.
 - Missing records return not-found responses.
 - Invalid references return safe validation or conflict responses as appropriate.
-- No raw SQLite errors, SQL, stack traces, or filesystem paths are exposed.
+- No raw SQLite errors, SQL, stack traces, filesystem paths, or secrets are exposed.
 - Responses preserve stable IDs, timestamps, revisions, and deterministic ordering.
 - Failed requests leave no partial writes.
 - The production UI remains unchanged and IndexedDB-authoritative.
