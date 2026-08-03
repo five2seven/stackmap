@@ -1,15 +1,5 @@
 # Files mentioned by the user:
 
-## Fix only the Task 1 review findings on the existing branch: codex/sqlite-founda…: C:\Users\rae\.codex/attachments/718e6dd1-5187-4e11-ab00-0f0ed207fbf9/pasted-text.txt
-
-The attached pasted text file(s) contain the user's request. Read and act on that content.
-
-## My request for Codex:
-
----
-
-# Files mentioned by the user:
-
 ## Investigate and fix the failed container smoke test on StackMap PR #1. Work onl…: C:\Users\rae\.codex/attachments/c5c40349-ff11-4bf5-a548-35464c438495/pasted-text.txt
 
 The attached pasted text file(s) contain the user's request. Read and act on that content.
