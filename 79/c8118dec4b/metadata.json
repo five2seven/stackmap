@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "79c8118dec4b",
+  "strategy": "manual-commit",
+  "branch": "codex/advance-sqlite-plan-task-2",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/current-task.md",
+    "docs/sqlite-migration-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/79/c8118dec4b/0/metadata.json",
+      "transcript": "/79/c8118dec4b/0/full.jsonl",
+      "compact_transcript": "/79/c8118dec4b/0/transcript.jsonl",
+      "content_hash": "/79/c8118dec4b/0/content_hash.txt",
+      "prompt": "/79/c8118dec4b/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 59753,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 195328,
+    "output_tokens": 5012,
+    "api_call_count": 9
+  }
+}
