@@ -98,6 +98,14 @@ The Port Map preserves incomplete entries and identifies missing host ports, con
 
 The Path Map preserves blank and partial mappings, groups conservatively without changing stored paths, and identifies same-host sharing across distinct services. It reuses existing mapping and service path warnings and intentionally does not rewrite paths, enforce cross-service consistency, or provide automatic correction.
 
+## Self-Hosted Deployment
+
+Portainer Stack deployment from the published `ghcr.io/five2seven/stackmap` image is a supported distribution method. End users paste the documented image-based Compose stack into Portainer and do not need a repository clone. Source-based Docker Compose remains available for developers.
+
+The container is a stateless static-file server. Inventory remains in the current browser's IndexedDB; there is no application database or inventory volume inside the container. Container restarts and recreation at the same URL normally leave browser-local data intact, but Docker volumes are not backups. JSON export is the current backup mechanism.
+
+Inventory does not synchronize between browsers or devices. Clearing browser site data can delete it, and a change to the hostname, IP address, protocol, or port selects a different browser origin that may contain an empty inventory. Users should keep one stable canonical URL, especially across image upgrades and reverse-proxy changes.
+
 ## MVP Non-Goals
 
 The MVP will not include:
@@ -118,5 +126,7 @@ The MVP will not include:
 - Secrets or credential storage
 - Automatic import from Docker Compose files
 - Infrastructure diagrams generated from live systems
+- Server-side persistence for self-hosted deployments
+- Automatic container updates
 
 These may be considered later, but they are intentionally excluded so the MVP remains local-first, easy to build, and easy to test.

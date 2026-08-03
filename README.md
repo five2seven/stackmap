@@ -1,144 +1,146 @@
 # StackMap
 
-A local-first homelab planning application for documenting services, hosts, ports, paths, networks, exposure, and dependencies.
+StackMap is a local-first homelab inventory and planning application for documenting Docker services, hosts, ports, paths, networks, exposure, and dependencies.
 
-StackMap stores its primary dataset in IndexedDB in the current browser. No account or hosted backend is required.
+## What StackMap Does
 
-## Prerequisites
+Homelab details often end up scattered across Compose files, notes, bookmarks, spreadsheets, and memory. StackMap provides one structured place to record what runs where, how services are connected, which ports and paths they use, and where configuration may be incomplete.
 
-- Node.js 22 or newer
-- npm 10 or newer
+Only a service name is required, so incomplete plans can be recorded and refined later. StackMap runs entirely in the browser and does not require an account or backend.
 
-## Getting started
+## Features
 
-```powershell
-npm install
-npx playwright install chromium
-npm run dev
+- Host and service inventories
+- Optional container names, Docker images, descriptions, application URLs, and internal addresses
+- Multiple port and path mappings per service
+- Service dependencies, Docker networks, and exposure documentation
+- Duplicate host-port and active container-name detection
+- Warnings for incomplete records and path mappings
+- Port Map grouped by host, with search, filtering, conflicts, and edit actions
+- Path Map grouped by host and path, with shared-path details, warnings, search, filtering, and edit actions
+- Service search and filters for status, host, network, and exposure
+- Versioned JSON backup and restore with import validation
+- Local browser storage through IndexedDB
+
+## Screenshots
+
+Screenshots are not available yet.
+
+## Deploy with Portainer
+
+The container image is prepared for publication at `ghcr.io/five2seven/stackmap`. Confirm that the image is publicly available before deploying; it should not be considered published until the container workflow has completed successfully on `main`.
+
+GitHub Container Registry packages may initially be private. After the first successful publish, open the `stackmap` package on the GitHub organization or user profile, select **Package settings**, choose **Change visibility** under **Danger Zone**, and set it to **Public** before sharing the deployment instructions.
+
+1. Open Portainer.
+2. Select **Stacks**.
+3. Select **Add stack**.
+4. Name the stack `stackmap`.
+5. Select **Web editor**.
+6. Paste the YAML below.
+7. Select **Deploy the stack**.
+8. Open `http://<docker-host-ip>:8088`.
+
+```yaml
+---
+services:
+  stackmap:
+    image: ghcr.io/five2seven/stackmap:latest
+    init: true
+    container_name: stackmap
+    environment:
+      - TZ=America/Chicago
+    ports:
+      - "8088:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/"]
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 ```
 
-Vite prints the local development URL after startup.
+StackMap stores inventory data in your browser using IndexedDB, not inside the Docker container. Docker volumes do not back up your StackMap inventory. Use JSON export for backups, and keep the same hostname, protocol, and port when upgrading.
 
-## Current functionality
+The left side of `"8088:8080"` is the host port. For example, use `"8090:8080"` to expose StackMap on port 8090. Change `TZ=America/Chicago` to the appropriate IANA timezone for the Docker host.
 
-- Create, edit, retire, and permanently delete service records
-- Record optional container names, Docker images, descriptions, application URLs, internal hostnames or IPs, hosts, repeatable Docker path mappings, networks, exposure, dependencies, notes, and multiple ports
-- Add and edit hosts, assign services to them, and protect referenced hosts from deletion
-- Search services and filter by status, host, Docker network, and exposure
-- Switch to a dedicated Port Map grouped by host, filter it by host, inspect exact conflict relationships, and edit services from an assignment
-- Switch to a dedicated Path Map grouped by host and normalized host path, inspect shared and incomplete mappings, and edit services from a mapping
-- Identify incomplete service records, initial path-mapping issues, duplicate host-port assignments, and duplicate active container names on the same host
-- Export the complete local dataset to a versioned JSON backup
-- Validate and review JSON imports before replacing local data
+The browser URL is part of the storage identity. Changing the hostname, IP address, protocol, or port creates a different browser origin and may show a separate empty inventory. Other browsers and devices do not automatically share the same data.
 
-Only a service name is required when creating a record. Incomplete records are intentionally supported.
+### Updating in Portainer
 
-The application URL is the address a user opens to reach the application. The internal hostname or IP records the service's internal network address. Container-name conflicts are reported only for non-retired services assigned to the same host; comparison ignores case and surrounding whitespace.
+1. Open the StackMap stack.
+2. Re-pull the latest image.
+3. Update the stack.
+4. Keep the same URL when practical.
+5. Refresh the browser after the container becomes healthy.
 
-The Port Map is derived from the current service and host records and does not duplicate data in IndexedDB. It groups every port entry by assigned host, places hostless services under **Unassigned host**, sorts numeric host ports first, and searches service identity, host, port, and protocol fields. Conflict details follow the existing same-host protocol-overlap rules, including retired services. Current filters are limited to host and search; the map does not recommend or reassign ports.
+## Usage
 
-The Path Map is also derived in memory, so it requires no IndexedDB or JSON schema migration. It groups mappings by host and trimmed, case-insensitive host path while displaying the stored path unchanged. A host path is marked shared only when distinct services—including retired services under the current policy—use it on the same assigned host. Search covers service identity, host, paths, purpose, and read-only or writable access; existing incomplete, mixed-style, and missing-configuration warnings are reused. Current limitations include no path rewriting, consistency enforcement, graphical topology, or automatic correction.
+1. Create the hosts that run or will run homelab services.
+2. Add services and assign them to hosts when known.
+3. Record ports, paths, networks, exposure, dependencies, and notes.
+4. Review the Port Map and Path Map for conflicts, shared paths, and incomplete entries.
+5. Resolve useful warnings as information becomes available.
+6. Export JSON backups regularly.
 
-## Local data and backups
+## Data Storage
 
-All user-created data remains in the browser for this MVP. Clearing site data or switching browsers does not transfer the dataset. Use **Export JSON** to create a backup before clearing browser data or moving to another browser, and use **Import JSON** to validate and restore that backup.
+StackMap stores its inventory in IndexedDB in the current browser. No application inventory database is stored in the container, and no Docker data volume is required. Restarting or recreating the container at the same URL normally leaves browser data intact, but clearing browser site data can delete it.
 
-Each path mapping records a host path, container path, optional purpose, and read-only status. Partial mappings may be saved. StackMap flags incomplete host/container pairs, mixed absolute and relative styles on each side, and services without a purpose containing “config.” It does not yet normalize paths or check sharing across services.
+Data does not synchronize between browsers or devices. Use one stable canonical URL to avoid unintentionally opening a different browser storage origin.
 
-Current exports use JSON schema version 3. Valid version 1 backups receive empty service identity fields and migrated paths; valid version 2 backups migrate `configPath` and `dataPath` into repeatable mappings. Current exports contain only `paths`.
+## Backup and Restore
 
-## Available commands
+Use **Export JSON** to download a versioned backup containing the complete local dataset. Use **Import JSON** to validate and review a backup before replacing the current browser data.
 
-- `npm run dev` starts the Vite development server.
-- `npm run build` type-checks and creates a production build in `dist`.
-- `npm run lint` checks the codebase with ESLint.
-- `npm test` runs the Vitest test suite once.
-- `npm run test:watch` runs Vitest in watch mode.
-- `npm run test:e2e` runs isolated Chromium end-to-end workflows.
-- `npm run test:all` runs lint, Vitest, the production build, and end-to-end tests.
+Docker volumes do not contain or protect the inventory. Export JSON before clearing site data, changing browsers, moving to another device, or changing the URL used to access StackMap.
 
-## Deployment foundation
+## Build from Source
 
-Proof-of-concept deployments follow this convention:
+Portainer deployment from the published image is the primary installation method. Developers can build the production container locally:
 
-- Registrar: Porkbun
-- DNS provider: Cloudflare
-- POC hosting: Cloudflare Pages
-- Source control: GitHub
-- Repository: `five2seven/stackmap`
-- POC domain: `stackmap.rareobjectlabs.app`
+```powershell
+git clone https://github.com/five2seven/stackmap.git
+cd stackmap
+docker compose up -d --build
+```
 
-Cloudflare configuration, DNS records, and deployment setup are managed separately from the application.
+The repository Compose stack uses `http://localhost:8088` by default. Set `STACKMAP_PORT` or `TZ` in the shell to override the host port or timezone.
 
-## Cloudflare Pages deployment
-
-Production deployment uses Cloudflare Pages Direct Upload through Wrangler. The GitHub Actions workflow runs on pushes to `main` and through manual workflow dispatch. It installs dependencies and Chromium, runs lint and all tests, builds the application, and deploys `dist` to the `stackmap` Pages project.
-
-### Required credentials
-
-Create a Cloudflare API token with permission to edit Cloudflare Pages for the target account. Store the account ID and API token only as GitHub Actions repository secrets named:
-
-- `CLOUDFLARE_ACCOUNT_ID`
-- `CLOUDFLARE_API_TOKEN`
-
-The same environment variable names are required by the local PowerShell scripts. The scripts verify that both variables exist and never print their values.
-
-### First deployment
-
-Install the locked dependencies:
+For frontend development:
 
 ```powershell
 npm ci
-npx playwright install chromium
+npm run dev
+npm test
 ```
 
-Set the credentials in the current PowerShell process without writing them to a file:
+Additional validation commands are `npm run lint`, `npm run build`, and `npm run test:e2e`. Install the Playwright Chromium browser with `npx playwright install chromium` before the first end-to-end test run.
 
-```powershell
-$env:CLOUDFLARE_ACCOUNT_ID = Read-Host 'Cloudflare account ID'
-$cloudflareToken = Read-Host 'Cloudflare API token' -AsSecureString
-$env:CLOUDFLARE_API_TOKEN = [System.Net.NetworkCredential]::new('', $cloudflareToken).Password
-```
+## Current Limitations
 
-Validate the application, create the `stackmap` Pages project if needed, and deploy `dist`:
+- Data is local to one browser origin.
+- There are no user accounts or cloud synchronization.
+- StackMap does not connect to or manage remote Docker hosts.
+- There is no container monitoring or automatic discovery.
+- Docker Compose import is not supported.
+- Markdown export is not available yet.
+- Docker Compose skeleton export is not available yet.
 
-```powershell
-.\scripts\deploy-cloudflare.ps1
-```
+## Development and Contributing
 
-Attach the intended custom domain only after the Pages deployment succeeds:
+StackMap uses React, TypeScript, Vite, Dexie, Vitest, Testing Library, and Playwright. Keep changes frontend-only unless the architecture explicitly changes, preserve strict TypeScript checks, and run lint, tests, the production build, and relevant end-to-end tests before submitting a change.
 
-```powershell
-.\scripts\configure-cloudflare-domain.ps1 `
-  -ProjectName 'stackmap' `
-  -DomainName 'stackmap.rareobjectlabs.app'
-```
+More technical context is available in [architecture](docs/architecture.md), [product documentation](docs/product.md), and [architecture decisions](docs/decisions.md).
 
-The domain script checks the project’s existing Pages domains before adding anything. It does not call the DNS Records API or overwrite unrelated DNS records.
+## License
 
-### Enable GitHub Actions deployment
-
-Add both repository secrets interactively so their values are not included in shell history:
-
-```powershell
-gh secret set CLOUDFLARE_ACCOUNT_ID
-gh secret set CLOUDFLARE_API_TOKEN
-```
-
-After the Pages project exists, push to `main` or run the **Deploy Cloudflare Pages** workflow manually. The workflow deploys only after lint, tests, and the production build succeed.
-
-## Project structure
-
-```text
-src/                  React application and tests
-  components/         Service, host, and import UI components
-  data/               IndexedDB repository and JSON portability
-  domain/             Types, validation, filtering, and warnings
-e2e/                  Isolated Playwright browser workflows
-scripts/              Repeatable Cloudflare deployment helpers
-.github/workflows/    GitHub Actions deployment workflow
-docs/                 Product, architecture, and decision records
-index.html             Vite HTML entry point
-vite.config.ts         Vite and Vitest configuration
-eslint.config.js       ESLint flat configuration
-```
+No license file has been added to this repository. All rights remain with the copyright holder unless a license is added.
