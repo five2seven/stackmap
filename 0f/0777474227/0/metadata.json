@@ -1,0 +1,54 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "0f0777474227",
+  "session_id": "019fc884-61fc-7e40-8451-f5f15efab13a",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-03T19:33:50.9050805Z",
+  "branch": "codex/sqlite-domain-repository",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "server/app.test.ts",
+    "server/database.test.ts",
+    "server/database.ts",
+    "server/inventory.ts",
+    "server/repository.test.ts",
+    "server/repository.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "5801b9d614ca",
+  "checkpoint_transcript_start": 1018,
+  "transcript_lines_at_start": 1018,
+  "compact_transcript_start": 224,
+  "token_usage": {
+    "input_tokens": 91824,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4785664,
+    "output_tokens": 21836,
+    "api_call_count": 46
+  },
+  "session_metrics": {
+    "turn_count": 6
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-03T19:33:50.702055Z",
+    "agent_lines": 960,
+    "agent_removed": 8,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 960,
+    "total_lines_changed": 968,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
