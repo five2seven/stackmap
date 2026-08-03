@@ -1,72 +1,66 @@
 # Current Migration Task
 
-## Task 2: Complete normalized SQLite schema and repository
+## Task 3: Complete inventory API
 
 - **Status:** Ready
-- **Branch:** `codex/sqlite-domain-repository`
-- **Dependency:** Task 1 — Complete
-- **Goal:** Build the complete server-side SQLite inventory model and repository while the production React application remains fully IndexedDB-authoritative.
+- **Branch:** `codex/inventory-api`
+- **Dependency:** Task 2 — Complete
+- **Goal:** Expose the complete SQLite inventory repository through a safe, versioned Fastify API while the production React application remains fully IndexedDB-authoritative.
 
 ### Scope
 
-- Hosts table
-- Services table
-- Service ports table
-- Service paths table
-- Service dependencies table
-- Application metadata and revision support where needed
-- Created and updated timestamps
-- Stable IDs
-- Ordering fields where required
-- Lifecycle status
-- Foreign keys
-- Unique constraints
-- Delete behavior
-- Host deletion protection when referenced
-- Service deletion behavior
-- Dependency cleanup rules
-- Transactional repository operations
-- Optimistic concurrency using integer revisions
-- Complete server-side repository methods
-- SQLite schema migration from the Task 1 database
-- Repository and migration tests
-- Upgrade tests from the Task 1 schema
-- Failure rollback tests
+- Versioned API routes under `/api/v1`
+- Host list, get, create, update, and delete operations
+- Service list, get, create, update, and delete operations
+- Complete nested ports
+- Complete nested paths
+- Complete dependencies
+- Inventory revision metadata
+- Optimistic concurrency through expected revision values
+- Request validation
+- Safe error mapping, including 404, 409, and validation responses
+- Transactional repository integration
+- Stable response contracts
+- Deterministic ordering
+- API tests
+- Route-level integration tests
+- Failure-path tests
+- Concurrency tests
 - Referential-integrity tests
 
 ### Datastore authority
 
-IndexedDB remains authoritative for all production inventory during Task 2. SQLite gains the complete server-side inventory schema and repository, but the React UI does not use it yet. No split-brain production behavior is introduced because the new repository is not connected to the production UI.
+IndexedDB remains authoritative for all production inventory during Task 3. The API operates against SQLite but is not used by the production React UI yet. No split-brain production behavior is introduced because the frontend remains entirely on IndexedDB until Task 4.
 
 ### Explicit exclusions
 
-- HTTP inventory API routes
 - React HTTP repository
 - Frontend persistence cutover
-- Any production UI change
-- JSON export or restore changes
+- Production UI changes
 - IndexedDB migration
 - Dexie removal
+- JSON backup or restore changes
 - Public demo mode
 - Authentication
-- CORS
-- Task 3 implementation
-- New user-facing application features
+- Cross-origin support
+- User accounts
+- Task 4 implementation
+- New user-facing features
 
 ### Acceptance criteria
 
-- Task 1 databases migrate forward safely.
-- All inventory tables and constraints are created transactionally.
-- Existing Task 1 metadata remains intact.
-- Repository CRUD preserves IDs and timestamps.
-- Revision checks prevent stale writes.
-- Invalid references are rejected.
-- Host deletion is blocked when referenced.
-- Service deletion applies the approved dependency and child-record cleanup behavior.
-- Migration failures roll back without partial schema changes.
-- Future or altered migrations still fail closed.
+- All host and service repository operations are exposed through `/api/v1`.
+- Nested ports, paths, and dependencies round-trip without loss.
+- Request bodies and parameters are validated before repository mutation.
+- Repository errors map to stable, safe HTTP responses.
+- Stale revisions return conflict responses.
+- Missing records return not-found responses.
+- Invalid references return safe validation or conflict responses as appropriate.
+- No raw SQLite errors, SQL, stack traces, filesystem paths, or secrets are exposed.
+- Responses preserve stable IDs, timestamps, revisions, and deterministic ordering.
+- Failed requests leave no partial writes.
 - The production UI remains unchanged and IndexedDB-authoritative.
-- No API routes are added.
+- No CORS is added.
 - All required tests pass.
 
 ### Validation
@@ -76,8 +70,8 @@ IndexedDB remains authoritative for all production inventory during Task 2. SQLi
 - Run `npm run build`.
 - Run `npm audit --omit=dev`.
 - Run `git diff --check`.
-- Docker validation is required only if Task 2 changes production image behavior or native runtime behavior; otherwise the Task 1 container proof remains sufficient.
-- E2E tests are required only if user-visible or production workflow behavior changes; Task 2 should normally remain server/repository-only.
+- E2E tests are required only if user-visible production behavior changes; Task 3 should normally remain server/API-only.
+- Docker validation is required if the API changes container runtime behavior, health behavior, or image startup behavior; otherwise the existing Task 2 container proof remains sufficient.
 
 ## Reusable operator prompts
 

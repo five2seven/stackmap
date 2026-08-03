@@ -10,7 +10,7 @@ JSON export remains supported. Legacy migration is opt-in and data-safe. Databas
 
 ## Phased backlog
 
-Task 1 is Complete and Task 2 is Ready. Tasks 3 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
+Tasks 1 and 2 are Complete, and Task 3 is Ready. Tasks 4 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
 
 ### 1. API, SQLite, and target-runtime proof
 
@@ -27,7 +27,7 @@ Task 1 is Complete and Task 2 is Ready. Tasks 3 through 10 remain Blocked until 
 
 ### 2. Complete normalized SQLite schema and server repository
 
-- **Status:** Ready
+- **Status:** Complete
 - **Branch:** `codex/sqlite-domain-repository`
 - **Goal:** Implement the complete server-side inventory model without connecting the production UI.
 - **Datastore authority after completion:** IndexedDB remains the sole authoritative production inventory datastore.
@@ -36,11 +36,11 @@ Task 1 is Complete and Task 2 is Ready. Tasks 3 through 10 remain Blocked until 
 - **Acceptance criteria:** The full model round-trips with preserved IDs and timestamps, enforced relationships, deterministic ordering, optimistic concurrency primitives, and transactional rollback.
 - **Required tests:** Forward migration, constraints, rollback, repository CRUD, relationships, ordering, revisions, concurrency, and compatibility fixtures, plus standard validation.
 - **Dependencies:** Task 1 Complete; its native and container validation passed.
-- **Completion notes:** Pending.
+- **Completion notes:** Implemented on `codex/sqlite-domain-repository` in commits `1a0f06980730f6f165d52a98bd6e6234e176dc5d` and `d43bf71df39fd46fac7fce054cb316b5f6f63013` (final head). Entire checkpoints: `0f0777474227` and `2bc875f94cb6`. PR #3 merged as `872962613207c7d4d913aa13a783935ea15fec6b`. Validation passed: lint; 116 tests; production build; 9 E2E tests; production audit with 0 vulnerabilities; `git diff --check`; GitHub Actions container validation; and the Task 2 schema smoke validation. IndexedDB remains authoritative for all production inventory; SQLite now contains the complete normalized server-side schema and repository, but no API or frontend cutover occurred and no production inventory source changed. Known limitations: SQLite inventory is not exposed through HTTP; the production UI and JSON backup/restore remain browser-side; cross-browser and multi-device sharing and legacy IndexedDB migration are not implemented; and ARM64 remains unvalidated.
 
 ### 3. Complete inventory API
 
-- **Status:** Blocked
+- **Status:** Ready
 - **Branch:** `codex/inventory-api`
 - **Goal:** Expose the complete inventory model before any frontend cutover.
 - **Datastore authority after completion:** IndexedDB remains the sole authoritative production inventory datastore; the API is not used for normal UI persistence.
@@ -49,7 +49,7 @@ Task 1 is Complete and Task 2 is Ready. Tasks 3 through 10 remain Blocked until 
 - **Acceptance criteria:** The API supports every normal inventory operation atomically and preserves current validation and deletion semantics without moving only hosts or scalar service fields.
 - **Required tests:** Routes, validation, nesting, referential integrity, deletion, concurrency, error handling, and complete-model integration tests, plus standard validation.
 - **Dependencies:** Task 2 Complete.
-- **Completion notes:** Pending.
+- **Completion notes:** Ready after Task 2 completed with its schema, repository, validation, container validation, and schema smoke validation passing; no unresolved blocker prevents API implementation.
 
 ### 4. HTTP repository and coordinated frontend cutover
 
