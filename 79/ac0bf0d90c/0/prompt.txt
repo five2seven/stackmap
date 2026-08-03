@@ -1,0 +1,139 @@
+# Files mentioned by the user:
+
+## Review and merge StackMap planning PR #4 according to AGENTS.md. Repository: C:…: C:\Users\rae\.codex/attachments/120be939-4250-4986-8003-ce97420bca26/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+Fix only the single PR #4 review finding on the existing branch:
+
+codex/advance-sqlite-plan-task-2
+
+Repository:
+
+C:\Code\Projects\APP-StackMap
+
+Do not create a new branch.
+Do not merge PR #4.
+Do not begin Task 3.
+Do not advance any other planning content.
+
+## Preconditions
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch and prune origin.
+4. Confirm codex/advance-sqlite-plan-task-2 matches origin/codex/advance-sqlite-plan-task-2.
+5. Confirm local main matches origin/main.
+6. Confirm Entire is enabled and available.
+7. Confirm PR #4 remains open.
+8. Confirm the current PR head is:
+   ea7357761650a64bf035fcaf5865b6f202bd2cb3
+
+Stop if the repository is not clean or synchronized.
+
+## Required fix
+
+Update only:
+
+docs/current-task.md
+
+In Task 3 acceptance criteria, change the sensitive-information prohibition so it explicitly says that API responses must not expose:
+
+- raw SQLite errors
+- SQL
+- stack traces
+- filesystem paths
+- secrets
+
+Do not broaden or rewrite the rest of the acceptance criteria.
+
+## Scope boundaries
+
+Do not modify:
+
+- docs/sqlite-migration-plan.md
+- docs/release-checklist.md
+- AGENTS.md
+- README.md
+- docs/architecture.md
+- docs/decisions.md
+- application code
+- server code
+- tests
+- Docker files
+- workflows
+- dependencies
+- lockfiles
+- Entire configuration
+
+If another file appears necessary, stop and report why instead of broadening scope.
+
+## Consistency review
+
+After editing, confirm:
+
+- Task 3 remains the only Ready task.
+- Tasks 4 through 10 remain Blocked.
+- IndexedDB remains production-authoritative.
+- Task 3 scope and exclusions remain unchanged.
+- The four reusable prompts remain unchanged.
+- No Task 3 implementation work was started.
+
+## Validation
+
+Run:
+
+git diff --check
+
+If an existing Markdown lint command exists, run it.
+
+Do not install new tooling.
+
+## Diff review
+
+Before committing:
+
+1. Confirm docs/current-task.md is the only modified file.
+2. Confirm the only substantive change is adding “secrets” to the sensitive-information prohibition.
+3. Confirm no implementation, dependency, lockfile, workflow, generated, secret, or Entire files changed.
+
+## Commit and push
+
+Commit with:
+
+Clarify Task 3 secret exposure criteria
+
+Push to:
+
+codex/advance-sqlite-plan-task-2
+
+Allow Entire to associate the commit normally.
+
+Update PR #4 if needed.
+
+Do not merge PR #4.
+
+## Required completion report
+
+Report:
+
+1. Initial Git state
+2. Entire status
+3. Files modified
+4. Acceptance-criteria change
+5. Consistency result
+6. Validation result
+7. Commit ID
+8. Entire checkpoint ID
+9. Push result
+10. PR update result
+11. Final working-tree status
+12. Confirmation that PR #4 is ready for re-review
+13. Confirmation that Task 3 was not started
+14. Confirmation that no unrelated functionality was added
+
+Stop after pushing the fix.
