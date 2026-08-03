@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "e036051fcbb6",
+  "strategy": "manual-commit",
+  "branch": "codex/docker-self-hosting",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "README.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e0/36051fcbb6/0/metadata.json",
+      "transcript": "/e0/36051fcbb6/0/full.jsonl",
+      "compact_transcript": "/e0/36051fcbb6/0/transcript.jsonl",
+      "content_hash": "/e0/36051fcbb6/0/content_hash.txt",
+      "prompt": "/e0/36051fcbb6/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 124845,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4033792,
+    "output_tokens": 24430,
+    "api_call_count": 65
+  }
+}
