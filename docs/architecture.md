@@ -1,106 +1,42 @@
 # Architecture
 
-## Application Type
+## Current implementation
 
-StackMap is a local-first single-page web application.
+StackMap currently runs as a React, TypeScript, and Vite single-page application. Inventory remains in browser IndexedDB through Dexie, and the existing self-hosted image serves static assets from nginx without an application-data volume. This is transitional implementation state, not the approved final architecture.
 
-## Frontend
+The current JSON export schema is version 3. Import accepts compatible versions 1 through 3, validates uploaded data before replacement, and migrates legacy identity and path fields without mutating uploaded objects. Dexie database version 4 similarly converts legacy path fields while preserving timestamps. IndexedDB and JSON schema versions are independent.
 
-Use:
+## Approved target architecture
 
-- React
-- TypeScript
-- Vite
+StackMap will become a self-hosted Docker web application while retaining the React, TypeScript, and Vite frontend. A Node.js 24 LTS and TypeScript server using Fastify 5 will serve a same-origin API and the compiled frontend. SQLite, accessed with better-sqlite3, will become the durable primary datastore at `/config/stackmap.db`.
 
-The interface should be responsive and work well on desktop and tablet-sized screens. Mobile support is secondary for the MVP.
+The production deployment should remain one non-root container and one process when practical. A `/config` bind mount will be required so inventory survives container recreation and can participate in normal Docker or NAS backup procedures. Multiple browsers and devices will share the server inventory.
 
-## Data Storage
+IndexedDB is transitional legacy storage only. It remains authoritative until a coordinated frontend cutover and is retained afterward only long enough to support an explicit, data-safe legacy migration. The migration plan must never split normal inventory authority between IndexedDB and SQLite.
 
-Use IndexedDB for local application data.
+JSON export remains a portable backup format. The application does not require an external database, cloud service, account system, telemetry, or Docker socket access.
 
-Do not use localStorage for the primary dataset because StackMap will store structured records and may grow beyond simple key-value data.
+## Data and application behavior
 
-Use a small IndexedDB wrapper library if it improves reliability and maintainability. Prefer a lightweight, established option.
+The existing host, service, port, path, dependency, validation, deletion, search, filter, Port Map, and Path Map behavior remains unless an approved migration task explicitly changes it. Derived maps remain projections of the authoritative inventory rather than separately persisted datasets.
 
-## Backend
-
-The MVP will not have a hosted backend.
-
-Do not add:
-
-- Supabase
-- Firebase
-- Server-side APIs
-- User accounts
-- Cloud synchronization
-
-## Data Portability
-
-Support JSON export and import.
-
-The exported file should include:
-
-- A schema version
-- Export timestamp
-- All StackMap records required to restore the app
-
-The current JSON export schema is version 3. The import boundary validates current path mappings, migrates valid version 1 services by adding empty identity fields and generalized paths, and migrates valid version 2 `configPath` and `dataPath` fields into generalized paths. Uploaded objects are not mutated.
-
-The architecture should allow future migration if cloud synchronization is added later.
-
-## Derived Views
-
-The Port Map is a read-only projection built in memory from existing `Service`, `Host`, and service-port records. It groups and sorts assignments, applies search and host filtering, and derives assignment-level conflict relationships without writing a second dataset or changing the IndexedDB or JSON schemas. Editing routes back through the existing service form and repository.
-
-The Path Map follows the same projection pattern over existing generalized `PathMapping` records. It groups by host and a conservative trimmed, case-insensitive host-path key, derives same-host cross-service sharing, and reuses the existing path-warning utility. Stored path values are never normalized or mutated, and editing uses the existing service form and repository. No database or backup-schema migration is required.
+Database migrations must be transactional and fail closed. Data migration and restore operations must preserve IDs and timestamps, validate input, and protect existing data through explicit confirmation and rollback behavior.
 
 ## Hosting
 
-The proof-of-concept frontend will be hosted on Cloudflare Pages.
+The final production product is the self-hosted Node.js application with durable `/config` storage. Cloudflare Pages cannot host that full product. A separate public demo may use Cloudflare Pages only with an in-memory repository, bundled sample data, session-only edits, a clear demo banner, and no IndexedDB or server persistence.
 
-The intended public URL is:
-
-`stackmap.rareobjectlabs.app`
-
-The source repository is:
-
-`five2seven/stackmap`
-
-Self-hosted deployments use the same compiled Vite assets in a stateless, non-root nginx container. The production image is prepared for GitHub Container Registry at `ghcr.io/five2seven/stackmap` and serves HTTP on internal port `8080`. Portainer consumes the published image directly; repository users may build it with Docker Compose. The container has a read-only root filesystem with `/tmp` as its only writable runtime path and has no application-data volume.
-
-The container does not terminate TLS. A reverse proxy may terminate TLS and forward ordinary HTTP traffic to the container; there are no backend API or WebSocket routes. Deployments should retain one canonical hostname, protocol, and port because these values define the browser origin used by IndexedDB.
-
-## Privacy
-
-All user-created StackMap data remains in the user’s browser for the MVP.
-
-The hosted application files are public, but the user’s homelab records are not uploaded to StackMap servers.
-
-Browser data can be lost if the user clears site data or changes browsers without exporting a backup.
-
-Restarting or recreating the static container at the same URL normally does not affect browser data. Docker volumes cannot back up the inventory, and no inventory volume should be added. JSON export remains the portable backup method. Browsers and devices do not synchronize automatically; changing the hostname, IP address, protocol, or port opens a separate origin and may appear to reset the application.
+The intended public demo URL remains `stackmap.rareobjectlabs.app`, and the source repository is `five2seven/stackmap`.
 
 ## Testing
 
-Use:
+Use Vitest and Testing Library for unit and component behavior, Playwright for critical browser workflows, and `npm run build` for production build validation. Tasks involving the Node runtime, better-sqlite3, container image, `/config`, persistence, health, permissions, shutdown, or upgrades also require relevant native and Docker validation at the time those capabilities are introduced.
 
-- Vitest for unit and component tests
-- Testing Library for UI behavior
-- Build validation through `npm run build`
+## Constraints
 
-Use Playwright for focused browser workflows that cover IndexedDB persistence and critical user journeys.
-
-## Architecture Constraints
-
-- Keep the MVP local-first
-- Do not add a backend without an explicit architecture decision
-- Do not store credentials or secrets
-- Keep data access separate from UI components
-- Version the local data schema
-- Preserve backward compatibility where practical
-- Ensure import validation does not blindly trust uploaded JSON
-- Keep deployment compatible with static hosting on Cloudflare Pages
-- Keep the Docker runtime stateless and avoid fake `/config` or `/data` inventory volumes
-- Preserve the stable-origin requirement in self-hosting and reverse-proxy documentation
-
-Dexie database version 3 added service identity fields. Dexie database version 4 converts non-empty legacy `configPath` and `dataPath` values into path mappings and removes the legacy fields from current records without changing timestamps. IndexedDB versions describe on-device storage upgrades; JSON schema versions independently describe portable backup formats.
+- Keep data access separate from UI components.
+- Preserve backward compatibility where required by the active task.
+- Validate imports rather than trusting uploaded JSON.
+- Do not store credentials or secrets in client code.
+- Do not add authentication, external persistence, telemetry, or Docker socket access without explicit approval.
+- Treat the target architecture as approved direction, not as already implemented behavior.

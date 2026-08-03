@@ -2,38 +2,34 @@
 
 ## Before implementation
 
-- [ ] Working tree is clean on `main`
-- [ ] Origin has been fetched and pruned
-- [ ] `main` matches `origin/main`
-- [ ] Entire is enabled and available
-- [ ] `docs/current-task.md` identifies the correct task and branch
+- [ ] Clean `main` fetched and synchronized with `origin/main`
+- [ ] Entire enabled and available
+- [ ] Current task, branch, scope, dependencies, and datastore authority confirmed
+- [ ] Existing planned branch inspected before reuse
+- [ ] No higher-authority conflict or unresolved decision blocks the task
 
 ## Before commit
 
-- [ ] Full scope reviewed; no unrelated changes
-- [ ] No secrets, generated files, or unapproved dependency, lockfile, or configuration changes
-- [ ] `npm run lint`
-- [ ] `npm test`
-- [ ] `npm run build`
-- [ ] Relevant end-to-end tests
-- [ ] Relevant Docker checks when applicable
+- [ ] Full diff contains only task scope; no secrets, generated artifacts, or unapproved dependency/configuration changes
+- [ ] `npm run lint`, `npm test`, and `npm run build`
+- [ ] Relevant E2E tests
+- [ ] Native dependency and Docker checks as soon as the task depends on them
 - [ ] `git diff --check`
-- [ ] Documentation accurately reflects changed behavior
+- [ ] Documentation matches changed behavior and identifies the authoritative datastore
 
 ## Before merge
 
-- [ ] Separate read-only review completed
-- [ ] Full diff reviewed against `origin/main`
+- [ ] Separate read-only review covers the full diff against `origin/main`
+- [ ] Task-specific risks are reviewed in addition to generic checks
 - [ ] Blocking, Important, Minor, and No issue findings reported
-- [ ] Required validation rerun
-- [ ] Recommendation is Ready to merge
+- [ ] Required validation rerun and recommendation is Ready to merge
+- [ ] Feature branch has been pushed and the pull request targets `main`
 
 ## After merge
 
-- [ ] `main` is pushed and synchronized with `origin/main`
-- [ ] Entire checkpoint is recorded
-- [ ] GHCR workflow checked when relevant
-- [ ] Portainer smoke test completed when relevant
-- [ ] Migration plan completion record updated
-- [ ] Current task advanced
-- [ ] Next dependency-unblocked task marked Ready
+- [ ] `main` pushed and synchronized with `origin/main`; Entire checkpoint recorded
+- [ ] GHCR and Portainer checks completed when relevant
+- [ ] Completed task's datastore authority and limitations recorded
+- [ ] No planning-file commit made directly on `main`
+- [ ] If advancement is safe, a separate planning branch and pull request update the plan, current task, and checklist
+- [ ] If validation failed or a decision remains unresolved, the next task stays Blocked and the reason is recorded
