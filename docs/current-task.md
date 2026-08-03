@@ -1,63 +1,83 @@
 # Current Migration Task
 
-## Task 1: API, SQLite, and target-runtime proof
+## Task 2: Complete normalized SQLite schema and repository
 
 - **Status:** Ready
-- **Branch:** `codex/sqlite-foundation`
-- **Dependency:** None
-- **Goal:** Prove the server, native SQLite dependency, and target Linux container before introducing inventory persistence.
+- **Branch:** `codex/sqlite-domain-repository`
+- **Dependency:** Task 1 — Complete
+- **Goal:** Build the complete server-side SQLite inventory model and repository while the production React application remains fully IndexedDB-authoritative.
 
 ### Scope
 
-- Minimal TypeScript Fastify server
-- SQLite connection through better-sqlite3
-- Configurable database path with production default `/config/stackmap.db`
-- Bootstrap migration framework and `schema_migrations`
-- `application_metadata` only if needed
-- SQLite pragmas
-- `/health` and `/api/v1/meta`
-- Built Vite static serving and SPA fallback
-- Graceful shutdown and local development arrangement
-- Windows native dependency validation
-- Linux Docker image build, non-root runtime, and health check
-- `/config` bind mount and database writability check
-- Bootstrap metadata persistence after container restart
-- Focused tests
+- Hosts table
+- Services table
+- Service ports table
+- Service paths table
+- Service dependencies table
+- Application metadata and revision support where needed
+- Created and updated timestamps
+- Stable IDs
+- Ordering fields where required
+- Lifecycle status
+- Foreign keys
+- Unique constraints
+- Delete behavior
+- Host deletion protection when referenced
+- Service deletion behavior
+- Dependency cleanup rules
+- Transactional repository operations
+- Optimistic concurrency using integer revisions
+- Complete server-side repository methods
+- SQLite schema migration from the Task 1 database
+- Repository and migration tests
+- Upgrade tests from the Task 1 schema
+- Failure rollback tests
+- Referential-integrity tests
 
 ### Datastore authority
 
-IndexedDB remains the only authoritative inventory datastore throughout Task 1. SQLite contains infrastructure metadata only. No normal inventory record may be written to SQLite.
+IndexedDB remains authoritative for all production inventory during Task 2. SQLite gains the complete server-side inventory schema and repository, but the React UI does not use it yet. No split-brain production behavior is introduced because the new repository is not connected to the production UI.
 
 ### Explicit exclusions
 
-- Hosts or services tables
-- Ports, paths, or dependencies
-- Inventory API
-- Frontend HTTP repository or production persistence cutover
-- JSON backup changes
-- IndexedDB migration or Dexie removal
+- HTTP inventory API routes
+- React HTTP repository
+- Frontend persistence cutover
+- Any production UI change
+- JSON export or restore changes
+- IndexedDB migration
+- Dexie removal
 - Public demo mode
-- Authentication or CORS
-- Release work
+- Authentication
+- CORS
+- Task 3 implementation
+- New user-facing application features
 
-### Acceptance criteria and validation
+### Acceptance criteria
 
-- Server and database lifecycle, transactional bootstrap migrations, WAL, foreign keys, endpoints, static serving, fallback, and shutdown are tested.
-- better-sqlite3 installs and runs on Windows and in the Linux production image.
-- The non-root container can write `/config/stackmap.db`, reports healthy, and preserves bootstrap metadata across restart.
-- Existing frontend behavior and IndexedDB data remain unchanged; SQLite contains no domain tables or inventory records.
-- Run `npm run lint`, `npm test`, `npm run build`, `npm run test:e2e`, focused server tests, relevant Docker checks, and `git diff --check`.
+- Task 1 databases migrate forward safely.
+- All inventory tables and constraints are created transactionally.
+- Existing Task 1 metadata remains intact.
+- Repository CRUD preserves IDs and timestamps.
+- Revision checks prevent stale writes.
+- Invalid references are rejected.
+- Host deletion is blocked when referenced.
+- Service deletion applies the approved dependency and child-record cleanup behavior.
+- Migration failures roll back without partial schema changes.
+- Future or altered migrations still fail closed.
+- The production UI remains unchanged and IndexedDB-authoritative.
+- No API routes are added.
+- All required tests pass.
 
-### Required completion report
+### Validation
 
-Record scope, exclusions, files changed, datastore authority, architecture/schema and data-safety impact, migration behavior, every validation result, known limitations, implementation commit, Entire checkpoint, review status, and confirmation that no unrelated work was added.
-
-### Tracking
-
-- **Review status:** Not started
-- **Implementation commit:** Pending
-- **Entire checkpoint:** Pending
-- **Merge commit:** Pending
+- Run `npm run lint`.
+- Run `npm test`.
+- Run `npm run build`.
+- Run `npm audit --omit=dev`.
+- Run `git diff --check`.
+- Docker validation is required only if Task 2 changes production image behavior or native runtime behavior; otherwise the Task 1 container proof remains sufficient.
+- E2E tests are required only if user-visible or production workflow behavior changes; Task 2 should normally remain server/repository-only.
 
 ## Reusable operator prompts
 

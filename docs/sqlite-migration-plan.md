@@ -10,11 +10,11 @@ JSON export remains supported. Legacy migration is opt-in and data-safe. Databas
 
 ## Phased backlog
 
-Only Task 1 is Ready. Every later task is Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
+Task 1 is Complete and Task 2 is Ready. Tasks 3 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
 
 ### 1. API, SQLite, and target-runtime proof
 
-- **Status:** Ready
+- **Status:** Complete
 - **Branch:** `codex/sqlite-foundation`
 - **Goal:** Prove the complete server, native dependency, and production-container foundation before adding inventory persistence.
 - **Datastore authority after completion:** IndexedDB remains the sole authoritative inventory datastore; SQLite contains infrastructure metadata only.
@@ -23,11 +23,11 @@ Only Task 1 is Ready. Every later task is Blocked until all listed dependencies 
 - **Acceptance criteria:** The server and database lifecycle work locally and in the target Linux container; better-sqlite3 installs on Windows and runs in the image; migrations are transactional; WAL and foreign keys are enabled; endpoints and static serving work; the non-root process can write the mounted database; bootstrap metadata survives restart; no inventory record is written to SQLite.
 - **Required tests:** Configuration, migration, endpoint, static-serving, fallback, and shutdown tests; Windows native install/runtime check; Linux image build; container health, permissions, bind-mount writability, restart-persistence, and shutdown checks; lint, unit/component, build, E2E, and `git diff --check`.
 - **Dependencies:** None.
-- **Completion notes:** Pending.
+- **Completion notes:** Implemented on `codex/sqlite-foundation` in commits `ae78567fde10e90d75913550d09fe1fb1c0d7157`, `1d8cb5d0ad808d53ed3be43bf091a6994e522d99`, and `8f3da39bf563d6f5f667e15b50ec0498062ced84` (final head). Entire checkpoints: `634ba1dbfd2e`, `dd8fb7e70650`, and `2a19e6dce3ab`. PR #1 merged as `775dd581bcc796bddccdb50b3cf7f225ae4f8ab3`. Validation passed: lint; 104 tests; production build; 9 E2E tests; production audit with 0 vulnerabilities; Linux/amd64 image build; non-root runtime; `/config` writability; metadata persistence across restart; and graceful shutdown. IndexedDB remains authoritative for all inventory, SQLite stores infrastructure metadata only, and no inventory records moved to SQLite. Known limitations: inventory remains browser-local; `/config/stackmap.db` does not contain inventory; ARM64 is unvalidated; and `/config` must be writable by container UID/GID 10001.
 
 ### 2. Complete normalized SQLite schema and server repository
 
-- **Status:** Blocked
+- **Status:** Ready
 - **Branch:** `codex/sqlite-domain-repository`
 - **Goal:** Implement the complete server-side inventory model without connecting the production UI.
 - **Datastore authority after completion:** IndexedDB remains the sole authoritative production inventory datastore.
@@ -35,7 +35,7 @@ Only Task 1 is Ready. Every later task is Blocked until all listed dependencies 
 - **Explicit exclusions:** Inventory HTTP routes, React repository changes, backup/restore, legacy migration, and cutover.
 - **Acceptance criteria:** The full model round-trips with preserved IDs and timestamps, enforced relationships, deterministic ordering, optimistic concurrency primitives, and transactional rollback.
 - **Required tests:** Forward migration, constraints, rollback, repository CRUD, relationships, ordering, revisions, concurrency, and compatibility fixtures, plus standard validation.
-- **Dependencies:** Task 1 Complete and its native/container validation passing.
+- **Dependencies:** Task 1 Complete; its native and container validation passed.
 - **Completion notes:** Pending.
 
 ### 3. Complete inventory API
