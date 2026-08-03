@@ -20,6 +20,10 @@
 - Dedicated responsive Port Map with host grouping, Unassigned host handling, host filtering, searchable assignments, conflict relationships, incomplete-state details, and edit-from-map actions
 - Dedicated responsive Path Map with host and normalized host-path grouping, shared-path details, warning reuse, searchable mappings, host filtering, incomplete states, and edit-from-map actions
 - Unit, database, UI behavior, and Playwright coverage for the MVP workflows
+- Production multi-stage Docker image with a non-root nginx runtime, SPA routing, caching, security headers, and container health check
+- Hardened Docker Compose and copy-and-paste Portainer Stack deployment examples without an application-data volume
+- GitHub Container Registry workflow for `latest`, semantic-version, and immutable commit image tags
+- Self-hosting documentation for browser IndexedDB persistence, JSON backups, stable origins, upgrades, and reverse proxies
 
 ### Fixed
 

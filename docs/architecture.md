@@ -66,6 +66,10 @@ The source repository is:
 
 `five2seven/stackmap`
 
+Self-hosted deployments use the same compiled Vite assets in a stateless, non-root nginx container. The production image is prepared for GitHub Container Registry at `ghcr.io/five2seven/stackmap` and serves HTTP on internal port `8080`. Portainer consumes the published image directly; repository users may build it with Docker Compose. The container has a read-only root filesystem with `/tmp` as its only writable runtime path and has no application-data volume.
+
+The container does not terminate TLS. A reverse proxy may terminate TLS and forward ordinary HTTP traffic to the container; there are no backend API or WebSocket routes. Deployments should retain one canonical hostname, protocol, and port because these values define the browser origin used by IndexedDB.
+
 ## Privacy
 
 All user-created StackMap data remains in the user’s browser for the MVP.
@@ -73,6 +77,8 @@ All user-created StackMap data remains in the user’s browser for the MVP.
 The hosted application files are public, but the user’s homelab records are not uploaded to StackMap servers.
 
 Browser data can be lost if the user clears site data or changes browsers without exporting a backup.
+
+Restarting or recreating the static container at the same URL normally does not affect browser data. Docker volumes cannot back up the inventory, and no inventory volume should be added. JSON export remains the portable backup method. Browsers and devices do not synchronize automatically; changing the hostname, IP address, protocol, or port opens a separate origin and may appear to reset the application.
 
 ## Testing
 
@@ -94,5 +100,7 @@ Use Playwright for focused browser workflows that cover IndexedDB persistence an
 - Preserve backward compatibility where practical
 - Ensure import validation does not blindly trust uploaded JSON
 - Keep deployment compatible with static hosting on Cloudflare Pages
+- Keep the Docker runtime stateless and avoid fake `/config` or `/data` inventory volumes
+- Preserve the stable-origin requirement in self-hosting and reverse-proxy documentation
 
 Dexie database version 3 added service identity fields. Dexie database version 4 converts non-empty legacy `configPath` and `dataPath` values into path mappings and removes the legacy fields from current records without changing timestamps. IndexedDB versions describe on-device storage upgrades; JSON schema versions independently describe portable backup formats.

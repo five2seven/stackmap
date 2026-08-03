@@ -70,6 +70,108 @@ Proof-of-concept deployments follow this convention:
 
 Cloudflare configuration, DNS records, and deployment setup are managed separately from the application.
 
+## Self-hosting with Docker
+
+Portainer is the primary self-hosted deployment path. The container image is prepared for publication at `ghcr.io/five2seven/stackmap`; do not assume it is available until the **Build and publish container image** workflow has completed successfully on `main`.
+
+### Portainer deployment
+
+1. Open Portainer.
+2. Select **Stacks**.
+3. Select **Add stack**.
+4. Enter `stackmap` as the stack name.
+5. Select **Web editor**.
+6. Paste the YAML below.
+7. Select **Deploy the stack**.
+8. Open `http://<docker-host-ip>:8088`.
+
+```yaml
+---
+services:
+  stackmap:
+    image: ghcr.io/five2seven/stackmap:latest
+    init: true
+    container_name: stackmap
+    environment:
+      - TZ=America/Chicago
+    ports:
+      - "8088:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/"]
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+```
+
+> StackMap currently stores inventory data in your browser using IndexedDB, not inside the Docker container. Docker volumes do not back up your StackMap inventory. Use JSON export for backups, and keep the same hostname, protocol, and port when upgrading.
+
+This stack needs no repository clone, `.env` file, or application-data volume. The image runs nginx as a non-root user on internal HTTP port `8080`; `/tmp` is its only writable runtime path. `wget` is included in the runtime image and the health check succeeds only when nginx serves the root page.
+
+To use another host port, change the left side of the mapping. For example, use `"8090:8080"` and then open port 8090. Change `TZ=America/Chicago` to an appropriate [IANA time zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) for the Docker host.
+
+For a shorter setup without the explicit hardening options, use:
+
+```yaml
+---
+services:
+  stackmap:
+    image: ghcr.io/five2seven/stackmap:latest
+    init: true
+    container_name: stackmap
+    environment:
+      - TZ=America/Chicago
+    ports:
+      - "8088:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/"]
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    restart: unless-stopped
+```
+
+### Updating in Portainer
+
+1. Open the StackMap stack.
+2. Enable image re-pull or choose the option to re-pull the image.
+3. Select **Update the stack**.
+4. Keep the same hostname, protocol, and port when practical.
+5. Refresh the browser after the new image becomes healthy.
+
+Recreating, restarting, or updating the container at the same browser URL normally preserves inventory because it remains in that browser's IndexedDB. Clearing site data can delete it. Another browser or device does not automatically share the inventory, and changing the hostname, IP address, protocol, or port creates a different browser storage origin that may appear empty. Keep one stable canonical URL and use **Export JSON** for backups.
+
+### Build from source
+
+Developers can build the same production image with the repository Compose file:
+
+```powershell
+git clone https://github.com/five2seven/stackmap.git
+cd stackmap
+docker compose up -d --build
+```
+
+The default address is `http://localhost:8088`. Set `STACKMAP_PORT` or `TZ` in the shell before running Compose to override the host port or timezone. The helper `./scripts/stackmap-docker.ps1` starts the stack and waits for health; run `./scripts/stackmap-docker.ps1 -Action Stop` to remove only this Compose stack's container and network.
+
+### Container image publication
+
+The container workflow builds and smoke-tests pull requests without publishing them. Pushes to `main` publish `latest` and an immutable `sha-<shortsha>` tag for `linux/amd64`; version tags such as `v1.2.3` publish `1.2.3` and a commit tag. It uses GitHub's repository-scoped `GITHUB_TOKEN`, so no registry password is stored in the repository. The existing Cloudflare Pages workflow remains independent.
+
+If the first GHCR package is private, open the package on the GitHub organization or user profile, select **Package settings**, scroll to **Danger Zone**, choose **Change visibility**, and set it to **Public**. Confirm the package is publicly pullable before directing users to the Portainer example.
+
+### Reverse proxies
+
+Terminate TLS at the reverse proxy and forward traffic to port `8080` in the container (or the chosen host port). StackMap has no backend API routes and currently needs no WebSocket forwarding. Use one stable canonical URL: switching between HTTP and HTTPS, changing the hostname, or changing the port changes the browser origin and therefore which IndexedDB inventory the browser opens. No vendor-specific proxy configuration is required by the container.
+
 ## Cloudflare Pages deployment
 
 Production deployment uses Cloudflare Pages Direct Upload through Wrangler. The GitHub Actions workflow runs on pushes to `main` and through manual workflow dispatch. It installs dependencies and Chromium, runs lint and all tests, builds the application, and deploys `dist` to the `stackmap` Pages project.

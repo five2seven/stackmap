@@ -170,6 +170,16 @@ The Path Map is a non-persistent projection of generalized path mappings. It gro
 
 A non-empty host path is informationally shared only when more than one distinct service uses it on the same assigned host. Same-service duplicates and identical paths on different hosts do not qualify, and displayed service names are deduplicated. Retired services remain included, consistent with current port-conflict and path-warning behavior. Existing mapping-pair, mixed-style, and missing-configuration warnings are reused. Path correction, rewriting, cross-service consistency errors, and graphical topology remain out of scope, and no schema migration is required.
 
+## ADR-005: Stateless self-hosted container
+
+**Status:** Accepted
+
+**Context:** Homelab users need an image-based Portainer deployment that does not require cloning or building the repository, while StackMap remains a frontend-only local-first application.
+
+**Decision:** Publish the compiled Vite application as `ghcr.io/five2seven/stackmap` in a non-root nginx container on port `8080`. Support Portainer through a copy-and-paste Stack definition and developers through a repository `compose.yaml`. Keep the root filesystem read-only with only nginx's `/tmp` runtime path writable. Do not add an application-data volume, backend, or server-side database. Inventory remains in browser IndexedDB and JSON export remains the backup mechanism.
+
+**Consequences:** Container recreation and image upgrades at an unchanged URL normally preserve browser-local inventory, but Docker volumes cannot back it up. Each browser and origin has independent data; changing hostname, IP address, protocol, or port may show an empty inventory. Reverse proxies terminate TLS and must preserve a stable canonical URL. GHCR publishing is independent of the existing Cloudflare Pages deployment.
+
 ## New decision template
 
 Copy this section for future decisions:
