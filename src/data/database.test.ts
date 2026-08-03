@@ -2,12 +2,13 @@ import Dexie, { type EntityTable } from 'dexie'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createService } from '../domain/serviceUtils'
 import type { Host, Service } from '../domain/types'
+import { createUuid } from '../utils/uuid'
 import { DexieStackMapRepository, StackMapDatabase } from './database'
 
 const databaseNames: string[] = []
 
 function uniqueDatabaseName() {
-  const name = `stackmap-test-${crypto.randomUUID()}`
+  const name = `stackmap-test-${createUuid()}`
   databaseNames.push(name)
   return name
 }

@@ -17,6 +17,28 @@ test.afterEach(async ({ page }) => {
   expect(browserIssues.get(page)).toEqual([])
 })
 
+test('opens record editors when crypto.randomUUID is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(globalThis.crypto, 'randomUUID', {
+      configurable: true,
+      value: undefined,
+    })
+  })
+  await page.goto('/')
+
+  await page.getByRole('button', { name: 'Add service' }).click()
+  const serviceEditor = page.getByRole('region', { name: 'Add service' })
+  await expect(serviceEditor).toBeVisible()
+  await serviceEditor.getByRole('button', { name: 'Add path' }).click()
+  await expect(serviceEditor.getByLabel('new service host path 1')).toBeVisible()
+  await serviceEditor.getByRole('button', { name: 'Add port' }).click()
+  await expect(serviceEditor.getByLabel('Host port 1')).toBeVisible()
+  await serviceEditor.getByRole('button', { name: 'Cancel' }).click()
+
+  await page.getByRole('button', { name: 'Manage hosts' }).click()
+  await expect(page.getByRole('heading', { name: 'Add host' })).toBeVisible()
+})
+
 async function addHost(page: Page, name: string) {
   await page.getByRole('button', { name: 'Manage hosts' }).click()
   await page.getByLabel('Host name *').fill(name)

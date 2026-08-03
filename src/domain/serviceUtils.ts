@@ -1,4 +1,5 @@
 import type { Host, PathMapping, Service, ServiceFilters, ServicePort } from './types'
+import { createUuid } from '../utils/uuid'
 
 export function missingServiceFields(service: Service): string[] {
   const missing: string[] = []
@@ -140,7 +141,7 @@ export function filterServices(
 export function createService(name: string): Service {
   const timestamp = new Date().toISOString()
   return {
-    id: crypto.randomUUID(),
+    id: createUuid(),
     name: name.trim(),
     containerName: '',
     dockerImage: '',

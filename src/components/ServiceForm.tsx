@@ -10,6 +10,7 @@ import {
 } from '../domain/types'
 import { createService } from '../domain/serviceUtils'
 import { normalizePaths } from '../domain/pathMappings'
+import { createUuid } from '../utils/uuid'
 
 interface ServiceFormProps {
   service?: Service
@@ -25,7 +26,7 @@ const emptyPort = (): ServicePort => ({
 })
 
 const emptyPath = (): PathMapping => ({
-  id: crypto.randomUUID(),
+  id: createUuid(),
   hostPath: '',
   containerPath: '',
   purpose: '',
