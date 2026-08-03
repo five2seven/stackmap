@@ -8,6 +8,9 @@
 .vscode
 node_modules
 dist
+dist-server
+.data
+config
 coverage
 playwright-report
 test-results

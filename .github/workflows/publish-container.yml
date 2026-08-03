@@ -42,19 +42,73 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker run --detach --name stackmap-validation --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --publish 8088:8080 stackmap:validation
-          trap 'docker rm --force stackmap-validation >/dev/null 2>&1 || true' EXIT
+          config_directory="$(mktemp -d)"
+          chmod 0777 "$config_directory"
 
-          for attempt in {1..20}; do
-            if [ "$(docker inspect --format='{{.State.Health.Status}}' stackmap-validation)" = "healthy" ]; then
-              break
-            fi
-            if [ "$attempt" -eq 20 ]; then
+          diagnostics() {
+            set +e
+            echo "::group::StackMap container diagnostics"
+            docker ps -a --filter "name=^/stackmap-validation$" --no-trunc
+            if docker inspect stackmap-validation >/dev/null 2>&1; then
+              docker inspect --format='state={{.State.Status}} exitCode={{.State.ExitCode}} error={{json .State.Error}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' stackmap-validation
+              echo "Health-check history:"
+              docker inspect --format='{{if .State.Health}}{{range .State.Health.Log}}{{println "exitCode=" .ExitCode "output=" (json .Output)}}{{end}}{{else}}No health-check history available.{{end}}' stackmap-validation
+              echo "Application logs:"
               docker logs stackmap-validation
-              exit 1
             fi
-            sleep 2
-          done
+            echo "Config directory and SQLite file permissions:"
+            stat --format='%A %u:%g %n' "$config_directory"
+            find "$config_directory" -maxdepth 1 -type f \
+              \( -name 'stackmap.db' -o -name 'stackmap.db-wal' -o -name 'stackmap.db-shm' \) \
+              -exec stat --format='%A %u:%g %n' {} +
+            echo "::endgroup::"
+            set -e
+          }
+
+          cleanup() {
+            exit_code=$?
+            trap - EXIT
+            if [ "$exit_code" -ne 0 ]; then diagnostics; fi
+            docker rm --force stackmap-validation >/dev/null 2>&1 || true
+            rm -rf "$config_directory"
+            exit "$exit_code"
+          }
+
+          wait_for_health() {
+            for attempt in {1..30}; do
+              state="$(docker inspect --format='{{.State.Status}}' stackmap-validation 2>/dev/null || true)"
+              health="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' stackmap-validation 2>/dev/null || true)"
+              echo "Health attempt ${attempt}/30: state=${state:-missing} health=${health:-missing}"
+              case "$state" in
+                exited|dead)
+                  echo "Container exited before becoming healthy."
+                  return 1
+                  ;;
+              esac
+              case "$health" in
+                healthy)
+                  return 0
+                  ;;
+                unhealthy)
+                  echo "Container reported unhealthy."
+                  return 1
+                  ;;
+                starting)
+                  ;;
+                *)
+                  echo "Container health state is unavailable."
+                  return 1
+                  ;;
+              esac
+              sleep 2
+            done
+            echo "Timed out waiting for the container to become healthy."
+            return 1
+          }
+
+          trap cleanup EXIT
+          docker run --detach --name stackmap-validation --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --mount "type=bind,source=$config_directory,target=/config" --publish 8088:8080 stackmap:validation
+          wait_for_health
 
           curl --fail --silent --show-error http://127.0.0.1:8088/ --output /tmp/stackmap-index.html
           asset_path="$(grep -oE '/assets/[^\" ]+\.js' /tmp/stackmap-index.html | head -n 1)"
@@ -63,7 +117,23 @@ jobs:
           test -n "$css_path"
           curl --fail --silent --show-error "http://127.0.0.1:8088${asset_path}" --output /dev/null
           curl --fail --silent --show-error "http://127.0.0.1:8088${css_path}" --output /dev/null
-          curl --fail --silent --show-error http://127.0.0.1:8088/services/example | grep --quiet '<div id="root"></div>'
+          curl --fail --silent --show-error http://127.0.0.1:8088/services/example --output /tmp/stackmap-fallback.html
+          grep --quiet '<div id="root"></div>' /tmp/stackmap-fallback.html
+          test "$(docker inspect --format='{{.Config.User}}' stackmap-validation)" = "10001:10001"
+          docker exec stackmap-validation node -e "const fs=require('node:fs'); fs.accessSync('/config/stackmap.db', fs.constants.W_OK)"
+
+          installation_id="$(curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta | node -e "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).installationId))")"
+          test -n "$installation_id"
+          test "$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db'); process.stdout.write(db.prepare(\"SELECT group_concat(name, ',') FROM (SELECT name FROM sqlite_master WHERE type='table' ORDER BY name)\").pluck().get())")" = "application_metadata,schema_migrations"
+
+          docker restart stackmap-validation >/dev/null
+          wait_for_health
+          persisted_id="$(curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta | node -e "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).installationId))")"
+          test "$persisted_id" = "$installation_id"
+          docker stop --time 10 stackmap-validation >/dev/null
+          docker logs stackmap-validation > /tmp/stackmap-container.log 2>&1
+          grep --quiet 'graceful shutdown started' /tmp/stackmap-container.log
+          grep --quiet 'graceful shutdown completed' /tmp/stackmap-container.log
 
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push'
