@@ -1,0 +1,17 @@
+# Files mentioned by the user:
+
+## # StackMap Review and Merge: Persistent SQLite Migration Workflow Review the co…: C:\Users\rae\.codex/attachments/a9fd8556-35bd-4c0e-86e7-ceae710f8392/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## # StackMap Fix Task: Correct SQLite Migration Workflow Design Work only in: C:\…: C:\Users\rae\.codex/attachments/86b60a9f-aa7e-45e4-b163-0166bc51585d/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
