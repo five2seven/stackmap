@@ -229,10 +229,64 @@ describe('SqliteInventoryRepository', () => {
 
   it('fails closed without writing when inventory revision metadata is invalid', () => {
     const { database, repository } = fixture()
+    const invalidValues = [
+      String(Number.MAX_SAFE_INTEGER + 1),
+      '9'.repeat(400),
+      '-1',
+      '+1',
+      '1.5',
+      ' 1',
+      '1 ',
+      '1e3',
+    ]
+    const updateRevision = database.connection.prepare(
+      "UPDATE application_metadata SET value = ? WHERE key = 'inventory_revision'",
+    )
+    const storedRevision = database.connection
+      .prepare("SELECT value FROM application_metadata WHERE key = 'inventory_revision'")
+      .pluck()
+
+    for (const value of invalidValues) {
+      updateRevision.run(value)
+      expect(() => repository.inventoryRevision()).toThrow(
+        /revision metadata is missing or invalid/,
+      )
+      expect(() => repository.createHost(host())).toThrow(
+        /revision metadata is missing or invalid/,
+      )
+      expect(repository.getHost('host-1')).toBeUndefined()
+      expect(storedRevision.get()).toBe(value)
+    }
+  })
+
+  it('reads MAX_SAFE_INTEGER but fails closed before incrementing it', () => {
+    const { database, repository } = fixture()
+    const maximumRevision = String(Number.MAX_SAFE_INTEGER)
     database.connection
-      .prepare("UPDATE application_metadata SET value = 'invalid' WHERE key = 'inventory_revision'")
+      .prepare("UPDATE application_metadata SET value = ? WHERE key = 'inventory_revision'")
+      .run(maximumRevision)
+
+    expect(repository.inventoryRevision()).toBe(Number.MAX_SAFE_INTEGER)
+    expect(() => repository.createService(service('app'))).toThrow(
+      /revision cannot be incremented safely/,
+    )
+    expect(repository.getService('app')).toBeUndefined()
+    expect(
+      database.connection
+        .prepare("SELECT value FROM application_metadata WHERE key = 'inventory_revision'")
+        .pluck()
+        .get(),
+    ).toBe(maximumRevision)
+  })
+
+  it('increments an accepted safe revision from its exact stored representation', () => {
+    const { database, repository } = fixture()
+    database.connection
+      .prepare("UPDATE application_metadata SET value = '0001' WHERE key = 'inventory_revision'")
       .run()
-    expect(() => repository.createHost(host())).toThrow(/revision metadata is missing or invalid/)
-    expect(repository.getHost('host-1')).toBeUndefined()
+
+    expect(repository.inventoryRevision()).toBe(1)
+    repository.createHost(host())
+    expect(repository.inventoryRevision()).toBe(2)
   })
 })

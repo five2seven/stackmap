@@ -124,12 +124,70 @@ jobs:
 
           installation_id="$(curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta | node -e "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).installationId))")"
           test -n "$installation_id"
-          test "$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db'); process.stdout.write(db.prepare(\"SELECT group_concat(name, ',') FROM (SELECT name FROM sqlite_master WHERE type='table' ORDER BY name)\").pluck().get())")" = "application_metadata,schema_migrations"
+          docker exec --interactive stackmap-validation node <<'NODE'
+          const Database = require('better-sqlite3')
+          const db = new Database('/config/stackmap.db', { readonly: true })
+          const expectedTables = [
+            'application_metadata',
+            'hosts',
+            'schema_migrations',
+            'service_dependencies',
+            'service_paths',
+            'service_ports',
+            'services',
+          ]
+          const actualTables = db
+            .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+            .pluck()
+            .all()
+          const metadataKeys = db
+            .prepare('SELECT key FROM application_metadata ORDER BY key')
+            .pluck()
+            .all()
+          const expectedMetadataKeys = ['created_at', 'installation_id', 'inventory_revision']
+          const schemaVersion = db.prepare('SELECT MAX(version) FROM schema_migrations').pluck().get()
+          const inventoryRevision = db
+            .prepare("SELECT value FROM application_metadata WHERE key = 'inventory_revision'")
+            .pluck()
+            .get()
+          const inventoryTables = [
+            'hosts',
+            'services',
+            'service_ports',
+            'service_paths',
+            'service_dependencies',
+          ]
+          const inventoryCounts = Object.fromEntries(
+            inventoryTables.map((table) => [
+              table,
+              db.prepare(`SELECT COUNT(*) FROM ${table}`).pluck().get(),
+            ]),
+          )
+          db.close()
+
+          const assertEqual = (actual, expected, label) => {
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+              throw new Error(`${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`)
+            }
+          }
+          assertEqual(actualTables, expectedTables, 'Task 2 table set')
+          assertEqual(schemaVersion, 2, 'Task 2 schema version')
+          assertEqual(metadataKeys, expectedMetadataKeys, 'Task 2 application metadata keys')
+          assertEqual(inventoryRevision, '0', 'fresh inventory revision')
+          assertEqual(
+            inventoryCounts,
+            Object.fromEntries(inventoryTables.map((table) => [table, 0])),
+            'fresh inventory table counts',
+          )
+          NODE
+          metadata_before_restart="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(JSON.stringify(db.prepare('SELECT key,value FROM application_metadata ORDER BY key').all()))")"
 
           docker restart stackmap-validation >/dev/null
           wait_for_health
           persisted_id="$(curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta | node -e "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).installationId))")"
           test "$persisted_id" = "$installation_id"
+          metadata_after_restart="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(JSON.stringify(db.prepare('SELECT key,value FROM application_metadata ORDER BY key').all()))")"
+          test "$metadata_after_restart" = "$metadata_before_restart"
           docker stop --time 10 stackmap-validation >/dev/null
           docker logs stackmap-validation > /tmp/stackmap-container.log 2>&1
           grep --quiet 'graceful shutdown started' /tmp/stackmap-container.log

@@ -53,6 +53,10 @@ export class SqliteInventoryRepository {
   ) {}
 
   inventoryRevision(): number {
+    return this.readInventoryRevision().revision
+  }
+
+  private readInventoryRevision(): { revision: number; storedValue: string } {
     const value = this.connection
       .prepare("SELECT value FROM application_metadata WHERE key = 'inventory_revision'")
       .pluck()
@@ -60,7 +64,11 @@ export class SqliteInventoryRepository {
     if (typeof value !== 'string' || !/^\d+$/.test(value)) {
       throw new Error('Inventory revision metadata is missing or invalid')
     }
-    return Number(value)
+    const revision = Number(value)
+    if (!Number.isFinite(revision) || !Number.isSafeInteger(revision) || revision < 0) {
+      throw new Error('Inventory revision metadata is missing or invalid')
+    }
+    return { revision, storedValue: value }
   }
 
   listHosts(): InventoryHost[] {
@@ -207,13 +215,16 @@ export class SqliteInventoryRepository {
 
   private mutate<T>(operation: () => T): T {
     return this.connection.transaction(() => {
-      const currentRevision = this.inventoryRevision()
+      const { revision: currentRevision, storedValue } = this.readInventoryRevision()
+      if (currentRevision === Number.MAX_SAFE_INTEGER) {
+        throw new Error('Inventory revision cannot be incremented safely')
+      }
       const result = operation()
       const revisionUpdate = this.connection.prepare(`
         UPDATE application_metadata
         SET value = ?
         WHERE key = 'inventory_revision' AND value = ?
-      `).run(String(currentRevision + 1), String(currentRevision))
+      `).run(String(currentRevision + 1), storedValue)
       if (revisionUpdate.changes !== 1) {
         throw new Error('Inventory revision changed during the transaction')
       }
