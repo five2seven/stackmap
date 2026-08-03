@@ -461,4 +461,142 @@ describe('StackMap service workflows', () => {
     await user.selectOptions(screen.getByLabelText('Filter Port Map by host'), 'two')
     expect(screen.getByRole('heading', { name: 'No ports for this host' })).toBeVisible()
   })
+
+  it('switches to an accessible Path Map with host/path groups, sharing, and warnings', async () => {
+    const user = userEvent.setup()
+    const timestamp = '2026-08-02T12:00:00.000Z'
+    const host: Host = { id: 'nas', name: 'NAS', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp }
+    const services: Service[] = [
+      { ...serviceNamed('Alpha'), hostId: 'nas', paths: [
+        { id: 'a1', hostPath: '/srv/shared', containerPath: '/data', purpose: 'Media', readOnly: true },
+        { id: 'a2', hostPath: 'relative', containerPath: '', purpose: '', readOnly: false },
+      ] },
+      { ...serviceNamed('Beta'), hostId: 'nas', paths: [{ id: 'b', hostPath: ' /SRV/SHARED ', containerPath: '/library', purpose: 'Library', readOnly: false }] },
+      { ...serviceNamed('Loose'), paths: [{ id: 'l', hostPath: '', containerPath: '', purpose: '', readOnly: false }] },
+    ]
+    render(<App repository={new MemoryRepository({ services, hosts: [host] })} />)
+
+    const servicesView = await screen.findByRole('button', { name: 'Services' })
+    const portMapView = screen.getByRole('button', { name: 'Port Map' })
+    const pathMapView = screen.getByRole('button', { name: 'Path Map' })
+    expect(servicesView).toHaveAttribute('aria-pressed', 'true')
+    await user.click(portMapView)
+    expect(screen.getByRole('heading', { name: 'Port Map' })).toBeVisible()
+    await user.click(pathMapView)
+    expect(pathMapView).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('heading', { name: 'NAS' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: '/srv/shared' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Unassigned host' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Host path missing' })).toBeVisible()
+    expect(screen.getByText('Shared with Beta')).toBeVisible()
+    expect(screen.getByText('Read-only')).toBeVisible()
+    expect(screen.getAllByText('Mapping is incomplete.')).toHaveLength(2)
+    expect(screen.getAllByText('Service warning: host paths mix absolute and relative styles.')).toHaveLength(2)
+    expect(screen.getAllByText('Service warning: no configuration-purpose mapping recorded.').length).toBeGreaterThan(0)
+  })
+
+  it('preserves stored host paths and gives every path group one valid unique accessible label', async () => {
+    const user = userEvent.setup()
+    const timestamp = '2026-08-02T12:00:00.000Z'
+    const hosts: Host[] = [
+      { id: 'host one', name: 'Host one', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+      { id: 'host:two', name: 'Host two', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+    ]
+    const services: Service[] = [
+      { ...serviceNamed('Alpha'), hostId: 'host one', paths: [{ id: 'alpha-path', hostPath: '/Data Folder', containerPath: '/alpha', purpose: '', readOnly: false }] },
+      { ...serviceNamed('Beta'), hostId: 'host one', paths: [{ id: 'beta-path', hostPath: ' /data folder ', containerPath: '/beta', purpose: '', readOnly: false }] },
+      { ...serviceNamed('Windows'), hostId: 'host one', paths: [{ id: 'windows-path', hostPath: String.raw`C:\Media Files`, containerPath: '/media', purpose: '', readOnly: false }] },
+      { ...serviceNamed('Gamma'), hostId: 'host:two', paths: [{ id: 'gamma-path', hostPath: '/DATA FOLDER', containerPath: '/gamma', purpose: '', readOnly: false }] },
+      { ...serviceNamed('Loose'), paths: [{ id: 'missing-path', hostPath: '', containerPath: '/loose', purpose: '', readOnly: false }] },
+    ]
+    const { container } = render(<App repository={new MemoryRepository({ services, hosts })} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Path Map' }))
+
+    const alphaRow = screen.getByRole('row', { name: /Alpha, host path \/Data Folder/ })
+    const betaRow = screen.getByRole('row', { name: /Beta, host path \/data folder/ })
+    expect(within(alphaRow).getByRole('cell', { name: /\/Data Folder/ })).toHaveTextContent('/Data Folderabsolute')
+    expect(within(betaRow).getByRole('cell', { name: /\/data folder/ }).textContent).toBe(' /data folder absolute')
+    expect(within(alphaRow).getByRole('cell', { name: /\/alpha/ })).toBeVisible()
+    expect(within(betaRow).getByRole('cell', { name: /\/beta/ })).toBeVisible()
+    expect(screen.getByText('Shared with Beta')).toBeVisible()
+    expect(screen.getByText('Shared with Alpha')).toBeVisible()
+    const windowsRow = screen.getByRole('row', { name: /Windows, host path C:\\Media Files/ })
+    expect(within(windowsRow).getByRole('cell', { name: /C:\\Media Files/ })).toBeVisible()
+    expect(screen.getByRole('row', { name: /Loose, host path missing/ })).toHaveTextContent('Missing')
+
+    const pathGroups = [...container.querySelectorAll<HTMLElement>('.path-group')]
+    const labelledBy = pathGroups.map((group) => group.getAttribute('aria-labelledby'))
+    expect(labelledBy).toHaveLength(4)
+    expect(new Set(labelledBy).size).toBe(labelledBy.length)
+    labelledBy.forEach((id) => {
+      expect(id).toBeTruthy()
+      expect(id).not.toMatch(/\s/)
+      expect(container.querySelectorAll(`[id="${id}"]`)).toHaveLength(1)
+    })
+    expect(screen.getByRole('region', { name: 'Host path missing' })).toBeVisible()
+  })
+
+  it('filters and searches Path Map, then returns from save and cancel with focus restored', async () => {
+    const user = userEvent.setup()
+    const timestamp = '2026-08-02T12:00:00.000Z'
+    const hosts: Host[] = [
+      { id: 'one', name: 'Host one', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+      { id: 'two', name: 'Host two', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+    ]
+    const repository = new MemoryRepository({ hosts, services: [
+      { ...serviceNamed('One'), hostId: 'one', paths: [{ id: 'one-path', hostPath: '/srv/config', containerPath: '/config', purpose: 'Configuration', readOnly: true }] },
+      { ...serviceNamed('Two'), hostId: 'two', paths: [{ id: 'two-path', hostPath: '/srv/media', containerPath: '/media', purpose: 'Library', readOnly: false }] },
+    ] })
+    render(<App repository={repository} />)
+    const pathMapView = await screen.findByRole('button', { name: 'Path Map' })
+    await user.click(pathMapView)
+    const filter = screen.getByLabelText('Filter Path Map by host')
+    await user.selectOptions(filter, 'one')
+    expect(screen.getByRole('heading', { name: 'Host one' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Host two' })).not.toBeInTheDocument()
+    await user.type(screen.getByRole('searchbox', { name: 'Search Path Map' }), 'configuration')
+    expect(screen.getByText('/config')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Edit service One' }))
+    const name = screen.getByLabelText('Service name *')
+    await user.clear(name)
+    await user.type(name, 'One updated')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+    expect(await screen.findByRole('heading', { name: 'Path Map' })).toBeVisible()
+    expect(filter).toHaveValue('one')
+    expect(screen.getByText('One updated')).toBeVisible()
+    expect(pathMapView).toHaveFocus()
+
+    await user.click(screen.getByRole('button', { name: 'Edit service One updated' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByRole('heading', { name: 'Path Map' })).toBeVisible()
+    expect(pathMapView).toHaveFocus()
+  })
+
+  it('shows Path Map empty states for no services, no paths, host filters, and search', async () => {
+    const user = userEvent.setup()
+    const first = render(<App repository={new MemoryRepository()} />)
+    await user.click(await screen.findByRole('button', { name: 'Path Map' }))
+    expect(screen.getByRole('heading', { name: 'No services yet' })).toBeVisible()
+    first.unmount()
+
+    const timestamp = '2026-08-02T12:00:00.000Z'
+    const hosts: Host[] = [
+      { id: 'one', name: 'Host one', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+      { id: 'two', name: 'Host two', type: 'nas', ipAddress: '', operatingSystem: '', notes: '', createdAt: timestamp, updatedAt: timestamp },
+    ]
+    const second = render(<App repository={new MemoryRepository({ services: [serviceNamed('No paths')], hosts })} />)
+    await user.click(await screen.findByRole('button', { name: 'Path Map' }))
+    expect(screen.getByRole('heading', { name: 'No path mappings yet' })).toBeVisible()
+    second.unmount()
+
+    render(<App repository={new MemoryRepository({ services: [{ ...serviceNamed('Mapped'), hostId: 'one', paths: [{ id: 'p', hostPath: '/data', containerPath: '/data', purpose: '', readOnly: false }] }], hosts })} />)
+    await user.click(await screen.findByRole('button', { name: 'Path Map' }))
+    await user.selectOptions(screen.getByLabelText('Filter Path Map by host'), 'two')
+    expect(screen.getByRole('heading', { name: 'No paths for this host' })).toBeVisible()
+    await user.selectOptions(screen.getByLabelText('Filter Path Map by host'), 'all')
+    await user.type(screen.getByRole('searchbox', { name: 'Search Path Map' }), 'no match')
+    expect(screen.getByRole('heading', { name: 'No path mappings match' })).toBeVisible()
+  })
 })

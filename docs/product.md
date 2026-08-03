@@ -77,6 +77,7 @@ The first useful version of StackMap should include:
 
 - A service list showing all documented services
 - A dedicated Port Map grouped by host, including an Unassigned host group, host filtering, conflict details, and edit-from-map actions
+- A dedicated Path Map grouped by host and host path, including shared-path details, existing warnings, host filtering, and edit-from-map actions
 - The ability to add a service
 - The ability to edit a service
 - The ability to delete or retire a service
@@ -94,6 +95,8 @@ The first useful version of StackMap should include:
 The MVP should prioritize fast entry, clear organization, and useful warnings over visual complexity.
 
 The Port Map preserves incomplete entries and identifies missing host ports, container ports, protocols, and host assignments. It intentionally does not provide network or protocol filters, port recommendations, or automatic conflict resolution.
+
+The Path Map preserves blank and partial mappings, groups conservatively without changing stored paths, and identifies same-host sharing across distinct services. It reuses existing mapping and service path warnings and intentionally does not rewrite paths, enforce cross-service consistency, or provide automatic correction.
 
 ## MVP Non-Goals
 

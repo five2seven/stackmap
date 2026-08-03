@@ -164,6 +164,12 @@ The Port Map is derived rather than persisted, so service ports retain one sourc
 
 Conflict relationships reuse the existing rules: matching host ports conflict only on the same assigned host when protocols overlap; `both` overlaps TCP and UDP, while `unknown` overlaps only `unknown`. The existing policy includes retired services. The displayed count is explicitly the number of affected assignments. Network/protocol filters, recommendations, and automated reassignment remain out of scope.
 
+### Derived Path Map
+
+The Path Map is a non-persistent projection of generalized path mappings. It groups first by assigned host, with hostless services under Unassigned host, and then by host paths compared after trimming and case folding. The original stored value remains visible. Blank host paths remain in a labeled incomplete group. Search covers service and container identity, host, both paths, purpose, and read-only or writable access; filtering is by host.
+
+A non-empty host path is informationally shared only when more than one distinct service uses it on the same assigned host. Same-service duplicates and identical paths on different hosts do not qualify, and displayed service names are deduplicated. Retired services remain included, consistent with current port-conflict and path-warning behavior. Existing mapping-pair, mixed-style, and missing-configuration warnings are reused. Path correction, rewriting, cross-service consistency errors, and graphical topology remain out of scope, and no schema migration is required.
+
 ## New decision template
 
 Copy this section for future decisions:

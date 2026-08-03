@@ -19,8 +19,10 @@ import {
 } from './domain/types'
 import { HostManager } from './components/HostManager'
 import { ImportReview } from './components/ImportReview'
+import { PathMapView } from './components/PathMapView'
 import { PortMapView } from './components/PortMapView'
 import { ServiceForm } from './components/ServiceForm'
+import { UNASSIGNED_PATH_HOST_FILTER } from './domain/pathMap'
 import { UNASSIGNED_HOST_FILTER } from './domain/portMap'
 
 const DEFAULT_FILTERS: ServiceFilters = {
@@ -45,11 +47,13 @@ function App({ repository = defaultRepository }: AppProps) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
-  const [activeView, setActiveView] = useState<'services' | 'port-map'>('services')
+  const [activeView, setActiveView] = useState<'services' | 'port-map' | 'path-map'>('services')
   const [portMapHostFilter, setPortMapHostFilter] = useState('all')
+  const [pathMapHostFilter, setPathMapHostFilter] = useState('all')
   const importInput = useRef<HTMLInputElement>(null)
   const portMapViewButton = useRef<HTMLButtonElement>(null)
-  const returnFocusToPortMap = useRef(false)
+  const pathMapViewButton = useRef<HTMLButtonElement>(null)
+  const returnFocusToMap = useRef<'port-map' | 'path-map' | null>(null)
 
   async function refresh() {
     const data = await repository.getAll()
@@ -79,9 +83,11 @@ function App({ repository = defaultRepository }: AppProps) {
   }, [repository])
 
   useEffect(() => {
-    if (!editingService && returnFocusToPortMap.current) {
-      returnFocusToPortMap.current = false
-      portMapViewButton.current?.focus()
+    if (!editingService && returnFocusToMap.current) {
+      const target = returnFocusToMap.current
+      returnFocusToMap.current = null
+      if (target === 'port-map') portMapViewButton.current?.focus()
+      if (target === 'path-map') pathMapViewButton.current?.focus()
     }
   }, [editingService])
 
@@ -109,6 +115,12 @@ function App({ repository = defaultRepository }: AppProps) {
     hosts.some((host) => host.id === portMapHostFilter)
       ? portMapHostFilter
       : 'all'
+  const effectivePathMapHostFilter =
+    pathMapHostFilter === 'all' ||
+    pathMapHostFilter === UNASSIGNED_PATH_HOST_FILTER ||
+    hosts.some((host) => host.id === pathMapHostFilter)
+      ? pathMapHostFilter
+      : 'all'
 
   async function saveService(service: Service): Promise<boolean> {
     try {
@@ -125,7 +137,12 @@ function App({ repository = defaultRepository }: AppProps) {
   }
 
   function editServiceFromPortMap(service: Service) {
-    returnFocusToPortMap.current = true
+    returnFocusToMap.current = 'port-map'
+    setEditingService(service)
+  }
+
+  function editServiceFromPathMap(service: Service) {
+    returnFocusToMap.current = 'path-map'
     setEditingService(service)
   }
 
@@ -263,6 +280,15 @@ function App({ repository = defaultRepository }: AppProps) {
             onClick={() => setActiveView('port-map')}
           >
             Port Map
+          </button>
+          <button
+            ref={pathMapViewButton}
+            className="view-switch"
+            type="button"
+            aria-pressed={activeView === 'path-map'}
+            onClick={() => setActiveView('path-map')}
+          >
+            Path Map
           </button>
         </nav>
         {message && (
@@ -596,7 +622,7 @@ function App({ repository = defaultRepository }: AppProps) {
           )}
         </section>
           </>
-        ) : (
+        ) : activeView === 'port-map' ? (
           <PortMapView
             services={services}
             hosts={hosts}
@@ -605,6 +631,16 @@ function App({ repository = defaultRepository }: AppProps) {
             onQueryChange={(query) => setFilters({ ...filters, query })}
             onHostFilterChange={setPortMapHostFilter}
             onEditService={editServiceFromPortMap}
+          />
+        ) : (
+          <PathMapView
+            services={services}
+            hosts={hosts}
+            query={filters.query}
+            hostFilter={effectivePathMapHostFilter}
+            onQueryChange={(query) => setFilters({ ...filters, query })}
+            onHostFilterChange={setPathMapHostFilter}
+            onEditService={editServiceFromPathMap}
           />
         )}
       </main>

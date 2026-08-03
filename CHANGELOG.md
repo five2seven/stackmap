@@ -18,6 +18,7 @@
 - Repeatable Docker path mappings with purpose, read-only status, search, display, and initial warnings
 - IndexedDB version 4 legacy-path migration and JSON schema version 3 with version 1 and 2 import compatibility
 - Dedicated responsive Port Map with host grouping, Unassigned host handling, host filtering, searchable assignments, conflict relationships, incomplete-state details, and edit-from-map actions
+- Dedicated responsive Path Map with host and normalized host-path grouping, shared-path details, warning reuse, searchable mappings, host filtering, incomplete states, and edit-from-map actions
 - Unit, database, UI behavior, and Playwright coverage for the MVP workflows
 
 ### Fixed

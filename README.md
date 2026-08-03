@@ -26,6 +26,7 @@ Vite prints the local development URL after startup.
 - Add and edit hosts, assign services to them, and protect referenced hosts from deletion
 - Search services and filter by status, host, Docker network, and exposure
 - Switch to a dedicated Port Map grouped by host, filter it by host, inspect exact conflict relationships, and edit services from an assignment
+- Switch to a dedicated Path Map grouped by host and normalized host path, inspect shared and incomplete mappings, and edit services from a mapping
 - Identify incomplete service records, initial path-mapping issues, duplicate host-port assignments, and duplicate active container names on the same host
 - Export the complete local dataset to a versioned JSON backup
 - Validate and review JSON imports before replacing local data
@@ -35,6 +36,8 @@ Only a service name is required when creating a record. Incomplete records are i
 The application URL is the address a user opens to reach the application. The internal hostname or IP records the service's internal network address. Container-name conflicts are reported only for non-retired services assigned to the same host; comparison ignores case and surrounding whitespace.
 
 The Port Map is derived from the current service and host records and does not duplicate data in IndexedDB. It groups every port entry by assigned host, places hostless services under **Unassigned host**, sorts numeric host ports first, and searches service identity, host, port, and protocol fields. Conflict details follow the existing same-host protocol-overlap rules, including retired services. Current filters are limited to host and search; the map does not recommend or reassign ports.
+
+The Path Map is also derived in memory, so it requires no IndexedDB or JSON schema migration. It groups mappings by host and trimmed, case-insensitive host path while displaying the stored path unchanged. A host path is marked shared only when distinct services—including retired services under the current policy—use it on the same assigned host. Search covers service identity, host, paths, purpose, and read-only or writable access; existing incomplete, mixed-style, and missing-configuration warnings are reused. Current limitations include no path rewriting, consistency enforcement, graphical topology, or automatic correction.
 
 ## Local data and backups
 
