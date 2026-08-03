@@ -42,8 +42,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker run --detach --name stackmap-validation --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --publish 8088:8080 stackmap:validation
-          trap 'docker rm --force stackmap-validation >/dev/null 2>&1 || true' EXIT
+          config_directory="$(mktemp -d)"
+          chmod 0777 "$config_directory"
+          docker run --detach --name stackmap-validation --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --mount "type=bind,source=$config_directory,target=/config" --publish 8088:8080 stackmap:validation
+          trap 'docker rm --force stackmap-validation >/dev/null 2>&1 || true; rm -rf "$config_directory"' EXIT
 
           for attempt in {1..20}; do
             if [ "$(docker inspect --format='{{.State.Health.Status}}' stackmap-validation)" = "healthy" ]; then
@@ -64,6 +66,23 @@ jobs:
           curl --fail --silent --show-error "http://127.0.0.1:8088${asset_path}" --output /dev/null
           curl --fail --silent --show-error "http://127.0.0.1:8088${css_path}" --output /dev/null
           curl --fail --silent --show-error http://127.0.0.1:8088/services/example | grep --quiet '<div id="root"></div>'
+          test "$(docker inspect --format='{{.Config.User}}' stackmap-validation)" = "10001:10001"
+          test -w "$config_directory/stackmap.db"
+
+          installation_id="$(curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta | node -e "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).installationId))")"
+          test -n "$installation_id"
+          test "$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db'); process.stdout.write(db.prepare(\"SELECT group_concat(name, ',') FROM (SELECT name FROM sqlite_master WHERE type='table' ORDER BY name)\").pluck().get())")" = "application_metadata,schema_migrations"
+
+          docker restart stackmap-validation >/dev/null
+          for attempt in {1..20}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' stackmap-validation)" = "healthy" ]; then break; fi
+            if [ "$attempt" -eq 20 ]; then docker logs stackmap-validation; exit 1; fi
+            sleep 2
+          done
+          persisted_id="$(curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta | node -e "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).installationId))")"
+          test "$persisted_id" = "$installation_id"
+          docker stop --time 10 stackmap-validation >/dev/null
+          docker logs stackmap-validation 2>&1 | grep --quiet 'graceful shutdown started'
 
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push'

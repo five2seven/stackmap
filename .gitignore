@@ -3,6 +3,9 @@ node_modules/
 
 # Build and test output
 dist/
+dist-server/
+/.data/
+/config/
 coverage/
 playwright-report/
 test-results/

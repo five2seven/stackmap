@@ -1,12 +1,12 @@
 # StackMap
 
-StackMap is a local-first homelab inventory and planning application for documenting Docker services, hosts, ports, paths, networks, exposure, and dependencies.
+StackMap is a self-hosted homelab inventory and planning application for documenting Docker services, hosts, ports, paths, networks, exposure, and dependencies.
 
 ## What StackMap Does
 
 Homelab details often end up scattered across Compose files, notes, bookmarks, spreadsheets, and memory. StackMap provides one structured place to record what runs where, how services are connected, which ports and paths they use, and where configuration may be incomplete.
 
-Only a service name is required, so incomplete plans can be recorded and refined later. StackMap runs entirely in the browser and does not require an account or backend.
+Only a service name is required, so incomplete plans can be recorded and refined later. StackMap does not require an account or external service.
 
 ## Features
 
@@ -53,13 +53,15 @@ services:
     ports:
       - "8088:8080"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       start_period: 20s
       timeout: 3s
       interval: 15s
       retries: 3
     restart: unless-stopped
     read_only: true
+    volumes:
+      - /path/to/stackmap/config:/config
     tmpfs:
       - /tmp
     security_opt:
@@ -68,7 +70,7 @@ services:
       - ALL
 ```
 
-StackMap stores inventory data in your browser using IndexedDB, not inside the Docker container. Docker volumes do not back up your StackMap inventory. Use JSON export for backups, and keep the same hostname, protocol, and port when upgrading.
+During the current migration phase, StackMap still stores inventory data in the browser using IndexedDB. The required `/config` mount stores only SQLite infrastructure metadata; it does not yet contain or back up inventory. Use JSON export for inventory backups and keep the same hostname, protocol, and port when upgrading. Replace `/path/to/stackmap/config` with a writable persistent directory on the Docker host.
 
 The left side of `"8088:8080"` is the host port. For example, use `"8090:8080"` to expose StackMap on port 8090. Change `TZ=America/Chicago` to the appropriate IANA timezone for the Docker host.
 
@@ -93,7 +95,7 @@ The browser URL is part of the storage identity. Changing the hostname, IP addre
 
 ## Data Storage
 
-StackMap stores its inventory in IndexedDB in the current browser. No application inventory database is stored in the container, and no Docker data volume is required. Restarting or recreating the container at the same URL normally leaves browser data intact, but clearing browser site data can delete it.
+StackMap still stores its inventory in IndexedDB in the current browser during this migration phase. The server creates `/config/stackmap.db` for infrastructure metadata only; no inventory records are written there yet. Restarting or recreating the container at the same URL normally leaves browser data intact, but clearing browser site data can delete it.
 
 Data does not synchronize between browsers or devices. Use one stable canonical URL to avoid unintentionally opening a different browser storage origin.
 
@@ -101,7 +103,7 @@ Data does not synchronize between browsers or devices. Use one stable canonical 
 
 Use **Export JSON** to download a versioned backup containing the complete local dataset. Use **Import JSON** to validate and review a backup before replacing the current browser data.
 
-Docker volumes do not contain or protect the inventory. Export JSON before clearing site data, changing browsers, moving to another device, or changing the URL used to access StackMap.
+The `/config` mount does not yet contain or protect inventory. Export JSON before clearing site data, changing browsers, moving to another device, or changing the URL used to access StackMap.
 
 ## Build from Source
 
@@ -113,9 +115,9 @@ cd stackmap
 docker compose up -d --build
 ```
 
-The repository Compose stack uses `http://localhost:8088` by default. Set `STACKMAP_PORT` or `TZ` in the shell to override the host port or timezone.
+The repository Compose stack uses `http://localhost:8088` and `./config` by default. Set `STACKMAP_PORT`, `STACKMAP_CONFIG_DIR`, or `TZ` in the shell to override these values.
 
-For frontend development:
+For local development (Vite and the Fastify server run together):
 
 ```powershell
 npm ci
@@ -137,7 +139,7 @@ Additional validation commands are `npm run lint`, `npm run build`, and `npm run
 
 ## Development and Contributing
 
-StackMap uses React, TypeScript, Vite, Dexie, Vitest, Testing Library, and Playwright. Keep changes frontend-only unless the architecture explicitly changes, preserve strict TypeScript checks, and run lint, tests, the production build, and relevant end-to-end tests before submitting a change.
+StackMap uses React, TypeScript, Vite, Fastify, better-sqlite3, Dexie, Vitest, Testing Library, and Playwright. Preserve strict TypeScript checks and run lint, tests, the production build, and relevant end-to-end tests before submitting a change.
 
 More technical context is available in [architecture](docs/architecture.md), [product documentation](docs/product.md), and [architecture decisions](docs/decisions.md).
 
