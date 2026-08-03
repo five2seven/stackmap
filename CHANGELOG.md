@@ -27,6 +27,7 @@
 
 ### Fixed
 
+- Support local record ID generation in plain HTTP LAN deployments where `crypto.randomUUID()` is unavailable
 - Persist the local dataset schema version and migrate existing version 1 databases safely
 - Reject invalid timestamps, blank IDs, self-dependencies, and duplicate dependency IDs during import
 - Preserve existing data when an imported replacement cannot be written

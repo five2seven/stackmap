@@ -60,7 +60,10 @@ function serviceNamed(name: string) {
 }
 
 describe('StackMap service workflows', () => {
-  afterEach(() => cleanup())
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+  })
 
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -78,6 +81,36 @@ describe('StackMap service workflows', () => {
     expect(await screen.findByRole('heading', { level: 3, name: 'Jellyfin' })).toBeInTheDocument()
     expect(repository.data.services[0].name).toBe('Jellyfin')
     expect(screen.getAllByText('Incomplete')).toHaveLength(2)
+  })
+
+  it('creates services, hosts, paths, and port rows without crypto.randomUUID', async () => {
+    vi.stubGlobal('crypto', undefined)
+    const user = userEvent.setup()
+    const existing = serviceNamed('Existing service')
+    const repository = new MemoryRepository({ services: [existing], hosts: [] })
+    render(<App repository={repository} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Add service' }))
+    await user.type(screen.getByLabelText('Service name *'), 'HTTP service')
+    await user.click(screen.getByRole('button', { name: 'Add path' }))
+    expect(screen.getByLabelText('HTTP service host path 1')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Add port' }))
+    expect(screen.getByLabelText('Host port 1')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Create service' }))
+
+    await user.click(screen.getByRole('button', { name: 'Manage hosts' }))
+    await user.type(screen.getByLabelText('Host name *'), 'HTTP host')
+    await user.click(screen.getByRole('button', { name: 'Create host' }))
+
+    expect(repository.data.services.find((service) => service.name === 'HTTP service')?.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    )
+    expect(repository.data.hosts[0].id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    )
+    expect(repository.data.services.find((service) => service.name === 'Existing service')?.id).toBe(
+      existing.id,
+    )
   })
 
   it('edits a service', async () => {

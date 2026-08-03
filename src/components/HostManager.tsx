@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { HOST_TYPES, type Host, type Service } from '../domain/types'
+import { createUuid } from '../utils/uuid'
 
 interface HostManagerProps {
   hosts: Host[]
@@ -12,7 +13,7 @@ interface HostManagerProps {
 function blankHost(): Host {
   const timestamp = new Date().toISOString()
   return {
-    id: crypto.randomUUID(),
+    id: createUuid(),
     name: '',
     type: 'unknown',
     ipAddress: '',
