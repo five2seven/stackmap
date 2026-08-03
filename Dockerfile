@@ -6,7 +6,7 @@ RUN npm ci
 COPY index.html tsconfig.app.json tsconfig.json tsconfig.node.json tsconfig.server.json vite.config.ts ./
 COPY server ./server
 COPY src ./src
-RUN npm run build && npm prune --omit=dev
+RUN npm run build && npm prune --omit=dev && npm audit --omit=dev
 
 FROM node:24.5.0-bookworm-slim
 
