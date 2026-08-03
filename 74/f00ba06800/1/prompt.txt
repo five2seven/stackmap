@@ -1,0 +1,44 @@
+Investigate why the Add service button works in the local Vite development environment but appears to do nothing in the Docker production deployment.
+
+Do not modify code yet.
+
+Repository:
+C:\Code\Projects\APP-StackMap
+
+Tasks:
+
+1. Confirm main is clean and matches origin/main.
+2. Inspect the Add service button, its event handler, view state, editor rendering conditions, and relevant CSS.
+3. Run the application using the production build locally:
+   npm run build
+   npm run preview
+4. Verify Add service behavior against the production preview, not only npm run dev.
+5. Review nginx.conf and Docker packaging for:
+   - missing assets
+   - SPA fallback problems
+   - cache behavior
+   - security headers
+   - Content Security Policy restrictions
+   - incorrect MIME types
+6. Confirm the Docker image build copies the current dist output from the correct build stage.
+7. Confirm no environment-dependent condition disables or hides the service editor.
+8. Inspect existing component and Playwright tests to determine whether Add service is tested against the production build or only the Vite development server.
+9. Do not change files.
+10. Report:
+   - likely cause
+   - evidence
+   - whether npm run preview reproduces it
+   - whether current tests could miss it
+   - exact next fix or diagnostic step
+
+Do not commit, push, or begin a fix.
+
+---
+
+# Files mentioned by the user:
+
+## # StackMap Hotfix: Support UUID Generation on Plain HTTP Fix the production run…: C:\Users\rae\.codex/attachments/901d44cd-3047-4dd0-becb-86fe34cb91c3/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:

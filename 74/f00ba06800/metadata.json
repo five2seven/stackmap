@@ -3,9 +3,17 @@
   "checkpoint_id": "74f00ba06800",
   "strategy": "manual-commit",
   "branch": "codex/http-uuid-fallback",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "e2e/stackmap.spec.ts",
+    "src/App.test.tsx",
+    "src/components/HostManager.tsx",
+    "src/components/ServiceForm.tsx",
+    "src/data/database.test.ts",
+    "src/domain/serviceUtils.ts",
+    "src/utils/uuid.test.ts",
+    "src/utils/uuid.ts"
   ],
   "sessions": [
     {
@@ -14,13 +22,20 @@
       "compact_transcript": "/74/f00ba06800/0/transcript.jsonl",
       "content_hash": "/74/f00ba06800/0/content_hash.txt",
       "prompt": "/74/f00ba06800/0/prompt.txt"
+    },
+    {
+      "metadata": "/74/f00ba06800/1/metadata.json",
+      "transcript": "/74/f00ba06800/1/full.jsonl",
+      "compact_transcript": "/74/f00ba06800/1/transcript.jsonl",
+      "content_hash": "/74/f00ba06800/1/content_hash.txt",
+      "prompt": "/74/f00ba06800/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 138424,
+    "input_tokens": 290828,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 4670208,
-    "output_tokens": 27234,
-    "api_call_count": 71
+    "cache_read_tokens": 9380352,
+    "output_tokens": 38782,
+    "api_call_count": 120
   }
 }
