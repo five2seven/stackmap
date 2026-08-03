@@ -1,0 +1,249 @@
+## README copy-and-paste Compose examples
+
+The GitHub README must include complete Docker Compose examples that users can copy into a new `compose.yaml` file.
+
+### A. End-user image example
+
+Document the intended public-image deployment format, even if registry publishing is not part of this task.
+
+Use a clearly marked placeholder until the image is actually published:
+
+```yaml
+services:
+  stackmap:
+    image: ghcr.io/five2seven/stackmap:latest
+    container_name: stackmap
+    ports:
+- "${STACKMAP_PORT:-8088}:8080"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+- /tmp
+- /var/cache/nginx
+- /var/run
+    security_opt:
+- no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+---
+
+## Portainer Stack deployment
+
+The primary self-hosted deployment experience should support Portainer’s Stack web editor.
+
+StackMap must publish or prepare for publication of a Docker image at:
+
+ghcr.io/five2seven/stackmap
+
+The README must contain a complete Portainer Stack example that users can paste directly into:
+
+Portainer → Stacks → Add stack → Web editor
+
+Use the actual internal port, writable temporary paths, health check, and runtime requirements established by the Docker implementation.
+
+The intended example should resemble:
+
+```yaml
+services:
+  stackmap:
+    image: ghcr.io/five2seven/stackmap:latest
+    container_name: stackmap
+    ports:
+- "${STACKMAP_PORT:-8088}:8080"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+- /tmp
+- /var/cache/nginx
+- /var/run
+    security_opt:
+- no-new-privileges:true
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:8080/"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+---
+
+# Files mentioned by the user:
+
+## No. That was an omission. The Portainer-specific requirements, GHCR publishing,…: C:\Users\rae\.codex/attachments/35db4389-dbdf-4378-9d6e-f74d98d47aa4/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# StackMap Final Review, README Cleanup, and Merge: Docker Self-Hosting
+
+Work only in:
+
+C:\Code\Projects\APP-StackMap
+
+Current branch:
+
+codex/docker-self-hosting
+
+Do not create a new branch.
+
+This branch already contains the Dockerfile, Compose deployment, Portainer examples, nginx configuration, GHCR workflow, PowerShell helper, and documentation updates.
+
+The branch has not yet been merged into main.
+
+## 1. Preconditions
+
+Before changing anything:
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch and prune remote references.
+4. Confirm the current branch matches:
+   origin/codex/docker-self-hosting
+5. Confirm local main matches origin/main.
+6. Confirm Entire is enabled and available.
+7. Confirm commit `57e7083a7457525089ac554d985f029e5e4b1ef9` is present.
+
+Stop if the repository is not clean or synchronized.
+
+## 2. Clean up README.md for public GitHub users
+
+Rewrite and reorganize README.md so it serves as the public project landing page.
+
+The README should answer:
+
+- What is StackMap?
+- What problem does it solve?
+- What features does it include?
+- How do I deploy it with Portainer?
+- How do I use it?
+- Where is the data stored?
+- How do I back it up?
+- How can a developer build it from source?
+
+Remove or relocate content that does not belong in the public README, including:
+
+- Cloudflare Pages implementation details
+- Internal Cloudflare deployment steps
+- “Deployment foundation” wording
+- References to personal infrastructure
+- Rare Object Labs internal infrastructure details
+- Entire.io setup or checkpoint details
+- Codex workflow details
+- Internal Git branch workflow
+- Historical build-planning notes
+- Internal proof-of-concept deployment notes
+- Personal machine paths
+- Any wording that assumes the reader is the original developer
+
+Do not remove useful developer documentation from the repository solely because it does not belong in README.md.
+
+Move durable technical details to the appropriate existing document when useful:
+
+- `docs/architecture.md`
+- `docs/decisions.md`
+
+Delete obsolete wording when it no longer adds value.
+
+Do not broadly rewrite those documents beyond what is necessary to keep the README accurate and remove duplicated or misplaced information.
+
+## 3. Required README structure
+
+Use a clear structure similar to:
+
+# StackMap
+
+Short product description.
+
+## What StackMap Does
+
+Explain that StackMap is a local-first homelab inventory and planning application for Docker services, hosts, ports, paths, networks, exposure, and dependencies.
+
+## Features
+
+Include the currently implemented features only, such as:
+
+- Host inventory
+- Service inventory
+- Container names and images
+- Port mappings
+- Path mappings
+- Service dependencies
+- Exposure and network documentation
+- Duplicate port detection
+- Duplicate container-name detection
+- Incomplete configuration warnings
+- Port Map
+- Path Map
+- Search and filters
+- JSON backup and restore
+- Local browser storage
+
+Do not advertise unimplemented features.
+
+## Screenshots
+
+Include a placeholder if screenshots are not yet available.
+
+Do not add fake screenshots.
+
+## Deploy with Portainer
+
+Make this the primary installation method.
+
+Include clear steps:
+
+1. Open Portainer.
+2. Select Stacks.
+3. Select Add stack.
+4. Name the stack `stackmap`.
+5. Select Web editor.
+6. Paste the YAML.
+7. Deploy the stack.
+8. Open `http://<docker-host-ip>:8088`.
+
+Include one complete copy-and-paste Portainer Stack example using:
+
+```yaml
+---
+services:
+  stackmap:
+    image: ghcr.io/five2seven/stackmap:latest
+    init: true
+    container_name: stackmap
+    environment:
+- TZ=America/Chicago
+    ports:
+- 8088:8080
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    restart: unless-stopped
+
+---
+
+# Files mentioned by the user:
+
+## # StackMap Final Review, README Cleanup, and Merge: Docker Self-Hosting Work on…: C:\Users\rae\.codex/attachments/24f36834-d31c-4afe-ab3e-ce2a629cf28f/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
