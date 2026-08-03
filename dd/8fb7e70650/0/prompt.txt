@@ -1,0 +1,34 @@
+Continue the active StackMap migration task defined in AGENTS.md and docs/current-task.md.
+
+Implement only that task.
+
+Follow all repository instructions for:
+
+- Git safety
+- Entire checkpoint tracking
+- Scope control
+- Validation
+- Documentation
+- Data safety
+- Pull request creation
+
+When complete:
+
+1. Push the feature branch.
+2. Open a pull request into main.
+3. Include the implementation summary, validation results, known limitations, commit ID, and Entire checkpoint ID in the pull request description.
+4. Do not merge.
+5. Do not advance the migration plan.
+6. Do not begin another task.
+
+Stop after opening the pull request.
+
+---
+
+# Files mentioned by the user:
+
+## Fix only the Task 1 review findings on the existing branch: codex/sqlite-founda…: C:\Users\rae\.codex/attachments/718e6dd1-5187-4e11-ab00-0f0ed207fbf9/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:

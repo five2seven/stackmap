@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "dd8fb7e70650",
+  "strategy": "manual-commit",
+  "branch": "codex/sqlite-foundation",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "server/app.test.ts",
+    "server/app.ts",
+    "server/database.test.ts",
+    "server/database.ts",
+    "server/index.ts",
+    "server/shutdown.test.ts",
+    "server/shutdown.ts",
+    "server/version.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/dd/8fb7e70650/0/metadata.json",
+      "transcript": "/dd/8fb7e70650/0/full.jsonl",
+      "compact_transcript": "/dd/8fb7e70650/0/transcript.jsonl",
+      "content_hash": "/dd/8fb7e70650/0/content_hash.txt",
+      "prompt": "/dd/8fb7e70650/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 47476,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4211456,
+    "output_tokens": 11516,
+    "api_call_count": 33
+  }
+}
