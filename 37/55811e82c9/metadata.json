@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3755811e82c9",
+  "strategy": "manual-commit",
+  "branch": "codex/sqlite-migration-workflow",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "AGENTS.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/37/55811e82c9/0/metadata.json",
+      "transcript": "/37/55811e82c9/0/full.jsonl",
+      "compact_transcript": "/37/55811e82c9/0/transcript.jsonl",
+      "content_hash": "/37/55811e82c9/0/content_hash.txt",
+      "prompt": "/37/55811e82c9/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 107698,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 368896,
+    "output_tokens": 4998,
+    "api_call_count": 11
+  }
+}
