@@ -114,6 +114,25 @@ describe('legacy migration preview and transaction', () => {
     expect(expiring.preview(dataset()).previewToken).toBeTruthy()
   })
 
+  it('rejects mismatched tokens without importing', () => {
+    const { repository, previews } = fixture()
+    const preview = previews.preview(dataset())
+    expect(() => previews.confirm(`${preview.previewToken}-wrong`, 0, dataset())).toThrow('LEGACY_MIGRATION_PREVIEW_INVALID')
+    expect(repository.inventorySnapshot()).toMatchObject({ revision: 0, hosts: [], services: [] })
+  })
+
+  it('allows at most one success when a confirmation re-enters the application guard', () => {
+    const { repository, previews } = fixture()
+    const preview = previews.preview(dataset())
+    const originalImport = repository.importLegacyInventory.bind(repository)
+    repository.importLegacyInventory = (...arguments_) => {
+      expect(() => previews.confirm(preview.previewToken, 0, dataset())).toThrow('LEGACY_MIGRATION_PREVIEW_STALE')
+      return originalImport(...arguments_)
+    }
+    expect(previews.confirm(preview.previewToken, 0, dataset()).inventoryRevision).toBe(1)
+    expect(repository.inventorySnapshot()).toMatchObject({ revision: 1 })
+  })
+
   it('rolls back inventory, revision, and receipt when receipt insertion fails', () => {
     const { database, repository, previews } = fixture()
     database.connection.exec(`CREATE TRIGGER fail_receipt BEFORE INSERT ON legacy_migration_receipt BEGIN SELECT RAISE(ABORT, 'forced'); END`)
@@ -156,6 +175,7 @@ describe('legacy migration preview and transaction', () => {
 
   it('matches receipt fingerprint and fails closed for changed legacy data', () => {
     const { previews } = fixture()
+    expect(previews.status(dataset())).toEqual({ status: 'missing' })
     const preview = previews.preview(dataset())
     previews.confirm(preview.previewToken, 0, dataset())
     expect(previews.status(dataset())).toEqual({ status: 'matched' })
