@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "1b08e366307f",
+  "session_id": "019fccbe-8d7f-7af0-99c2-06fd03e52635",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-04T12:34:02.8199893Z",
+  "branch": "codex/advance-sqlite-plan-task-3",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "docs/current-task.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "055ea85d2c05",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 64366,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 557056,
+    "output_tokens": 6488,
+    "api_call_count": 16
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-04T12:34:02.7546059Z",
+    "agent_lines": 25,
+    "agent_removed": 12,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 25,
+    "total_lines_changed": 37,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Files mentioned by the user:
+
+## Review and merge StackMap planning PR #6 according to AGENTS.md. Repository: C:…: C:\Users\rae\.codex/attachments/9cb40f37-5888-4e60-8f22-7dd4a2c13c66/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Fix only the two PR #6 review findings on the existing branch: codex/advance-sq…: C:\Users\rae\.codex/attachments/327217c1-f26b-40ab-bf0c-e6f8db21dc81/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
