@@ -38,7 +38,7 @@
 - Search
 - Filters
 - Editing workflows
-- JSON export behavior review
+- Explicitly separated legacy browser-data and server-inventory JSON exports
 - Clear handling when legacy IndexedDB data exists
 - Same-origin API usage
 - Component tests
@@ -51,14 +51,19 @@
 
 Until Task 6 provides the explicit migration workflow, Task 4 must use this safe temporary behavior:
 
-- Detect legacy IndexedDB inventory.
-- Do not automatically import it.
-- Do not delete or overwrite it.
-- Clearly inform the user that browser-local legacy data exists and is not yet in the server database.
-- Provide safe guidance to export the legacy JSON backup before continuing.
-- Do not allow ambiguous simultaneous editing of legacy IndexedDB and SQLite inventories.
-- Preserve IndexedDB untouched for the explicit opt-in migration task.
-- Do not implement the full Task 6 migration workflow in Task 4.
+- At application startup, detect whether legacy IndexedDB contains any hosts or services.
+- If no legacy inventory exists, proceed normally with the server-backed SQLite inventory.
+- If legacy inventory exists, show a blocking legacy-data interstitial before the normal inventory UI becomes editable.
+- The interstitial must clearly state that browser-local legacy data was found, that it is not yet stored in SQLite, that the current server inventory may be empty or different, that automatic migration is unavailable in Task 4, and that the legacy data will remain untouched.
+- The interstitial must provide a clearly labeled **Export legacy browser data** action. This action reads only from legacy IndexedDB, preserves the existing browser-local JSON schema and behavior, does not read from SQLite, does not modify either datastore, and clearly identifies the action and downloaded file as a legacy browser-data backup.
+- The interstitial must provide a separate, deliberate acknowledgement action to continue to the server-backed inventory without importing legacy data. Accidental dismissal must not enable editing.
+- Until the user deliberately acknowledges and continues, block normal host and service editing and all normal Port Map and Path Map editing paths, and do not mutate the server inventory.
+- Acknowledgement may be session-scoped for Task 4. Do not provide permanent suppression or a “do not show again” mechanism.
+- After deliberate continuation, the normal application uses only the HTTP API, performs no IndexedDB writes, and leaves legacy IndexedDB untouched.
+- After deliberate continuation, the normal export action exports only the current server-authoritative inventory returned by the HTTP API, does not read from IndexedDB, and is clearly labeled as exporting the current StackMap server inventory.
+- The legacy browser export and server inventory export must use distinct visible text and accessible names, must identify their data source before download, and must never silently select a source.
+- The server inventory export is not a full server backup/restore system; server-authoritative restore remains excluded until Task 5.
+- Do not implement legacy migration, merge, import, deletion, or synchronization behavior. Preserve IndexedDB untouched for Task 6.
 
 ### Explicit exclusions
 
@@ -91,10 +96,18 @@ Until Task 6 provides the explicit migration workflow, Task 4 must use this safe
 - Loading and error states are accessible.
 - Multiple browsers see the same server inventory.
 - Container restart and recreation preserve inventory through `/config`.
-- Legacy IndexedDB data is detected but not modified.
-- The user is warned before relying on the empty or new server inventory when legacy data exists.
+- Startup detection distinguishes an IndexedDB inventory containing hosts or services from one containing no legacy inventory.
+- When legacy inventory exists, a blocking interstitial presents all required legacy/server distinctions before the normal inventory UI is editable.
+- Normal host, service, Port Map, and Path Map editing and all server mutations remain blocked until a separate deliberate acknowledgement continues to the server-backed application.
+- Accidental dismissal cannot acknowledge the warning; acknowledgement may be session-scoped but cannot be permanently suppressed in Task 4.
+- After acknowledgement, normal inventory operations use only the HTTP API, perform no IndexedDB writes, and leave legacy IndexedDB unmodified.
 - No automatic migration occurs.
-- Existing JSON export behavior is reviewed and either safely preserved for legacy data or clearly separated from server inventory.
+- **Export legacy browser data** reads only legacy IndexedDB, preserves the browser-local JSON schema and behavior, clearly identifies the download as a legacy backup, and modifies neither datastore.
+- The normal server inventory export reads only the HTTP repository, clearly identifies the download as the current StackMap server inventory, and modifies neither datastore.
+- Legacy and server export actions have distinguishable visible text and accessible names, identify their source before download, and never silently select a datastore.
+- Server-authoritative restore remains excluded until Task 5, and the full opt-in migration workflow remains excluded until Task 6.
+- Tests prove that legacy export reads only IndexedDB, server export reads only the HTTP repository, neither export mutates data, and both actions are distinguishable by visible text and accessible name.
+- Tests prove that server editing remains blocked and no API mutation occurs from the legacy interstitial before acknowledgement, then acknowledgement enables server-backed operation without writing to IndexedDB.
 - All required tests pass.
 
 ### Validation
