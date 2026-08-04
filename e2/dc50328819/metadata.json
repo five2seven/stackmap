@@ -3,9 +3,17 @@
   "checkpoint_id": "e2dc50328819",
   "strategy": "manual-commit",
   "branch": "codex/server-backup-restore",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
-    ".github/workflows/publish-container.yml"
+    ".github/workflows/publish-container.yml",
+    "README.md",
+    "docs/architecture.md",
+    "server/backup-api.test.ts",
+    "server/backup-api.ts",
+    "server/backup.test.ts",
+    "server/backup.ts",
+    "server/repository.test.ts",
+    "server/repository.ts"
   ],
   "sessions": [
     {
@@ -14,13 +22,20 @@
       "compact_transcript": "/e2/dc50328819/0/transcript.jsonl",
       "content_hash": "/e2/dc50328819/0/content_hash.txt",
       "prompt": "/e2/dc50328819/0/prompt.txt"
+    },
+    {
+      "metadata": "/e2/dc50328819/1/metadata.json",
+      "transcript": "/e2/dc50328819/1/full.jsonl",
+      "compact_transcript": "/e2/dc50328819/1/transcript.jsonl",
+      "content_hash": "/e2/dc50328819/1/content_hash.txt",
+      "prompt": "/e2/dc50328819/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 601514,
+    "input_tokens": 713367,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 25411840,
-    "output_tokens": 53238,
-    "api_call_count": 212
+    "cache_read_tokens": 28746240,
+    "output_tokens": 67710,
+    "api_call_count": 259
   }
 }

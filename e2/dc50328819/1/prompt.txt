@@ -1,0 +1,17 @@
+# Files mentioned by the user:
+
+## Perform the initial read-only review of StackMap draft PR #9 according to AGENT…: C:\Users\rae\.codex/attachments/49ab2a24-a3d2-4aa7-9602-171d1a54d984/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Fix only the recorded PR #9 review findings on the existing branch: codex/serve…: C:\Users\rae\.codex/attachments/0eb54d9c-bb56-4125-8035-476de00597e2/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
