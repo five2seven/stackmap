@@ -10,7 +10,7 @@ JSON export remains supported. Legacy migration is opt-in and data-safe. Databas
 
 ## Phased backlog
 
-Tasks 1 and 2 are Complete, and Task 3 is Ready. Tasks 4 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
+Tasks 1 through 3 are Complete, and Task 4 is Ready. Tasks 5 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
 
 ### 1. API, SQLite, and target-runtime proof
 
@@ -40,7 +40,7 @@ Tasks 1 and 2 are Complete, and Task 3 is Ready. Tasks 4 through 10 remain Block
 
 ### 3. Complete inventory API
 
-- **Status:** Ready
+- **Status:** Complete
 - **Branch:** `codex/inventory-api`
 - **Goal:** Expose the complete inventory model before any frontend cutover.
 - **Datastore authority after completion:** IndexedDB remains the sole authoritative production inventory datastore; the API is not used for normal UI persistence.
@@ -49,11 +49,11 @@ Tasks 1 and 2 are Complete, and Task 3 is Ready. Tasks 4 through 10 remain Block
 - **Acceptance criteria:** The API supports every normal inventory operation atomically and preserves current validation and deletion semantics without moving only hosts or scalar service fields.
 - **Required tests:** Routes, validation, nesting, referential integrity, deletion, concurrency, error handling, and complete-model integration tests, plus standard validation.
 - **Dependencies:** Task 2 Complete.
-- **Completion notes:** Ready after Task 2 completed with its schema, repository, validation, container validation, and schema smoke validation passing; no unresolved blocker prevents API implementation.
+- **Completion notes:** Implemented on `codex/inventory-api` in commits `16998f9a5fe3e71cb9fa83f0dccb0f812385cdd1` and `c54491620a84c19e78cf5b39dd1bead529d8c5a0` (final head). Entire checkpoints: `3efb48068159` and `c74d6fde2534`. PR #5 merged as `2431638c1ab7ec77c69d1609e207b8d605baf712`. Validation passed: lint; 127 tests; production build; 9 E2E tests; production audit with 0 vulnerabilities; `git diff --check`; GitHub Actions container validation; and exact-head workflow run 30865255752. Container and API validation confirmed the complete normalized inventory API under `/api/v1`, including host and service operations, nested ports, paths, dependencies, validation, safe errors, and optimistic concurrency. IndexedDB remains authoritative for all production inventory; SQLite contains the complete normalized inventory schema, repository, and API, but the React frontend does not use the API, no production cutover occurred, and no production inventory source changed. Known limitations: SQLite inventory is not visible in the production UI; browser and SQLite inventories are not synchronized; JSON backup and restore remain browser-side; legacy IndexedDB migration is not implemented; the API intentionally has no authentication or CORS; and ARM64 remains unvalidated.
 
 ### 4. HTTP repository and coordinated frontend cutover
 
-- **Status:** Blocked
+- **Status:** Ready
 - **Branch:** `codex/http-repository-cutover`
 - **Goal:** Switch the entire normal application inventory source from Dexie to the server in one coordinated cutover.
 - **Datastore authority after completion:** SQLite is authoritative for every normal inventory operation; Dexie is accessible only to the later explicit legacy migration.
@@ -62,7 +62,7 @@ Tasks 1 and 2 are Complete, and Task 3 is Ready. Tasks 4 through 10 remain Block
 - **Acceptance criteria:** Hosts, services, ports, paths, and dependencies switch together; normal use never reads or writes Dexie; all existing workflows remain functional; no production split-brain state exists.
 - **Required tests:** Repository adapter, component, failure, concurrency, Port Map, Path Map, search, filter, and full cutover E2E coverage, plus standard validation.
 - **Dependencies:** Task 3 Complete.
-- **Completion notes:** Pending.
+- **Completion notes:** Ready after Task 3 completed and merged with its complete-model API, validation, container validation, and exact-head workflow passing. Task 3 satisfies this task's dependency, and no unresolved blocker prevents the coordinated frontend cutover. Task 4 is not In Progress.
 
 ### 5. Server-authoritative JSON backup and restore
 
