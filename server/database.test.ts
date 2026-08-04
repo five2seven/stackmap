@@ -28,6 +28,7 @@ describe('openDatabase', () => {
     expect(tables).toEqual([
       'application_metadata',
       'hosts',
+      'legacy_migration_receipt',
       'schema_migrations',
       'service_dependencies',
       'service_paths',
@@ -36,7 +37,7 @@ describe('openDatabase', () => {
     ])
     expect(database.connection.pragma('foreign_keys', { simple: true })).toBe(1)
     expect(database.connection.pragma('synchronous', { simple: true })).toBe(1)
-    expect(database.schemaVersion()).toBe(2)
+    expect(database.schemaVersion()).toBe(3)
     expect(database.installationId()).toMatch(/^[0-9a-f-]{36}$/)
     database.checkpointAndClose()
   })
@@ -58,7 +59,7 @@ describe('openDatabase', () => {
     taskOneConnection.close()
 
     const upgraded = openDatabase(filename)
-    expect(upgraded.schemaVersion()).toBe(2)
+    expect(upgraded.schemaVersion()).toBe(3)
     expect(upgraded.installationId()).toBe(installationId)
     expect(
       upgraded.connection

@@ -50,6 +50,18 @@ export class RestoreConflictError extends Error {
     super(code)
   }
 }
+export class LegacyMigrationConflictError extends Error {
+  constructor(public readonly code: 'LEGACY_MIGRATION_PREVIEW_STALE' | 'LEGACY_MIGRATION_TARGET_NOT_EMPTY') {
+    super(code)
+  }
+}
+
+export interface LegacyMigrationReceipt {
+  fingerprint: string
+  importedAt: string
+  inventoryRevision: number
+  legacySchemaVersion: 3
+}
 
 export interface InventorySnapshot {
   revision: number
@@ -65,6 +77,66 @@ export class SqliteInventoryRepository {
 
   inventoryRevision(): number {
     return this.readInventoryRevision().revision
+  }
+
+  isInventoryEmpty(): boolean {
+    const row = this.connection.prepare(`
+      SELECT EXISTS(SELECT 1 FROM hosts) AS hosts, EXISTS(SELECT 1 FROM services) AS services
+    `).get() as { hosts: number; services: number }
+    return row.hosts === 0 && row.services === 0
+  }
+
+  legacyMigrationReceipt(): LegacyMigrationReceipt | undefined {
+    const row = this.connection.prepare(`
+      SELECT fingerprint, imported_at, inventory_revision, legacy_schema_version
+      FROM legacy_migration_receipt WHERE singleton = 1
+    `).get() as { fingerprint: string; imported_at: string; inventory_revision: number; legacy_schema_version: 3 } | undefined
+    return row && {
+      fingerprint: row.fingerprint,
+      importedAt: row.imported_at,
+      inventoryRevision: row.inventory_revision,
+      legacySchemaVersion: row.legacy_schema_version,
+    }
+  }
+
+  importLegacyInventory(
+    hosts: NewInventoryHost[], services: NewInventoryService[], expectedRevision: number,
+    fingerprint: string, importedAt: string,
+  ): number {
+    return this.connection.transaction(() => {
+      const { revision, storedValue } = this.readInventoryRevision()
+      if (revision !== expectedRevision) throw new LegacyMigrationConflictError('LEGACY_MIGRATION_PREVIEW_STALE')
+      if (!this.isInventoryEmpty()) throw new LegacyMigrationConflictError('LEGACY_MIGRATION_TARGET_NOT_EMPTY')
+      if (revision === Number.MAX_SAFE_INTEGER) throw new LegacyMigrationConflictError('LEGACY_MIGRATION_PREVIEW_STALE')
+
+      const insertHost = this.connection.prepare(`
+        INSERT INTO hosts (id, name, type, ip_address, operating_system, notes, revision, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `)
+      for (const host of hosts) insertHost.run(
+        host.id, host.name, host.type, host.ipAddress, host.operatingSystem, host.notes,
+        host.createdAt, host.updatedAt,
+      )
+      for (const service of services) this.insertService(service)
+      for (const service of services) this.replaceServiceChildren(service)
+
+      const nextRevision = revision + 1
+      const updated = this.connection.prepare(`
+        UPDATE application_metadata SET value = ? WHERE key = 'inventory_revision' AND value = ?
+      `).run(String(nextRevision), storedValue)
+      if (updated.changes !== 1) throw new LegacyMigrationConflictError('LEGACY_MIGRATION_PREVIEW_STALE')
+      this.connection.prepare(`
+        INSERT INTO legacy_migration_receipt
+          (singleton, fingerprint, imported_at, inventory_revision, legacy_schema_version)
+        VALUES (1, ?, ?, ?, 3)
+        ON CONFLICT(singleton) DO UPDATE SET
+          fingerprint = excluded.fingerprint,
+          imported_at = excluded.imported_at,
+          inventory_revision = excluded.inventory_revision,
+          legacy_schema_version = excluded.legacy_schema_version
+      `).run(fingerprint, importedAt, nextRevision)
+      return nextRevision
+    })()
   }
 
   inventorySnapshot(afterRevisionRead?: () => void): InventorySnapshot {

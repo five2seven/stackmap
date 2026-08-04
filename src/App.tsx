@@ -15,6 +15,10 @@ import {
 } from './data/legacyInventory'
 import type { StackMapRepository } from './data/repository'
 import {
+  legacyMigrationClient as defaultMigrationClient, legacyMigrationDataset,
+  LegacyMigrationError, type LegacyMigrationClient, type LegacyMigrationPreview,
+} from './data/legacyMigration'
+import {
   duplicateContainerNameServiceIds,
   duplicatePortServiceIds,
   filterServices,
@@ -47,9 +51,10 @@ interface AppProps {
   repository?: StackMapRepository
   legacyReader?: LegacyInventoryReader
   backupClient?: ServerBackupClient
+  migrationClient?: LegacyMigrationClient
 }
 
-function App({ repository = defaultRepository, legacyReader = defaultLegacyReader, backupClient = defaultBackupClient }: AppProps) {
+function App({ repository = defaultRepository, legacyReader = defaultLegacyReader, backupClient = defaultBackupClient, migrationClient = defaultMigrationClient }: AppProps) {
   const [services, setServices] = useState<Service[]>([])
   const [hosts, setHosts] = useState<Host[]>([])
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
@@ -61,6 +66,10 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
   const [loadFailed, setLoadFailed] = useState(false)
   const [legacyBlocked, setLegacyBlocked] = useState(false)
   const [legacyDetectionFailure, setLegacyDetectionFailure] = useState<'unsupported' | 'transient' | null>(null)
+  const [migrationPreview, setMigrationPreview] = useState<LegacyMigrationPreview | null>(null)
+  const [migrationAcknowledged, setMigrationAcknowledged] = useState(false)
+  const [migrationBusy, setMigrationBusy] = useState(false)
+  const migrationStatus = useRef<HTMLDivElement>(null)
   const [activeView, setActiveView] = useState<'services' | 'port-map' | 'path-map'>('services')
   const [portMapHostFilter, setPortMapHostFilter] = useState('all')
   const [pathMapHostFilter, setPathMapHostFilter] = useState('all')
@@ -104,8 +113,7 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
     try {
       const hasLegacyInventory = await legacyReader.detect()
       if (hasLegacyInventory) {
-        setLegacyBlocked(true)
-        setLoading(false)
+        await resolveLegacyStartup()
         return
       }
       await loadServerInventory()
@@ -121,13 +129,24 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
     }
   }
 
+  async function resolveLegacyStartup() {
+    const data = legacyMigrationDataset(await legacyReader.read())
+    const status = await migrationClient.status(data)
+    if (status.status === 'matched') {
+      await loadServerInventory()
+      return
+    }
+    setLegacyBlocked(true)
+    setLoading(false)
+    if (status.status === 'changed') setError('Browser-local legacy data differs from the dataset previously migrated. Preview is required and no data was imported.')
+  }
+
   useEffect(() => {
     let active = true
     legacyReader.detect().then(async (hasLegacyInventory) => {
       if (!active) return
       if (hasLegacyInventory) {
-        setLegacyBlocked(true)
-        setLoading(false)
+        await resolveLegacyStartup()
         return
       }
       try {
@@ -157,7 +176,9 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
     return () => {
       active = false
     }
-  }, [legacyReader, repository])
+  // Startup intentionally reruns only when an injected boundary changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [legacyReader, migrationClient, repository])
 
   useEffect(() => {
     if (!editingService && returnFocusToMap.current) {
@@ -362,6 +383,36 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
     }
   }
 
+  async function previewLegacyMigration() {
+    if (migrationBusy) return
+    setMigrationBusy(true); setError(''); setMessage('Validating legacy browser inventory…')
+    try {
+      const preview = await migrationClient.preview(legacyMigrationDataset(await legacyReader.read()))
+      setMigrationPreview(preview); setMigrationAcknowledged(false)
+      setMessage('Legacy inventory validated. Review the summary and acknowledge the copy.')
+    } catch (caught) {
+      setMigrationPreview(null)
+      setError(caught instanceof Error ? caught.message : 'Legacy migration could not be previewed.')
+      setMessage('')
+    } finally { setMigrationBusy(false); window.setTimeout(() => migrationStatus.current?.focus(), 0) }
+  }
+
+  async function confirmLegacyMigration() {
+    if (!migrationPreview || !migrationAcknowledged || migrationBusy) return
+    setMigrationBusy(true); setError(''); setMessage('Copying legacy inventory into SQLite…')
+    try {
+      const current = legacyMigrationDataset(await legacyReader.read())
+      const result = await migrationClient.confirm(migrationPreview.previewToken, migrationPreview.expectedInventoryRevision, current)
+      setMigrationPreview(null); setMigrationAcknowledged(false)
+      await loadServerInventory()
+      setMessage(`Legacy migration complete: ${result.summary.hostCount} hosts and ${result.summary.serviceCount} services. Inventory revision ${result.inventoryRevision}. Browser data was left untouched.`)
+    } catch (caught) {
+      if (caught instanceof LegacyMigrationError && ['LEGACY_MIGRATION_PREVIEW_STALE', 'LEGACY_MIGRATION_PREVIEW_INVALID'].includes(caught.code)) setMigrationPreview(null)
+      setError(caught instanceof Error ? caught.message : 'Legacy migration could not be completed.')
+      setMessage('')
+    } finally { setMigrationBusy(false); window.setTimeout(() => migrationStatus.current?.focus(), 0) }
+  }
+
   if (loading) {
     return <div className="loading-state" role="status">Loading StackMap server inventory…</div>
   }
@@ -372,18 +423,30 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
         <p className="eyebrow">Legacy browser data found</p>
         <h1 id="legacy-data-title">Choose how to continue safely</h1>
         <p>Browser-local legacy hosts or services were found. This data is not stored in SQLite.</p>
-        <p>The current StackMap server inventory may be empty or different. Automatic migration is not available in Task 4, and your legacy browser data will remain untouched.</p>
-        {message && <div className="notice success" role="status">{message}</div>}
+        <p>Migration copies the complete legacy inventory only into an empty SQLite server inventory. Nothing imports automatically, and browser data remains untouched.</p>
+        <p>If server inventory already exists, back it up and intentionally handle it through a separate approved workflow before migration.</p>
+        <div ref={migrationStatus} tabIndex={-1}>{message && <div className="notice success" role="status" aria-live="polite">{message}</div>}</div>
         {error && <div className="notice error" role="alert">{error}</div>}
+        {migrationPreview && <section className="restore-panel" aria-label="Legacy migration preview">
+          <dl className="restore-summary">
+            <div><dt>Hosts</dt><dd>{migrationPreview.summary.hostCount}</dd></div>
+            <div><dt>Services</dt><dd>{migrationPreview.summary.serviceCount}</dd></div>
+            <div><dt>Ports</dt><dd>{migrationPreview.summary.portCount}</dd></div>
+            <div><dt>Paths</dt><dd>{migrationPreview.summary.pathCount}</dd></div>
+            <div><dt>Dependencies</dt><dd>{migrationPreview.summary.dependencyCount}</dd></div>
+          </dl>
+          <label className="restore-acknowledgement"><input type="checkbox" checked={migrationAcknowledged} onChange={(event) => setMigrationAcknowledged(event.target.checked)} /> I understand this copies all legacy data into the empty SQLite inventory and leaves IndexedDB unchanged.</label>
+        </section>}
         <div className="blocking-actions">
           <button className="button ghost" type="button" onClick={exportLegacyInventory} aria-label="Export legacy browser data from IndexedDB">
             Export legacy browser data
           </button>
-          <button className="button primary" type="button" onClick={loadServerInventory}>
-            Continue to StackMap server inventory without importing
-          </button>
+          {!migrationPreview ? <button className="button primary" type="button" disabled={migrationBusy} onClick={previewLegacyMigration}>{migrationBusy ? 'Checking…' : 'Preview migration'}</button> : <>
+            <button className="button ghost" type="button" disabled={migrationBusy} onClick={() => { setMigrationPreview(null); setMigrationAcknowledged(false); setMessage('Migration cancelled. Neither datastore was changed.') }}>Cancel</button>
+            <button className="button primary" type="button" disabled={!migrationAcknowledged || migrationBusy} onClick={confirmLegacyMigration}>{migrationBusy ? 'Migrating…' : 'Confirm migration'}</button>
+          </>}
         </div>
-        <p className="field-help">Continuing is acknowledged for this browser session only. It does not import, merge, delete, or synchronize data.</p>
+        <p className="field-help">Migration never merges, appends, overwrites, deletes, synchronizes, or writes browser data.</p>
       </main>
     )
   }

@@ -95,6 +95,16 @@ const inventorySchemaSql = `
 const inventoryFingerprint = `${inventorySchemaSql}
 INSERT application_metadata inventory_revision 0`
 
+const legacyMigrationReceiptSchemaSql = `
+  CREATE TABLE legacy_migration_receipt (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    fingerprint TEXT NOT NULL,
+    imported_at TEXT NOT NULL,
+    inventory_revision INTEGER NOT NULL CHECK (inventory_revision >= 1),
+    legacy_schema_version INTEGER NOT NULL CHECK (legacy_schema_version = 3)
+  ) STRICT;
+`
+
 export function migrationChecksum(version: number, name: string, definition: string): string {
   return createHash('sha256').update(`${version}\0${name}\0${definition}`).digest('hex')
 }
@@ -122,6 +132,14 @@ export const databaseMigrations: readonly Migration[] = [
       connection
         .prepare('INSERT INTO application_metadata (key, value) VALUES (?, ?)')
         .run('inventory_revision', '0')
+    },
+  },
+  {
+    version: 3,
+    name: 'legacy migration receipt',
+    checksum: migrationChecksum(3, 'legacy migration receipt', legacyMigrationReceiptSchemaSql),
+    apply(connection: Database.Database) {
+      connection.exec(legacyMigrationReceiptSchemaSql)
     },
   },
 ] as const

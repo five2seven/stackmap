@@ -7,7 +7,7 @@ export interface LegacyInventoryReader {
 }
 
 export class LegacyInventoryError extends Error {
-  constructor(message: string, readonly code: 'UNSUPPORTED_ENUMERATION' | 'DETECTION_FAILED' | 'TIMEOUT') {
+  constructor(message: string, readonly code: 'UNSUPPORTED_ENUMERATION' | 'UNSUPPORTED_SCHEMA' | 'DETECTION_FAILED' | 'TIMEOUT') {
     super(message)
     this.name = 'LegacyInventoryError'
   }
@@ -28,9 +28,14 @@ export class IndexedDbLegacyInventoryReader implements LegacyInventoryReader {
 
   async read(): Promise<StackMapData> {
     const snapshot = await this.snapshot()
-    const schemaVersion = snapshot.version >= 4 ? 3 : snapshot.version >= 3 ? 2 : 1
+    // Dexie encodes version 4 as IndexedDB version 40; hand-created compatibility
+    // databases used by older deployments may expose the literal version 4.
+    if (snapshot.version !== 4 && snapshot.version !== 40) throw new LegacyInventoryError(
+      'Only exact legacy browser schema version 3 can be migrated.',
+      'UNSUPPORTED_SCHEMA',
+    )
     const normalized = validateImport({
-      schemaVersion,
+      schemaVersion: 3,
       exportedAt: new Date().toISOString(),
       services: snapshot.services,
       hosts: snapshot.hosts,

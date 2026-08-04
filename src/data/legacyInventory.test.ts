@@ -46,6 +46,23 @@ describe('IndexedDbLegacyInventoryReader', () => {
     database.close()
   })
 
+  it('fails closed when legacy storage is not exact browser schema version 3', async () => {
+    const name = `legacy-old-${crypto.randomUUID()}`
+    names.push(name)
+    class OldDatabase extends Dexie {
+      constructor() {
+        super(name)
+        this.version(3).stores({ services: 'id', hosts: 'id' })
+      }
+    }
+    const database = new OldDatabase()
+    await database.table('services').put({ id: 'old-service' })
+    database.close()
+    const reader = new IndexedDbLegacyInventoryReader(name)
+    expect(await reader.detect()).toBe(true)
+    await expect(reader.read()).rejects.toMatchObject({ code: 'UNSUPPORTED_SCHEMA' })
+  })
+
   it('times out enumeration and allows a later retry', async () => {
     vi.useFakeTimers()
     const databases = vi.spyOn(indexedDB, 'databases')
