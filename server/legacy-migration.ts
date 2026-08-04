@@ -42,11 +42,12 @@ export class LegacyMigrationPreviewStore {
 
   preview(value: unknown) {
     const validated = validateLegacyDataset(value)
-    if (!this.repository.isInventoryEmpty()) throw new LegacyMigrationConflictError('LEGACY_MIGRATION_TARGET_NOT_EMPTY')
+    const target = this.repository.legacyMigrationTargetState()
+    if (!target.empty) throw new LegacyMigrationConflictError('LEGACY_MIGRATION_TARGET_NOT_EMPTY')
     this.cleanup()
     if (this.previews.size >= this.capacity) throw new LegacyMigrationPreviewCapacityError()
     const token = randomBytes(32).toString('base64url')
-    const expectedRevision = this.repository.inventoryRevision()
+    const expectedRevision = target.revision
     this.previews.set(token, { ...validated, expectedRevision, expiresAt: this.now() + this.ttlMs })
     return { summary: validated.summary, expectedInventoryRevision: expectedRevision, previewToken: token }
   }

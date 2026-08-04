@@ -70,6 +70,25 @@ describe('coordinated cutover boundary', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Legacy browser-data backup exported')
   })
 
+  it('returns focus to preview after cancelling without reading or migrating again', async () => {
+    const user = userEvent.setup()
+    const read = vi.fn(async () => ({ services: [createService('Legacy app')], hosts: [] }))
+    const client = migrationClient()
+    render(<App repository={repository()} legacyReader={{ detect: async () => true, read }} migrationClient={client} />)
+    const previewButton = await screen.findByRole('button', { name: 'Preview migration' })
+    await user.click(previewButton)
+    const callsAfterPreview = read.mock.calls.length
+    const cancel = await screen.findByRole('button', { name: 'Cancel' })
+    cancel.focus()
+    expect(cancel).toHaveFocus()
+    await user.keyboard('{Enter}')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Preview migration' })).toHaveFocus())
+    expect(read).toHaveBeenCalledTimes(callsAfterPreview)
+    expect(client.preview).toHaveBeenCalledOnce()
+    expect(client.confirm).not.toHaveBeenCalled()
+    expect(screen.queryByRole('region', { name: 'Legacy migration preview' })).not.toBeInTheDocument()
+  })
+
   it('uses a matching server receipt to bypass repeat blocking', async () => {
     const getAll = vi.fn(async () => ({ services: [createService('Migrated app')], hosts: [] }))
     render(<App repository={repository(getAll)} legacyReader={{ detect: async () => true, read: async () => ({ services: [createService('Migrated app')], hosts: [] }) }} migrationClient={migrationClient({ status: vi.fn(async () => ({ status: 'matched' as const })) })} />)

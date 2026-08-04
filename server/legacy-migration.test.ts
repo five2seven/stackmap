@@ -90,6 +90,56 @@ describe('legacy migration preview and transaction', () => {
     expect(repository.inventoryRevision()).toBe(revision)
   })
 
+  it.each([
+    ['hosts', "INSERT INTO hosts VALUES ('orphan','Orphan','unknown','','','',1,?,?)"],
+    ['services', "INSERT INTO services VALUES ('orphan','Orphan','','','','','active',NULL,'','','unknown','',1,?,?)"],
+    ['service_ports', "INSERT INTO service_ports VALUES ('orphan','missing',0,80,80,'tcp','')"],
+    ['service_paths', "INSERT INTO service_paths VALUES ('orphan','missing',0,'/a','/b','orphan',0)"],
+    ['service_dependencies', "INSERT INTO service_dependencies VALUES ('missing','also-missing',0)"],
+  ])('rejects a target containing rows only in %s at preview and confirmation', (_table, sql) => {
+    const previewCase = fixture()
+    previewCase.database.connection.pragma('foreign_keys = OFF')
+    const statement = previewCase.database.connection.prepare(sql)
+    if (sql.includes('?')) statement.run(timestamp, timestamp)
+    else statement.run()
+    previewCase.database.connection.pragma('foreign_keys = ON')
+    expect(() => previewCase.previews.preview(dataset())).toThrow('LEGACY_MIGRATION_TARGET_NOT_EMPTY')
+    expect(previewCase.repository.inventoryRevision()).toBe(0)
+
+    const confirmationCase = fixture()
+    const preview = confirmationCase.previews.preview(dataset())
+    confirmationCase.database.connection.pragma('foreign_keys = OFF')
+    const confirmationStatement = confirmationCase.database.connection.prepare(sql)
+    if (sql.includes('?')) confirmationStatement.run(timestamp, timestamp)
+    else confirmationStatement.run()
+    confirmationCase.database.connection.pragma('foreign_keys = ON')
+    expect(() => confirmationCase.previews.confirm(preview.previewToken, 0, dataset())).toThrow('LEGACY_MIGRATION_TARGET_NOT_EMPTY')
+    expect(confirmationCase.repository.inventoryRevision()).toBe(0)
+    expect(confirmationCase.repository.legacyMigrationReceipt()).toBeUndefined()
+  })
+
+  it('rejects a target containing mixed orphan child rows', () => {
+    const { database, repository, previews } = fixture()
+    database.connection.pragma('foreign_keys = OFF')
+    database.connection.exec(`
+      INSERT INTO service_ports VALUES ('port','missing',0,80,80,'tcp','orphan');
+      INSERT INTO service_paths VALUES ('path','missing',0,'/a','/b','orphan',0);
+      INSERT INTO service_dependencies VALUES ('missing','also-missing',0);
+    `)
+    database.connection.pragma('foreign_keys = ON')
+    expect(() => previews.preview(dataset())).toThrow('LEGACY_MIGRATION_TARGET_NOT_EMPTY')
+    expect(repository.inventoryRevision()).toBe(0)
+  })
+
+  it('migrates an empty target whose revision is already greater than zero', () => {
+    const { database, repository, previews } = fixture()
+    database.connection.prepare("UPDATE application_metadata SET value = '7' WHERE key = 'inventory_revision'").run()
+    const preview = previews.preview(dataset())
+    expect(preview.expectedInventoryRevision).toBe(7)
+    expect(previews.confirm(preview.previewToken, 7, dataset()).inventoryRevision).toBe(8)
+    expect(repository.legacyMigrationReceipt()).toMatchObject({ inventoryRevision: 8 })
+  })
+
   it('rejects changed source and changed target after preview', () => {
     const changedSource = fixture()
     const sourcePreview = changedSource.previews.preview(dataset())

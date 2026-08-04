@@ -246,7 +246,7 @@ test('shares server inventory across independent browser contexts and protects s
   await secondContext.close()
 })
 
-test('previews and explicitly migrates legacy IndexedDB without mutating it', async ({ page }) => {
+test('previews and explicitly migrates legacy IndexedDB without mutating it', async ({ page, browser }) => {
   await page.goto('/')
   await page.evaluate(async () => {
     await new Promise<void>((resolve, reject) => {
@@ -300,6 +300,35 @@ test('previews and explicitly migrates legacy IndexedDB without mutating it', as
   await page.reload()
   await expect(page.getByRole('alertdialog', { name: 'Choose how to continue safely' })).not.toBeVisible()
   await expect(page.getByRole('heading', { name: 'Legacy service' })).toBeVisible()
+  const secondContext = await browser.newContext()
+  const secondPage = await secondContext.newPage()
+  await secondPage.goto('/')
+  await secondPage.evaluate(async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('stackmap', 4)
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore('services', { keyPath: 'id' })
+        request.result.createObjectStore('hosts', { keyPath: 'id' })
+        request.result.createObjectStore('metadata', { keyPath: 'key' })
+      }
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const transaction = request.result.transaction('services', 'readwrite')
+        transaction.objectStore('services').put({
+          id: 'legacy-service', name: 'Legacy service', containerName: '', dockerImage: '', description: '',
+          applicationUrl: '', status: 'active', internalUrl: '', ports: [], paths: [], network: '', exposure: 'unknown',
+          dependencyIds: [], notes: '', createdAt: '2026-08-04T00:00:00.000Z', updatedAt: '2026-08-04T00:00:00.000Z',
+        })
+        transaction.oncomplete = () => { request.result.close(); resolve() }
+        transaction.onerror = () => reject(transaction.error)
+      }
+    })
+  })
+  await secondPage.reload()
+  await expect(secondPage.getByRole('alertdialog', { name: 'Choose how to continue safely' })).not.toBeVisible()
+  await expect(secondPage.getByRole('heading', { name: 'Legacy service' })).toBeVisible()
+  expect(await secondPage.evaluate(() => ({ ...localStorage }))).toEqual({})
+  await secondContext.close()
 })
 
 test('persists identity fields and flags duplicate container names per host', async ({ page }) => {

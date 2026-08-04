@@ -74,7 +74,7 @@ StackMap stores its authoritative inventory in `/config/stackmap.db`. Replace `/
 
 The left side of `"8088:8080"` is the host port. For example, use `"8090:8080"` to expose StackMap on port 8090. Change `TZ=America/Chicago` to the appropriate IANA timezone for the Docker host.
 
-Browsers and devices using the same StackMap server share its SQLite inventory. Existing browser-local IndexedDB data is detected and preserved for the later explicit migration workflow; it is never imported automatically.
+Browsers and devices using the same StackMap server share its SQLite inventory. Existing browser-local IndexedDB data is never imported automatically: StackMap detects it and offers an explicit preview-and-confirm migration only when the SQLite inventory is empty.
 
 ### Updating in Portainer
 
@@ -97,7 +97,7 @@ Browsers and devices using the same StackMap server share its SQLite inventory. 
 
 StackMap stores all normal production inventory in SQLite at `/config/stackmap.db`. The React application reads and writes that inventory only through the same-origin HTTP API. Container restart or recreation with the same `/config` mount preserves inventory, and independent browsers see the same records.
 
-Legacy IndexedDB records remain browser-local and untouched. When detected, StackMap blocks normal editing until the user exports a legacy backup or deliberately continues to the server inventory without importing it.
+Legacy IndexedDB records remain browser-local and untouched. When detected, StackMap blocks normal editing until the dataset matches an earlier migration receipt, the user completes the explicit empty-target migration, or the user deliberately continues to the server inventory without importing it. Migration copies exact schema-version-3 records transactionally and preserves IDs and timestamps; it never deletes or writes IndexedDB.
 
 ## Backup and Restore
 
@@ -105,7 +105,7 @@ Use **Download server backup** to save a versioned JSON backup of the authoritat
 
 To restore, select a server-backup JSON file, preview its summary, read the destructive warning, and explicitly acknowledge replacement. Restore replaces the complete server inventory atomically. If inventory changes after preview, StackMap rejects confirmation and requires a new preview. Keep `/config` persistently mounted so restored data survives container replacement.
 
-When legacy browser data is detected, use **Export legacy browser data** to download it without reading or modifying SQLite. The legacy and server backup actions are deliberately separate; a legacy browser export cannot be restored through the server workflow.
+When legacy browser data is detected, use **Export legacy browser data** to preserve a copy, or **Preview migration** and explicitly confirm copying it into an empty SQLite inventory. Populated SQLite targets are rejected without mutation. The legacy migration and server restore actions are deliberately separate; migration never uses restore as an overwrite mechanism.
 
 ## Build from Source
 
@@ -133,7 +133,8 @@ Additional validation commands are `npm run lint`, `npm run build`, and `npm run
 
 - Server-authoritative JSON backup and restore are implemented for exact-shape server backup schema version 1. Restore is manual and destructive, and requires preview plus explicit confirmation; it is not a raw SQLite database-file backup.
 - Scheduled, cloud, incremental, partial, and merge backup or restore are not implemented.
-- Legacy browser-data migration remains separate and is not implemented yet.
+- Legacy migration supports exact browser schema version 3 into an empty SQLite inventory only; merge, append, partial import, and overwrite are not supported.
+- The read-only legacy compatibility boundary remains until its planned Task 7 retirement; normal application persistence is already HTTP and SQLite only.
 - There are no user accounts or cloud synchronization.
 - StackMap does not connect to or manage remote Docker hosts.
 - There is no container monitoring or automatic discovery.

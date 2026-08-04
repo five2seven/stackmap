@@ -70,6 +70,7 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
   const [migrationAcknowledged, setMigrationAcknowledged] = useState(false)
   const [migrationBusy, setMigrationBusy] = useState(false)
   const migrationStatus = useRef<HTMLDivElement>(null)
+  const migrationPreviewButton = useRef<HTMLButtonElement>(null)
   const [activeView, setActiveView] = useState<'services' | 'port-map' | 'path-map'>('services')
   const [portMapHostFilter, setPortMapHostFilter] = useState('all')
   const [pathMapHostFilter, setPathMapHostFilter] = useState('all')
@@ -413,6 +414,13 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
     } finally { setMigrationBusy(false); window.setTimeout(() => migrationStatus.current?.focus(), 0) }
   }
 
+  function cancelLegacyMigration() {
+    setMigrationPreview(null)
+    setMigrationAcknowledged(false)
+    setMessage('Migration cancelled. Neither datastore was changed.')
+    window.setTimeout(() => migrationPreviewButton.current?.focus(), 0)
+  }
+
   if (loading) {
     return <div className="loading-state" role="status">Loading StackMap server inventory…</div>
   }
@@ -441,8 +449,8 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
           <button className="button ghost" type="button" onClick={exportLegacyInventory} aria-label="Export legacy browser data from IndexedDB">
             Export legacy browser data
           </button>
-          {!migrationPreview ? <button className="button primary" type="button" disabled={migrationBusy} onClick={previewLegacyMigration}>{migrationBusy ? 'Checking…' : 'Preview migration'}</button> : <>
-            <button className="button ghost" type="button" disabled={migrationBusy} onClick={() => { setMigrationPreview(null); setMigrationAcknowledged(false); setMessage('Migration cancelled. Neither datastore was changed.') }}>Cancel</button>
+          {!migrationPreview ? <button ref={migrationPreviewButton} className="button primary" type="button" disabled={migrationBusy} onClick={previewLegacyMigration}>{migrationBusy ? 'Checking…' : 'Preview migration'}</button> : <>
+            <button className="button ghost" type="button" disabled={migrationBusy} onClick={cancelLegacyMigration}>Cancel</button>
             <button className="button primary" type="button" disabled={!migrationAcknowledged || migrationBusy} onClick={confirmLegacyMigration}>{migrationBusy ? 'Migrating…' : 'Confirm migration'}</button>
           </>}
         </div>

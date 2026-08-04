@@ -65,6 +65,12 @@ export class IndexedDbLegacyInventoryReader implements LegacyInventoryReader {
       )), this.timeoutMs)
       request.onerror = () => finish(new LegacyInventoryError('Legacy browser data could not be read.', 'DETECTION_FAILED'))
       request.onblocked = () => finish(new LegacyInventoryError('Legacy browser data is currently unavailable.', 'DETECTION_FAILED'))
+      request.onupgradeneeded = () => {
+        const openedDatabase = request.result
+        try { request.transaction?.abort() } catch { /* The request still fails closed below. */ }
+        openedDatabase.close()
+        finish(new LegacyInventoryError('Legacy browser data changed before it could be read safely.', 'DETECTION_FAILED'))
+      }
       request.onsuccess = () => {
         if (settled) {
           request.result.close()

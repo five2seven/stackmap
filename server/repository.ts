@@ -81,9 +81,21 @@ export class SqliteInventoryRepository {
 
   isInventoryEmpty(): boolean {
     const row = this.connection.prepare(`
-      SELECT EXISTS(SELECT 1 FROM hosts) AS hosts, EXISTS(SELECT 1 FROM services) AS services
-    `).get() as { hosts: number; services: number }
-    return row.hosts === 0 && row.services === 0
+      SELECT
+        EXISTS(SELECT 1 FROM hosts) AS hosts,
+        EXISTS(SELECT 1 FROM services) AS services,
+        EXISTS(SELECT 1 FROM service_ports) AS ports,
+        EXISTS(SELECT 1 FROM service_paths) AS paths,
+        EXISTS(SELECT 1 FROM service_dependencies) AS dependencies
+    `).get() as Record<'hosts' | 'services' | 'ports' | 'paths' | 'dependencies', number>
+    return Object.values(row).every((present) => present === 0)
+  }
+
+  legacyMigrationTargetState(): { empty: boolean; revision: number } {
+    return this.connection.transaction(() => ({
+      empty: this.isInventoryEmpty(),
+      revision: this.readInventoryRevision().revision,
+    }))()
   }
 
   legacyMigrationReceipt(): LegacyMigrationReceipt | undefined {
