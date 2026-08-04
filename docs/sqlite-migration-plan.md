@@ -10,7 +10,7 @@ JSON export remains supported. Legacy migration is opt-in and data-safe. Databas
 
 ## Phased backlog
 
-Tasks 1 through 3 are Complete, and Task 4 is Ready. Tasks 5 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
+Tasks 1 through 4 are Complete, and Task 5 is Ready. Tasks 6 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
 
 ### 1. API, SQLite, and target-runtime proof
 
@@ -53,7 +53,7 @@ Tasks 1 through 3 are Complete, and Task 4 is Ready. Tasks 5 through 10 remain B
 
 ### 4. HTTP repository and coordinated frontend cutover
 
-- **Status:** Ready
+- **Status:** Complete
 - **Branch:** `codex/http-repository-cutover`
 - **Goal:** Switch the entire normal application inventory source from Dexie to the server in one coordinated cutover.
 - **Datastore authority after completion:** SQLite is authoritative for every normal inventory operation; Dexie is accessible only to the later explicit legacy migration.
@@ -62,20 +62,20 @@ Tasks 1 through 3 are Complete, and Task 4 is Ready. Tasks 5 through 10 remain B
 - **Acceptance criteria:** Hosts, services, ports, paths, and dependencies switch together; normal use never reads or writes Dexie; all existing workflows remain functional; no production split-brain state exists.
 - **Required tests:** Repository adapter, component, failure, concurrency, Port Map, Path Map, search, filter, and full cutover E2E coverage, plus standard validation.
 - **Dependencies:** Task 3 Complete.
-- **Completion notes:** Ready after Task 3 completed and merged with its complete-model API, validation, container validation, and exact-head workflow passing. Task 3 satisfies this task's dependency, and no unresolved blocker prevents the coordinated frontend cutover. Task 4 is not In Progress.
+- **Completion notes:** Implemented on `codex/http-repository-cutover` in commits `7f5fa41c11fae273bd919f4d9bfa0e57201fdaac`, `62e13ec9085deb57c40f9286b2b88c4b49118198`, and `0111a539874e55d6ea3fdc8df6b687f1ce1340dc` (final head). Entire checkpoints: `5f15fb6cf573`, `1799c92113b9`, and `f77cb1711e16`. PR #7 merged as `c050d9f26f07c7ac904dd256c5929a3b435518c3`. Validation passed: lint; 163 tests; production build; 10 E2E tests; production audit with 0 vulnerabilities; `git diff --check`; exact-head workflow 30916458935; Linux/amd64 image, non-root/read-only runtime, writable `/config`, health, nested restart/recreation persistence, multi-browser consistency, concurrency, and legacy-data safety checks. SQLite is the sole authority for normal production inventory; the React frontend uses only HTTP for normal operations, IndexedDB is read-only and legacy-only, and no normal Dexie read/write, dual write, fallback, synchronization, or split-brain path remains. Known limitations: legacy migration and server restore are not implemented, Dexie remains for the legacy boundary, authentication/CORS/accounts are absent, and ARM64 is unvalidated.
 
 ### 5. Server-authoritative JSON backup and restore
 
-- **Status:** Blocked
+- **Status:** Ready
 - **Branch:** `codex/server-backup-restore`
-- **Goal:** Move JSON export, preview, confirmation, and replacement to transactional server operations.
+- **Goal:** Implement safe, complete, server-authoritative JSON export and atomic restore for the SQLite inventory without using IndexedDB as an active inventory source.
 - **Datastore authority after completion:** SQLite remains authoritative; JSON is a portable transfer and backup format.
-- **Scope:** Versions 1 through 3 import compatibility; current export; size limit; validation; preview; dry run; explicit confirmation; atomic replacement.
-- **Explicit exclusions:** Automatic legacy migration, live backup automation, and Dexie removal.
-- **Acceptance criteria:** Exports are complete; invalid or unconfirmed imports cannot change data; confirmed imports preserve IDs and timestamps and replace inventory atomically.
-- **Required tests:** Versions 1 through 3 fixtures, size limit, invalid input, preview, confirmation, rollback, API, and E2E tests, plus standard validation.
+- **Scope:** Versioned, exact-shape server backup schema and metadata; complete hosts, services, ordered ports, ordered paths, dependencies, stable IDs/timestamps, revision and installation-metadata policy; validation before replacement; duplicate-ID, referential-integrity, nested-record, dependency, and schema-version validation; safe export/restore API and UI; explicit destructive confirmation; atomic full-model replacement with rollback; accessible progress/results; multi-browser and container persistence validation.
+- **Explicit exclusions:** Legacy IndexedDB migration or automatic import; legacy deletion; Dexie removal; authentication; CORS; accounts; scheduled, cloud, or incremental backups; partial or merge restore; Task 6; public demo; unrelated features.
+- **Acceptance criteria:** Server export contains the complete SQLite-authoritative inventory and preserves supported identities, timestamps, ordering, nested data, references, and metadata. Restore validates the whole backup before mutation, rejects malformed, duplicate, invalid-reference, invalid-nested, or incompatible data, migrates supported older versions without mutating input, and replaces hosts, services, ports, paths, and dependencies in one transaction. Validation or write failure leaves the exact existing inventory untouched; success returns a coherent new inventory revision visible across browsers and durable across restart/recreation. No IndexedDB write or restore fallback occurs, and legacy data remains untouched.
+- **Required tests:** Fresh and nonempty complete exports; valid, malformed, duplicate-ID, invalid-reference, invalid-nested, future-version, and supported-legacy-version restores; transactional rollback; inventory revision; confirmation and accessibility; two-browser visibility; restart/recreation; no IndexedDB writes; legacy-data preservation; standard validation and Docker checks.
 - **Dependencies:** Task 4 Complete.
-- **Completion notes:** Pending.
+- **Completion notes:** Ready after Task 4 completed and merged. Task 4 satisfies this task's dependency, SQLite is authoritative, and no unresolved blocker prevents server-authoritative backup and atomic restore work. Task 5 is not In Progress.
 
 ### 6. Opt-in legacy IndexedDB migration
 
