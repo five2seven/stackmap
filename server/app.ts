@@ -3,6 +3,8 @@ import path from 'node:path'
 import fastifyStatic from '@fastify/static'
 import Fastify, { type FastifyInstance } from 'fastify'
 import type { StackMapDatabase } from './database.js'
+import { registerInventoryApi, sendApiError } from './inventory-api.js'
+import { SqliteInventoryRepository } from './repository.js'
 import { applicationVersion } from './version.js'
 
 export interface BuildAppOptions {
@@ -17,6 +19,7 @@ function isApiRequest(url: string): boolean {
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: options.logger ?? false })
+  const inventoryRepository = new SqliteInventoryRepository(options.database.connection)
 
   app.addHook('onSend', async (request, reply, payload) => {
     reply.headers({
@@ -54,7 +57,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     datastoreAuthority: 'indexeddb',
     installationId: options.database.installationId(),
     schemaVersion: options.database.schemaVersion(),
+    inventoryRevision: inventoryRepository.inventoryRevision(),
   }))
+  registerInventoryApi(app, inventoryRepository)
 
   const staticAvailable = fs.existsSync(path.join(options.staticRoot, 'index.html'))
   if (staticAvailable) {
@@ -77,14 +82,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
 
   app.setErrorHandler(async (error, request, reply) => {
     if (isApiRequest(request.url)) {
-      request.log.error({ err: error }, 'unexpected API request failure')
-      return reply.code(500).send({
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'The request could not be completed.',
-          requestId: request.id,
-        },
-      })
+      return sendApiError(error, request, reply)
     }
     return reply.send(error)
   })
