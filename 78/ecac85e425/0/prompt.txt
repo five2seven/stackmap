@@ -1,0 +1,293 @@
+# Files mentioned by the user:
+
+## Perform the initial read-only review of StackMap draft PR #9 according to AGENT…: C:\Users\rae\.codex/attachments/49ab2a24-a3d2-4aa7-9602-171d1a54d984/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Fix only the recorded PR #9 review findings on the existing branch: codex/serve…: C:\Users\rae\.codex/attachments/0eb54d9c-bb56-4125-8035-476de00597e2/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Perform the final re-review of StackMap draft PR #9 and merge it only if every …: C:\Users\rae\.codex/attachments/6956cf44-44e0-4377-81d1-c04218e82cbe/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Perform the final re-review of StackMap draft PR #9 and merge it only if every …: C:\Users\rae\.codex/attachments/fda43eaf-99d7-427f-a45f-78fe4fd13b1c/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+Advance the SQLite migration planning after Task 5.
+
+Follow AGENTS.md exactly.
+
+This is a PLANNING ADVANCEMENT task only. Do NOT implement Task 6.
+
+Preconditions:
+- Verify local `main` is clean and synchronized with `origin/main`.
+- Verify Task 5 has already been merged into `main` (merge commit `d1b7218e440386c992ecc7dc1e9628f5af85389a`).
+- If these preconditions are not true, stop and report why.
+
+Create a new planning branch:
+
+codex/advance-sqlite-plan-task-5
+
+Only modify:
+- docs/current-task.md
+- docs/sqlite-migration-plan.md
+
+Required planning updates:
+- Mark Task 5 Complete.
+- Record:
+  - implementation branch
+  - implementation commits
+  - final implementation head
+  - Entire checkpoints
+  - PR number
+  - merge commit
+  - validation results
+  - datastore authority
+  - known limitations (if any)
+- Mark Task 6 Ready.
+- Leave Tasks 7–10 Blocked.
+- Record that:
+  - SQLite remains the sole production-authoritative datastore.
+  - Backup/restore is complete.
+  - Legacy IndexedDB remains read-only and isolated.
+  - Task 6 is responsible only for legacy import/migration and removal of Dexie from normal application paths.
+- Do not modify AGENTS.md, README, architecture, implementation code, tests, workflows, dependencies, Docker, or configuration.
+
+Validation:
+- Run git diff --check.
+- If a Markdown lint command exists, run it. Otherwise report that none exists.
+- Ensure only the two planning documents changed.
+
+Commit:
+Advance SQLite migration plan after Task 5
+
+Create a normal (non-draft) PR.
+
+Do NOT merge it.
+
+Return:
+- branch
+- commit
+- Entire checkpoint
+- validation results
+- PR URL
+- confirmation that Task 6 was NOT implemented
+- confirmation that only the planning documents changed
+
+---
+
+# Files mentioned by the user:
+
+## Review and merge StackMap planning PR #10 according to AGENTS.md. Repository: C…: C:\Users\rae\.codex/attachments/731f6f0b-16cc-4963-819c-1aeaa149596a/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Fix only the recorded PR #10 planning findings on the existing branch: codex/ad…: C:\Users\rae\.codex/attachments/595f1c86-dd5a-477b-9ed3-92bbe57fb5d3/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Perform the final re-review of StackMap planning PR #10 and merge it only if al…: C:\Users\rae\.codex/attachments/ac93306e-8976-4040-bcdf-ee028b529d68/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+Fix only the one remaining PR #10 planning contradiction on the existing branch:
+
+codex/advance-sqlite-plan-task-5
+
+Repository:
+
+C:\Code\Projects\APP-StackMap
+
+Pull request:
+
+https://github.com/five2seven/stackmap/pull/10
+
+Current reviewed head:
+
+f15b953ce55bb13731b3831314713006f0fd4414
+
+Do not create a new branch.
+Do not merge PR #10.
+Do not begin Task 6.
+Do not create codex/indexeddb-migration.
+Do not modify implementation files.
+
+## Preconditions
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch and prune origin.
+4. Confirm codex/advance-sqlite-plan-task-5 matches origin/codex/advance-sqlite-plan-task-5.
+5. Confirm local main matches origin/main at:
+   d1b7218e440386c992ecc7dc1e9628f5af85389a
+6. Confirm Entire is enabled and available.
+7. Confirm PR #10 remains open and non-draft.
+8. Confirm the current PR head is:
+   f15b953ce55bb13731b3831314713006f0fd4414
+
+Stop if the repository is not clean or synchronized.
+
+## File allowed to change
+
+Modify only:
+
+- docs/sqlite-migration-plan.md
+
+Do not modify:
+
+- docs/current-task.md
+- docs/release-checklist.md
+- AGENTS.md
+- README.md
+- docs/architecture.md
+- docs/decisions.md
+- application source
+- server source
+- tests
+- Docker files
+- workflows
+- dependencies
+- lockfiles
+- Entire configuration
+
+If another file appears necessary, stop and report why.
+
+## Required correction
+
+Find the remaining statement under `Defaults and open decisions` that says or implies populated SQLite targets require additional destructive confirmation.
+
+Replace it with the authoritative Task 6 policy:
+
+- Legacy migration is permitted only when the target SQLite inventory is empty.
+- If any host or service exists in SQLite, migration preview fails closed.
+- No migration token is issued.
+- No destructive replacement, merge, append, partial import, or overwrite is permitted in Task 6.
+- The user must first back up and intentionally clear or otherwise handle the existing server inventory through a separate approved workflow.
+- Task 6 must not reuse Task 5 restore as an implicit overwrite mechanism.
+- Populated-target rejection must not mutate either datastore or increment the global inventory revision.
+
+Ensure this wording is consistent with:
+
+- docs/current-task.md
+- the Task 6 scope
+- the populated-target error policy
+- the acceptance criteria
+- the planned tests
+
+Do not alter unrelated defaults or open decisions.
+
+## Consistency review
+
+After editing, confirm:
+
+- No planning text still permits destructive migration into populated SQLite.
+- No planning text still describes populated-target behavior as an open decision.
+- Empty-target-only migration is the single authoritative policy.
+- Task 6 remains Ready.
+- Tasks 7 through 10 remain Blocked.
+- Task 6 implementation was not started.
+
+## Validation
+
+Run:
+
+git diff --check
+
+If an existing Markdown lint command exists, run it.
+
+Do not install new tooling.
+
+## Diff review
+
+Before committing:
+
+1. Confirm docs/sqlite-migration-plan.md is the only modified file.
+2. Confirm the change addresses only the remaining contradiction.
+3. Confirm no implementation, test, Docker, workflow, dependency, lockfile, generated, secret, or Entire files changed.
+4. Confirm Task 6 remains the only Ready task.
+5. Confirm Tasks 7–10 remain Blocked.
+
+## Commit and push
+
+Commit with:
+
+Resolve Task 6 populated-target planning contradiction
+
+Push to:
+
+codex/advance-sqlite-plan-task-5
+
+Allow Entire to associate the commit normally.
+
+Update PR #10 description with:
+
+- the corrected populated-target default
+- confirmation that destructive migration is prohibited
+- validation result
+- fix commit
+- Entire checkpoint
+
+Do not merge PR #10.
+
+## Required completion report
+
+Report:
+
+1. Initial Git state
+2. Entire status
+3. Files modified
+4. Contradictory statement removed
+5. Replacement populated-target policy
+6. Consistency result
+7. Validation result
+8. Commit ID
+9. Entire checkpoint ID
+10. Push result
+11. PR update result
+12. Final working-tree status
+13. Confirmation that PR #10 is ready for final re-review
+14. Confirmation that Task 6 was not started
+15. Confirmation that no unrelated functionality was added
+
+Stop after pushing the planning fix.
