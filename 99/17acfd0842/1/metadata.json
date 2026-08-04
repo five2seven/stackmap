@@ -1,0 +1,57 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "9917acfd0842",
+  "session_id": "019fcd93-9da1-7ab1-8a01-ac57a41e0e62",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-04T16:34:32.0039374Z",
+  "branch": "codex/server-backup-restore",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "README.md",
+    "docs/architecture.md",
+    "e2e/stackmap.spec.ts",
+    "server/app.ts",
+    "server/backup-api.test.ts",
+    "server/backup-api.ts",
+    "server/backup.test.ts",
+    "server/backup.ts",
+    "server/repository.ts",
+    "src/App.css",
+    "src/App.test.tsx",
+    "src/App.tsx",
+    "src/data/serverBackup.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "9236098ace60",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 195417,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 10553344,
+    "output_tokens": 22420,
+    "api_call_count": 104
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-04T16:34:31.9307868Z",
+    "agent_lines": 794,
+    "agent_removed": 14,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 794,
+    "total_lines_changed": 808,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
