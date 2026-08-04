@@ -10,7 +10,7 @@ JSON export remains supported. Legacy migration is opt-in and data-safe. Databas
 
 ## Phased backlog
 
-Tasks 1 through 4 are Complete, and Task 5 is Ready. Tasks 6 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
+Tasks 1 through 5 are Complete, and Task 6 is Ready. Tasks 7 through 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
 
 ### 1. API, SQLite, and target-runtime proof
 
@@ -66,7 +66,7 @@ Tasks 1 through 4 are Complete, and Task 5 is Ready. Tasks 6 through 10 remain B
 
 ### 5. Server-authoritative JSON backup and restore
 
-- **Status:** Ready
+- **Status:** Complete
 - **Branch:** `codex/server-backup-restore`
 - **Goal:** Implement safe, complete, server-authoritative JSON export and atomic restore for the SQLite inventory without using IndexedDB as an active inventory source.
 - **Datastore authority after completion:** SQLite remains authoritative; JSON is a portable transfer and backup format.
@@ -75,20 +75,20 @@ Tasks 1 through 4 are Complete, and Task 5 is Ready. Tasks 6 through 10 remain B
 - **Acceptance criteria:** Server export contains the complete SQLite-authoritative inventory and preserves supported identities, timestamps, ordering, nested data, references, and metadata. Restore validates the whole backup before mutation, rejects malformed, duplicate, invalid-reference, invalid-nested, or incompatible data, migrates supported older versions without mutating input, and replaces hosts, services, ports, paths, and dependencies in one transaction. Validation or write failure leaves the exact existing inventory untouched; success returns a coherent new inventory revision visible across browsers and durable across restart/recreation. No IndexedDB write or restore fallback occurs, and legacy data remains untouched.
 - **Required tests:** Fresh and nonempty complete exports; valid, malformed, duplicate-ID, invalid-reference, invalid-nested, future-version, and supported-legacy-version restores; transactional rollback; inventory revision; confirmation and accessibility; two-browser visibility; restart/recreation; no IndexedDB writes; legacy-data preservation; standard validation and Docker checks.
 - **Dependencies:** Task 4 Complete.
-- **Completion notes:** Ready after Task 4 completed and merged. Task 4 satisfies this task's dependency, SQLite is authoritative, and no unresolved blocker prevents server-authoritative backup and atomic restore work. Task 5 is not In Progress.
+- **Completion notes:** Implemented on `codex/server-backup-restore` in commits `36a8935485b0d8616036a7abcb3b4f18bd4f6756` and `7dc5904807c49d4df08c95f7b29b00ef04d9d210` (final head). Entire checkpoints: `9917acfd0842` and `e2dc50328819`. PR #9 merged as `d1b7218e440386c992ecc7dc1e9628f5af85389a`. Validation passed: lint; 180 unit/integration tests; production build; 11 browser E2E tests; production audit with zero vulnerabilities; `git diff --check`; exact-head GitHub Actions run 30941581675; and container export, preview, atomic restore, revision, target metadata, nested persistence, restart, and recreation checks. SQLite remains the sole production-authoritative datastore; server backup and restore are complete and operate only through SQLite and the server API; legacy IndexedDB remains read-only and isolated. Known limitations: only server backup schema version 1 is supported; restore is manual and destructive; scheduled, cloud, incremental, partial, and merge backup/restore are not implemented; legacy migration awaits Task 6; ARM64 remains unvalidated.
 
 ### 6. Opt-in legacy IndexedDB migration
 
-- **Status:** Blocked
+- **Status:** Ready
 - **Branch:** `codex/indexeddb-migration`
-- **Goal:** Copy legacy browser inventory into SQLite only with explicit user consent.
+- **Goal:** Import legacy browser inventory into SQLite only with explicit user consent and remove Dexie from normal application paths while preserving the read-only migration boundary.
 - **Datastore authority after completion:** SQLite remains authoritative; IndexedDB is a read-only migration source and is never silently deleted.
-- **Scope:** Detection, preview, consent, empty-server default, destructive confirmation for populated servers, idempotency, retry, and user-facing results.
+- **Scope:** Detection, preview, consent, empty-server default, destructive confirmation for populated servers, idempotency, retry, user-facing results, and removal of Dexie from normal application paths. Task 6 is limited to legacy import/migration and that normal-path cleanup.
 - **Explicit exclusions:** Silent migration, IndexedDB deletion, normal Dexie persistence, and unrelated UI changes.
 - **Acceptance criteria:** Nothing migrates without consent; existing server data is protected; IDs and timestamps are preserved; failures leave both stores intact.
 - **Required tests:** Empty and populated server, consent, cancellation, retry, rollback, compatibility, component, and E2E coverage, plus standard validation.
 - **Dependencies:** Task 5 Complete.
-- **Completion notes:** Pending.
+- **Completion notes:** Ready after Task 5 completed and merged. SQLite remains the sole production-authoritative datastore, server backup/restore is complete, and legacy IndexedDB remains read-only and isolated. Task 6 is the only active migration task; Tasks 7–10 remain Blocked.
 
 ### 7. Remove IndexedDB from normal persistence paths
 
