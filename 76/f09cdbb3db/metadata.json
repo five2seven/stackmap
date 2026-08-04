@@ -1,0 +1,42 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "76f09cdbb3db",
+  "strategy": "manual-commit",
+  "branch": "codex/indexeddb-migration",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "e2e/stackmap.spec.ts",
+    "server/app.test.ts",
+    "server/app.ts",
+    "server/database.test.ts",
+    "server/database.ts",
+    "server/legacy-migration-api.test.ts",
+    "server/legacy-migration-api.ts",
+    "server/legacy-migration.test.ts",
+    "server/legacy-migration.ts",
+    "server/repository.ts",
+    "src/App.cutover.test.tsx",
+    "src/App.tsx",
+    "src/data/database.ts",
+    "src/data/legacyInventory.test.ts",
+    "src/data/legacyInventory.ts",
+    "src/data/legacyMigration.test.ts",
+    "src/data/legacyMigration.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/76/f09cdbb3db/0/metadata.json",
+      "transcript": "/76/f09cdbb3db/0/full.jsonl",
+      "compact_transcript": "/76/f09cdbb3db/0/transcript.jsonl",
+      "content_hash": "/76/f09cdbb3db/0/content_hash.txt",
+      "prompt": "/76/f09cdbb3db/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 480650,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 26405120,
+    "output_tokens": 66290,
+    "api_call_count": 236
+  }
+}

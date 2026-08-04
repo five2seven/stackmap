@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "76f09cdbb3db",
+  "session_id": "019fce20-2913-7860-9136-9bcb18ea59de",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-04T22:39:00.0308054Z",
+  "branch": "codex/indexeddb-migration",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "e2e/stackmap.spec.ts",
+    "server/app.test.ts",
+    "server/app.ts",
+    "server/database.test.ts",
+    "server/database.ts",
+    "server/legacy-migration-api.test.ts",
+    "server/legacy-migration-api.ts",
+    "server/legacy-migration.test.ts",
+    "server/legacy-migration.ts",
+    "server/repository.ts",
+    "src/App.cutover.test.tsx",
+    "src/App.tsx",
+    "src/data/database.ts",
+    "src/data/legacyInventory.test.ts",
+    "src/data/legacyInventory.ts",
+    "src/data/legacyMigration.test.ts",
+    "src/data/legacyMigration.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "ffb3f00515b5",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 480650,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 26405120,
+    "output_tokens": 66290,
+    "api_call_count": 236
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-04T22:38:59.8523675Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 687,
+    "human_modified": 596,
+    "human_removed": 0,
+    "total_committed": 1245,
+    "total_lines_changed": 1283,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
