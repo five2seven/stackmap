@@ -292,6 +292,24 @@ describe('inventory API', () => {
     expect(failure.body).not.toMatch(/private|secret|SELECT|revision metadata/i)
   })
 
+  it('normalizes unsupported media types without mutating inventory', async () => {
+    const { app } = await fixture()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/hosts',
+      headers: { 'content-type': 'application/xml' },
+      payload: '<host><name>hidden parser detail</name></host>',
+    })
+
+    expectSafeError(response, 400, 'VALIDATION_ERROR')
+    expect(response.json().error.message).toBe('The request is invalid.')
+    expect(response.body).not.toMatch(/application\/xml|content.type|parser|hidden/i)
+    expect((await app.inject('/api/v1/hosts')).json()).toEqual({
+      data: [],
+      meta: { inventoryRevision: 0 },
+    })
+  })
+
   it('does not add cross-origin headers', async () => {
     const { app } = await fixture()
     const response = await app.inject({

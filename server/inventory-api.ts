@@ -82,6 +82,9 @@ export function sendApiError(
   if (error instanceof ApiRequestValidationError || error instanceof InventoryValidationError) {
     return reply.code(400).send(envelope('VALIDATION_ERROR', 'The request is invalid.', request.id))
   }
+  if (isRecord(error) && error.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') {
+    return reply.code(400).send(envelope('VALIDATION_ERROR', 'The request is invalid.', request.id))
+  }
   if (error instanceof InventoryNotFoundError) {
     return reply.code(404).send(envelope('NOT_FOUND', 'The requested record was not found.', request.id))
   }
