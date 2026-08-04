@@ -240,14 +240,13 @@ jobs:
             curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta >/tmp/assert-meta.json
             ASSERT_PHASE="$phase" node <<'NODE'
           const fs = require('node:fs')
+          const assert = require('node:assert/strict')
           const phase = process.env.ASSERT_PHASE
           const hosts = JSON.parse(fs.readFileSync('/tmp/assert-hosts.json', 'utf8'))
           const services = JSON.parse(fs.readFileSync('/tmp/assert-services.json', 'utf8'))
           const meta = JSON.parse(fs.readFileSync('/tmp/assert-meta.json', 'utf8'))
           const fail = (field, actual, expected) => {
-            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-              throw new Error(`${phase} ${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`)
-            }
+            assert.deepStrictEqual(actual, expected, `${phase} ${field}`)
           }
           fail('host', hosts.data.find(({ id }) => id === 'ci-host'), {
             id: 'ci-host', name: 'CI host', type: 'nas', ipAddress: '192.0.2.10', operatingSystem: 'Linux', notes: '',
