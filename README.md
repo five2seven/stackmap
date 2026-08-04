@@ -101,9 +101,11 @@ Legacy IndexedDB records remain browser-local and untouched. When detected, Stac
 
 ## Backup and Restore
 
-Use **Export server inventory** to download a versioned JSON copy of the current server-authoritative dataset. This interim export is not a full server backup/restore system; server-authoritative restore is planned for a later migration task.
+Use **Download server backup** to save a versioned JSON backup of the authoritative SQLite inventory. The file contains complete hosts and services, including ordered ports, paths, dependencies, IDs, and timestamps; it is not a raw SQLite database file.
 
-When legacy browser data is detected, use **Export legacy browser data** to download it without reading or modifying SQLite. The legacy and server export actions are deliberately separate and clearly identify their source.
+To restore, select a server-backup JSON file, preview its summary, read the destructive warning, and explicitly acknowledge replacement. Restore replaces the complete server inventory atomically. If inventory changes after preview, StackMap rejects confirmation and requires a new preview. Keep `/config` persistently mounted so restored data survives container replacement.
+
+When legacy browser data is detected, use **Export legacy browser data** to download it without reading or modifying SQLite. The legacy and server backup actions are deliberately separate; a legacy browser export cannot be restored through the server workflow.
 
 ## Build from Source
 
@@ -129,7 +131,9 @@ Additional validation commands are `npm run lint`, `npm run build`, and `npm run
 
 ## Current Limitations
 
-- Legacy IndexedDB migration and server-authoritative restore are not implemented yet.
+- Server-authoritative JSON backup and restore are implemented for exact-shape server backup schema version 1. Restore is manual and destructive, and requires preview plus explicit confirmation; it is not a raw SQLite database-file backup.
+- Scheduled, cloud, incremental, partial, and merge backup or restore are not implemented.
+- Legacy browser-data migration remains separate and is not implemented yet.
 - There are no user accounts or cloud synchronization.
 - StackMap does not connect to or manage remote Docker hosts.
 - There is no container monitoring or automatic discovery.

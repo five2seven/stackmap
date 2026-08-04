@@ -210,6 +210,23 @@ main {
   box-shadow: var(--shadow);
 }
 
+.restore-panel {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface-subtle);
+}
+.restore-panel p { margin: 0; }
+.restore-confirmation { display: grid; gap: 0.8rem; padding: 1rem; border: 2px solid var(--danger); border-radius: 0.65rem; background: var(--danger-soft); }
+.restore-summary { display: flex; flex-wrap: wrap; gap: 0.8rem 1.5rem; margin: 0; }
+.restore-summary div { display: flex; gap: 0.35rem; }
+.restore-summary dd { margin: 0; font-weight: 800; }
+.restore-acknowledgement { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; }
+.restore-acknowledgement input { width: auto; min-height: 0; }
+
 .section-heading {
   display: flex;
   align-items: flex-start;

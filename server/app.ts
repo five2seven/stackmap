@@ -4,6 +4,7 @@ import fastifyStatic from '@fastify/static'
 import Fastify, { type FastifyInstance } from 'fastify'
 import type { StackMapDatabase } from './database.js'
 import { registerInventoryApi, sendApiError } from './inventory-api.js'
+import { backupApiError, registerBackupApi } from './backup-api.js'
 import { SqliteInventoryRepository } from './repository.js'
 import { applicationVersion } from './version.js'
 
@@ -21,6 +22,10 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const app = Fastify({ logger: options.logger ?? false })
   app.setErrorHandler(async (error, request, reply) => {
     if (isApiRequest(request.url)) {
+      const backupError = backupApiError(error)
+      if (backupError) return reply.code(backupError.status).send({
+        error: { code: backupError.code, message: backupError.message, requestId: request.id },
+      })
       return sendApiError(error, request, reply)
     }
     return reply.send(error)
@@ -66,6 +71,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     inventoryRevision: inventoryRepository.inventoryRevision(),
   }))
   registerInventoryApi(app, inventoryRepository)
+  registerBackupApi(app, inventoryRepository, options.database.installationId)
 
   const staticAvailable = fs.existsSync(path.join(options.staticRoot, 'index.html'))
   if (staticAvailable) {

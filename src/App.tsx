@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { serializeExport, serializeLegacyExport } from './data/backup'
+import { serializeLegacyExport } from './data/backup'
+import {
+  serverBackupClient as defaultBackupClient,
+  ServerBackupError,
+  type RestorePreview,
+  type ServerBackupClient,
+} from './data/serverBackup'
 import { repository as defaultRepository } from './data/httpRepository'
 import {
   legacyInventoryReader as defaultLegacyReader,
@@ -40,9 +46,10 @@ const DEFAULT_FILTERS: ServiceFilters = {
 interface AppProps {
   repository?: StackMapRepository
   legacyReader?: LegacyInventoryReader
+  backupClient?: ServerBackupClient
 }
 
-function App({ repository = defaultRepository, legacyReader = defaultLegacyReader }: AppProps) {
+function App({ repository = defaultRepository, legacyReader = defaultLegacyReader, backupClient = defaultBackupClient }: AppProps) {
   const [services, setServices] = useState<Service[]>([])
   const [hosts, setHosts] = useState<Host[]>([])
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
@@ -57,6 +64,12 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
   const [activeView, setActiveView] = useState<'services' | 'port-map' | 'path-map'>('services')
   const [portMapHostFilter, setPortMapHostFilter] = useState('all')
   const [pathMapHostFilter, setPathMapHostFilter] = useState('all')
+  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+  const [restorePreview, setRestorePreview] = useState<RestorePreview | null>(null)
+  const [restoreAcknowledged, setRestoreAcknowledged] = useState(false)
+  const [restoreBusy, setRestoreBusy] = useState(false)
+  const [showRestore, setShowRestore] = useState(false)
+  const restoreStatus = useRef<HTMLDivElement>(null)
   const portMapViewButton = useRef<HTMLButtonElement>(null)
   const pathMapViewButton = useRef<HTMLButtonElement>(null)
   const returnFocusToMap = useRef<'port-map' | 'path-map' | null>(null)
@@ -273,13 +286,69 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
 
   async function exportServerInventory() {
     try {
-      const data = await repository.getAll()
-      downloadExport(serializeExport(data), `stackmap-server-inventory-${new Date().toISOString().slice(0, 10)}.json`)
+      const blob = await backupClient.download()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `stackmap-server-backup-${new Date().toISOString().slice(0, 10)}.json`
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 0)
       setError('')
-      setMessage('Current StackMap server inventory exported.')
+      setMessage('Current server-authoritative backup downloaded.')
     } catch {
       setError('The current server inventory could not be exported. Retry when the server is available.')
     }
+  }
+
+  async function previewRestore() {
+    if (!restoreFile || restoreBusy) return
+    setRestoreBusy(true)
+    setError('')
+    setMessage('Validating backup on the server…')
+    try {
+      const parsed: unknown = JSON.parse(await restoreFile.text())
+      setRestorePreview(await backupClient.preview(parsed))
+      setRestoreAcknowledged(false)
+      setMessage('Backup validated. Review the summary before restoring.')
+    } catch (caught) {
+      setRestorePreview(null)
+      setError(caught instanceof SyntaxError ? 'The selected file is not valid JSON.' : caught instanceof Error ? caught.message : 'The backup could not be previewed.')
+      setMessage('')
+    } finally {
+      setRestoreBusy(false)
+      window.setTimeout(() => restoreStatus.current?.focus(), 0)
+    }
+  }
+
+  async function confirmRestore() {
+    if (!restorePreview || !restoreAcknowledged || restoreBusy) return
+    setRestoreBusy(true)
+    setError('')
+    setMessage('Replacing the current server inventory…')
+    try {
+      const result = await backupClient.confirm(restorePreview.previewToken, restorePreview.expectedInventoryRevision)
+      await refresh()
+      setRestorePreview(null)
+      setRestoreFile(null)
+      setRestoreAcknowledged(false)
+      setMessage(`Restore complete: ${result.summary.hostCount} hosts and ${result.summary.serviceCount} services. Inventory revision ${result.inventoryRevision}.`)
+    } catch (caught) {
+      const requiresPreview = caught instanceof ServerBackupError &&
+        ['RESTORE_PREVIEW_STALE', 'RESTORE_PREVIEW_INVALID'].includes(caught.code)
+      if (requiresPreview) setRestorePreview(null)
+      setError(caught instanceof Error ? caught.message : 'The restore could not be completed.')
+      setMessage('')
+    } finally {
+      setRestoreBusy(false)
+      window.setTimeout(() => restoreStatus.current?.focus(), 0)
+    }
+  }
+
+  function cancelRestore() {
+    setRestorePreview(null)
+    setRestoreAcknowledged(false)
+    setMessage('Restore cancelled. Server inventory was not changed.')
+    window.setTimeout(() => restoreStatus.current?.focus(), 0)
   }
 
   async function exportLegacyInventory() {
@@ -466,11 +535,53 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
               <h2 id="services-title">Services</h2>
             </div>
             <div className="data-actions">
-              <button className="button ghost" type="button" onClick={exportServerInventory} aria-label="Export current StackMap server inventory">
-                Export server inventory
+              <button className="button ghost" type="button" onClick={exportServerInventory} aria-label="Download current StackMap server backup">
+                Download server backup
+              </button>
+              <button className="button ghost" type="button" onClick={() => setShowRestore((shown) => !shown)} aria-expanded={showRestore} aria-controls="restore-panel">
+                {showRestore ? 'Close restore' : 'Restore backup'}
               </button>
             </div>
           </div>
+
+          {showRestore && <section id="restore-panel" className="restore-panel" aria-labelledby="restore-title" aria-busy={restoreBusy}>
+            <h3 id="restore-title">Restore server backup</h3>
+            <p>Upload a StackMap server backup to validate it. Previewing does not change inventory.</p>
+            <label className="field">
+              <span>Backup JSON file</span>
+              <input type="file" accept="application/json,.json" disabled={restoreBusy} onChange={(event) => {
+                setRestoreFile(event.target.files?.[0] ?? null)
+                setRestorePreview(null)
+                setRestoreAcknowledged(false)
+              }} />
+            </label>
+            <button className="button ghost" type="button" disabled={!restoreFile || restoreBusy} onClick={previewRestore}>
+              {restoreBusy && !restorePreview ? 'Validating…' : 'Preview restore'}
+            </button>
+            {restorePreview && (
+              <div className="restore-confirmation" role="group" aria-labelledby="restore-warning-title">
+                <h3 id="restore-warning-title" className="danger">Destructive restore</h3>
+                <p><strong>Current server inventory will be fully replaced.</strong> This is not a merge. Legacy browser data remains untouched.</p>
+                <dl className="restore-summary">
+                  <div><dt>Hosts</dt><dd>{restorePreview.summary.hostCount}</dd></div>
+                  <div><dt>Services</dt><dd>{restorePreview.summary.serviceCount}</dd></div>
+                  <div><dt>Ports</dt><dd>{restorePreview.summary.portCount}</dd></div>
+                  <div><dt>Paths</dt><dd>{restorePreview.summary.pathCount}</dd></div>
+                  <div><dt>Dependencies</dt><dd>{restorePreview.summary.dependencyCount}</dd></div>
+                </dl>
+                <p className="field-help">Backup version {restorePreview.summary.backupVersion}; exported {restorePreview.summary.exportedAt}; source installation {restorePreview.summary.sourceInstallationId}.</p>
+                <label className="restore-acknowledgement">
+                  <input type="checkbox" checked={restoreAcknowledged} disabled={restoreBusy} onChange={(event) => setRestoreAcknowledged(event.target.checked)} />
+                  I understand that the current server inventory will be replaced.
+                </label>
+                <div className="form-actions">
+                  <button className="button danger-fill" type="button" disabled={!restoreAcknowledged || restoreBusy} onClick={confirmRestore}>{restoreBusy ? 'Restoring…' : 'Replace server inventory'}</button>
+                  <button className="button ghost" type="button" disabled={restoreBusy} onClick={cancelRestore}>Cancel restore</button>
+                </div>
+              </div>
+            )}
+            <div ref={restoreStatus} tabIndex={-1} className="visually-hidden" aria-live="polite">{restoreBusy ? message : error || message}</div>
+          </section>}
 
           <div className="filters">
             <label className="search-field">

@@ -45,6 +45,17 @@ type ServiceRow = {
 export class InventoryNotFoundError extends Error {}
 export class InventoryConflictError extends Error {}
 export class InventoryValidationError extends Error {}
+export class RestoreConflictError extends Error {
+  constructor(public readonly code: 'RESTORE_PREVIEW_STALE' | 'RESTORE_PREVIEW_INVALID') {
+    super(code)
+  }
+}
+
+export interface InventorySnapshot {
+  revision: number
+  hosts: InventoryHost[]
+  services: InventoryService[]
+}
 
 export class SqliteInventoryRepository {
   constructor(
@@ -54,6 +65,56 @@ export class SqliteInventoryRepository {
 
   inventoryRevision(): number {
     return this.readInventoryRevision().revision
+  }
+
+  inventorySnapshot(afterRevisionRead?: () => void): InventorySnapshot {
+    return this.connection.transaction(() => {
+      const revision = this.readInventoryRevision().revision
+      afterRevisionRead?.()
+      return {
+        revision,
+        hosts: this.listHosts(),
+        services: this.listServices(),
+      }
+    })()
+  }
+
+  replaceInventory(
+    hosts: NewInventoryHost[],
+    services: NewInventoryService[],
+    expectedRevision: number,
+  ): number {
+    return this.connection.transaction(() => {
+      const { revision, storedValue } = this.readInventoryRevision()
+      if (revision !== expectedRevision) throw new RestoreConflictError('RESTORE_PREVIEW_STALE')
+      if (revision === Number.MAX_SAFE_INTEGER) throw new Error('Inventory revision cannot be incremented safely')
+
+      this.connection.prepare('DELETE FROM service_dependencies').run()
+      this.connection.prepare('DELETE FROM service_ports').run()
+      this.connection.prepare('DELETE FROM service_paths').run()
+      this.connection.prepare('DELETE FROM services').run()
+      this.connection.prepare('DELETE FROM hosts').run()
+
+      const insertHost = this.connection.prepare(`
+        INSERT INTO hosts (
+          id, name, type, ip_address, operating_system, notes, revision, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `)
+      for (const host of hosts) {
+        insertHost.run(host.id, host.name, host.type, host.ipAddress, host.operatingSystem,
+          host.notes, host.createdAt, host.updatedAt)
+      }
+      for (const service of services) this.insertService(service)
+      for (const service of services) this.replaceServiceChildren(service)
+
+      const nextRevision = revision + 1
+      const updated = this.connection.prepare(`
+        UPDATE application_metadata SET value = ?
+        WHERE key = 'inventory_revision' AND value = ?
+      `).run(String(nextRevision), storedValue)
+      if (updated.changes !== 1) throw new RestoreConflictError('RESTORE_PREVIEW_STALE')
+      return nextRevision
+    })()
   }
 
   private readInventoryRevision(): { revision: number; storedValue: string } {

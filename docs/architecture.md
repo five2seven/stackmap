@@ -4,7 +4,7 @@
 
 StackMap runs as a React, TypeScript, and Vite single-page application served by a Node.js 24/Fastify 5 process. The frontend uses a typed same-origin HTTP repository, and SQLite at `/config/stackmap.db` is authoritative for all normal inventory reads and writes. Multiple browsers share the same server inventory.
 
-The current JSON export schema is version 3. Server inventory and legacy browser data have explicitly separate export actions. Server-authoritative restore remains deferred. Dexie remains installed only at the legacy boundary; detection and export use read-only IndexedDB access so legacy records are not upgraded, imported, deleted, or otherwise modified.
+Server inventory and legacy browser data use separate JSON formats and explicitly separate export actions. Server-authoritative export and restore use exact-shape server backup schema version 1. Legacy browser export remains schema version 3 only for preservation and the future Task 6 migration; server restore does not accept it. Dexie remains installed only at the legacy boundary, where detection and export use read-only IndexedDB access so legacy records are not upgraded, imported, deleted, or otherwise modified.
 
 ## Approved target architecture
 
@@ -40,3 +40,23 @@ Use Vitest and Testing Library for unit and component behavior, Playwright for c
 - Do not store credentials or secrets in client code.
 - Do not add authentication, external persistence, telemetry, or Docker socket access without explicit approval.
 - Keep IndexedDB isolated to explicit legacy detection, export, and later migration behavior.
+# Server backup format
+
+Task 5 defines server backup schema version `1`. A backup is JSON with the exact top-level keys
+`schemaVersion`, `metadata`, `hosts`, and `services`. Metadata has the exact keys `exportedAt`,
+`sourceInstallationId`, `sourceInventoryRevision`, and `applicationVersion`; all are informational.
+Hosts and services use the complete production API record shape, including source record revisions,
+IDs, timestamps, ordered ports, ordered paths, and ordered dependency IDs. Source record revisions are
+not restored: hosts and services start at revision 1. The source installation and inventory revision
+never replace target metadata.
+
+Only schema version 1 is supported. Unknown fields, older versions, and future versions fail closed.
+Adding a version requires an explicit parser and immutable conversion to the current validated model.
+Restore uses non-mutating preview followed by an opaque, single-use, five-minute token and the target
+revision observed at preview. Confirmation replaces the complete inventory in one SQLite transaction,
+then advances the target inventory revision exactly once. The target installation identity, database
+creation time, migrations, pragmas, WAL state, path, and filesystem state are outside the backup format.
+Preview tokens and their validated backups are held in memory per application instance. At most eight
+unused previews may be active, limiting retained upload data to a conservative bound for a self-hosted
+single-process deployment. Expired and consumed previews free capacity; process restart invalidates all
+previews. A capacity-full server rejects new previews safely instead of evicting one under review.
