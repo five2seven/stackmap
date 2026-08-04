@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b60c95606231",
+  "strategy": "manual-commit",
+  "branch": "codex/indexeddb-migration",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "README.md",
+    "docs/architecture.md",
+    "e2e/stackmap.spec.ts",
+    "server/legacy-migration-api.test.ts",
+    "server/legacy-migration.test.ts",
+    "server/legacy-migration.ts",
+    "server/repository.ts",
+    "src/App.cutover.test.tsx",
+    "src/App.tsx",
+    "src/data/legacyInventory.test.ts",
+    "src/data/legacyInventory.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b6/0c95606231/0/metadata.json",
+      "transcript": "/b6/0c95606231/0/full.jsonl",
+      "compact_transcript": "/b6/0c95606231/0/transcript.jsonl",
+      "content_hash": "/b6/0c95606231/0/content_hash.txt",
+      "prompt": "/b6/0c95606231/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 759752,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 48802560,
+    "output_tokens": 96091,
+    "api_call_count": 391
+  }
+}
