@@ -2,6 +2,9 @@ import Dexie, { type EntityTable } from 'dexie'
 import { CURRENT_SCHEMA_VERSION } from '../domain/schema'
 import { migrateLegacyPaths } from '../domain/pathMappings'
 import type { Host, Service, StackMapData } from '../domain/types'
+import type { StackMapRepository } from './repository'
+
+export type { StackMapRepository } from './repository'
 
 interface StackMapMetadata {
   key: 'schemaVersion'
@@ -72,16 +75,6 @@ export class StackMapDatabase extends Dexie {
           .put({ key: 'schemaVersion', value: CURRENT_SCHEMA_VERSION })
       })
   }
-}
-
-export interface StackMapRepository {
-  getAll(): Promise<StackMapData>
-  putService(service: Service): Promise<void>
-  deleteService(id: string): Promise<void>
-  putHost(host: Host): Promise<void>
-  deleteHost(id: string): Promise<void>
-  replaceAll(data: StackMapData): Promise<void>
-  getSchemaVersion(): Promise<number>
 }
 
 export class DexieStackMapRepository implements StackMapRepository {

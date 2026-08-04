@@ -5,7 +5,14 @@ export function createExport(data: StackMapData, exportedAt = new Date().toISOSt
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     exportedAt,
-    services: data.services,
+    services: data.services.map((service) => ({
+      ...service,
+      ports: service.ports.map((port) => {
+        const exportedPort = { ...port }
+        delete exportedPort.id
+        return exportedPort
+      }),
+    })),
     hosts: data.hosts,
   }
 }
@@ -23,4 +30,3 @@ export function parseImport(text: string): StackMapExport {
   }
   return validateImport(parsed)
 }
-

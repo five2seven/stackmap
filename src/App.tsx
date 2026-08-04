@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { parseImport, serializeExport } from './data/backup'
-import { repository as defaultRepository, type StackMapRepository } from './data/database'
+import { serializeExport } from './data/backup'
+import { repository as defaultRepository } from './data/httpRepository'
+import {
+  legacyInventoryReader as defaultLegacyReader,
+  type LegacyInventoryReader,
+} from './data/legacyInventory'
+import type { StackMapRepository } from './data/repository'
 import {
   duplicateContainerNameServiceIds,
   duplicatePortServiceIds,
@@ -15,10 +20,8 @@ import {
   type Host,
   type Service,
   type ServiceFilters,
-  type StackMapExport,
 } from './domain/types'
 import { HostManager } from './components/HostManager'
-import { ImportReview } from './components/ImportReview'
 import { PathMapView } from './components/PathMapView'
 import { PortMapView } from './components/PortMapView'
 import { ServiceForm } from './components/ServiceForm'
@@ -35,22 +38,23 @@ const DEFAULT_FILTERS: ServiceFilters = {
 
 interface AppProps {
   repository?: StackMapRepository
+  legacyReader?: LegacyInventoryReader
 }
 
-function App({ repository = defaultRepository }: AppProps) {
+function App({ repository = defaultRepository, legacyReader = defaultLegacyReader }: AppProps) {
   const [services, setServices] = useState<Service[]>([])
   const [hosts, setHosts] = useState<Host[]>([])
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [editingService, setEditingService] = useState<Service | null | 'new'>(null)
   const [showHosts, setShowHosts] = useState(false)
-  const [importReview, setImportReview] = useState<StackMapExport | null>(null)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [legacyBlocked, setLegacyBlocked] = useState(false)
   const [activeView, setActiveView] = useState<'services' | 'port-map' | 'path-map'>('services')
   const [portMapHostFilter, setPortMapHostFilter] = useState('all')
   const [pathMapHostFilter, setPathMapHostFilter] = useState('all')
-  const importInput = useRef<HTMLInputElement>(null)
   const portMapViewButton = useRef<HTMLButtonElement>(null)
   const pathMapViewButton = useRef<HTMLButtonElement>(null)
   const returnFocusToMap = useRef<'port-map' | 'path-map' | null>(null)
@@ -61,26 +65,55 @@ function App({ repository = defaultRepository }: AppProps) {
     setHosts(data.hosts.sort((left, right) => left.name.localeCompare(right.name)))
   }
 
+  async function loadServerInventory() {
+    setLoading(true)
+    setLoadFailed(false)
+    try {
+      const data = await repository.getAll()
+      setServices(data.services.sort((left, right) => left.name.localeCompare(right.name)))
+      setHosts(data.hosts.sort((left, right) => left.name.localeCompare(right.name)))
+      setError('')
+      setLegacyBlocked(false)
+    } catch {
+      setError('StackMap could not load the server inventory. No browser fallback was used.')
+      setLoadFailed(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     let active = true
-    repository
-      .getAll()
-      .then((data) => {
+    legacyReader.detect().then(async (hasLegacyInventory) => {
+      if (!active) return
+      if (hasLegacyInventory) {
+        setLegacyBlocked(true)
+        setLoading(false)
+        return
+      }
+      try {
+        const data = await repository.getAll()
         if (!active) return
         setServices(data.services.sort((left, right) => left.name.localeCompare(right.name)))
         setHosts(data.hosts.sort((left, right) => left.name.localeCompare(right.name)))
-      })
-      .catch(() => {
-        if (active) setError('StackMap could not load local data.')
-      })
-      .finally(() => {
+      } catch {
+        if (!active) return
+        setError('StackMap could not load the server inventory. No browser fallback was used.')
+        setLoadFailed(true)
+      } finally {
         if (active) setLoading(false)
-      })
+      }
+    }).catch(() => {
+      if (!active) return
+      setError('StackMap could not safely check for legacy browser data. Server editing remains blocked.')
+      setLoadFailed(true)
+      setLoading(false)
+    })
 
     return () => {
       active = false
     }
-  }, [repository])
+  }, [legacyReader, repository])
 
   useEffect(() => {
     if (!editingService && returnFocusToMap.current) {
@@ -197,59 +230,79 @@ function App({ repository = defaultRepository }: AppProps) {
     }
   }
 
-  function exportData() {
+  function downloadExport(data: { services: Service[]; hosts: Host[] }, filename: string) {
+    const blob = new Blob([serializeExport(data)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 0)
+  }
+
+  async function exportServerInventory() {
     try {
-      const blob = new Blob([serializeExport({ services, hosts })], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `stackmap-${new Date().toISOString().slice(0, 10)}.json`
-      link.click()
-      window.setTimeout(() => URL.revokeObjectURL(url), 0)
+      const data = await repository.getAll()
+      downloadExport(data, `stackmap-server-inventory-${new Date().toISOString().slice(0, 10)}.json`)
       setError('')
-      setMessage('Backup exported.')
+      setMessage('Current StackMap server inventory exported.')
     } catch {
-      setError('The backup could not be exported.')
+      setError('The current server inventory could not be exported. Retry when the server is available.')
     }
   }
 
-  async function readImport(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
+  async function exportLegacyInventory() {
     try {
-      setImportReview(parseImport(await file.text()))
+      const data = await legacyReader.read()
+      downloadExport(data, `stackmap-legacy-browser-data-${new Date().toISOString().slice(0, 10)}.json`)
       setError('')
+      setMessage('Legacy browser-data backup exported. The browser data was not changed.')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The backup could not be read.')
-    }
-  }
-
-  async function confirmImport() {
-    if (!importReview) return
-    try {
-      await repository.replaceAll({
-        services: importReview.services,
-        hosts: importReview.hosts,
-      })
-      await refresh()
-      setImportReview(null)
-      setError('')
-      setMessage('Backup imported successfully.')
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The backup could not be imported.')
+      setError(caught instanceof Error ? caught.message : 'Legacy browser data could not be exported.')
     }
   }
 
   if (loading) {
-    return <div className="loading-state">Loading StackMap…</div>
+    return <div className="loading-state" role="status">Loading StackMap server inventory…</div>
+  }
+
+  if (legacyBlocked) {
+    return (
+      <main className="blocking-state" role="alertdialog" aria-modal="true" aria-labelledby="legacy-data-title">
+        <p className="eyebrow">Legacy browser data found</p>
+        <h1 id="legacy-data-title">Choose how to continue safely</h1>
+        <p>Browser-local legacy hosts or services were found. This data is not stored in SQLite.</p>
+        <p>The current StackMap server inventory may be empty or different. Automatic migration is not available in Task 4, and your legacy browser data will remain untouched.</p>
+        {message && <div className="notice success" role="status">{message}</div>}
+        {error && <div className="notice error" role="alert">{error}</div>}
+        <div className="blocking-actions">
+          <button className="button ghost" type="button" onClick={exportLegacyInventory} aria-label="Export legacy browser data from IndexedDB">
+            Export legacy browser data
+          </button>
+          <button className="button primary" type="button" onClick={loadServerInventory}>
+            Continue to StackMap server inventory without importing
+          </button>
+        </div>
+        <p className="field-help">Continuing is acknowledged for this browser session only. It does not import, merge, delete, or synchronize data.</p>
+      </main>
+    )
+  }
+
+  if (loadFailed) {
+    return (
+      <main className="blocking-state" role="alert" aria-labelledby="load-error-title">
+        <h1 id="load-error-title">Server inventory unavailable</h1>
+        <p>{error}</p>
+        <button className="button primary" type="button" onClick={loadServerInventory}>Retry loading server inventory</button>
+      </main>
+    )
   }
 
   return (
     <div className="app-shell">
       <header className="site-header">
         <div>
-          <p className="eyebrow">Local-first homelab inventory</p>
+          <p className="eyebrow">Self-hosted homelab inventory</p>
           <h1>StackMap</h1>
         </div>
         <div className="header-actions">
@@ -328,14 +381,6 @@ function App({ repository = defaultRepository }: AppProps) {
           />
         )}
 
-        {importReview && (
-          <ImportReview
-            data={importReview}
-            onConfirm={confirmImport}
-            onCancel={() => setImportReview(null)}
-          />
-        )}
-
         {activeView === 'services' ? (
           <>
         <section className="summary-strip" aria-label="Service summary">
@@ -368,24 +413,9 @@ function App({ repository = defaultRepository }: AppProps) {
               <h2 id="services-title">Services</h2>
             </div>
             <div className="data-actions">
-              <button className="button ghost" type="button" onClick={exportData}>
-                Export JSON
+              <button className="button ghost" type="button" onClick={exportServerInventory} aria-label="Export current StackMap server inventory">
+                Export server inventory
               </button>
-              <button
-                className="button ghost"
-                type="button"
-                onClick={() => importInput.current?.click()}
-              >
-                Import JSON
-              </button>
-              <input
-                ref={importInput}
-                className="visually-hidden"
-                type="file"
-                accept="application/json,.json"
-                onChange={readImport}
-                aria-label="Choose JSON backup"
-              />
             </div>
           </div>
 

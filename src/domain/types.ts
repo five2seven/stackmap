@@ -16,6 +16,7 @@ export type HostType = (typeof HOST_TYPES)[number]
 export type PortProtocol = (typeof PORT_PROTOCOLS)[number]
 
 export interface ServicePort {
+  id?: string
   hostPort?: number
   containerPort?: number
   protocol: PortProtocol

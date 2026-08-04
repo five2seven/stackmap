@@ -25,6 +25,22 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Validate application cutover
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run lint
+          npm test
+          npm run build
+          npm run test:e2e
+          npm audit --omit=dev
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -180,6 +196,26 @@ jobs:
             'fresh inventory table counts',
           )
           NODE
+          node <<'NODE' >/tmp/stackmap-host.json
+          const timestamp = '2026-08-04T00:00:00.000Z'
+          process.stdout.write(JSON.stringify({
+            id: 'ci-host', name: 'CI host', type: 'nas', ipAddress: '192.0.2.10',
+            operatingSystem: 'Linux', notes: '', createdAt: timestamp, updatedAt: timestamp,
+          }))
+          NODE
+          curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-host.json http://127.0.0.1:8088/api/v1/hosts >/tmp/created-host.json
+          node <<'NODE' >/tmp/stackmap-service.json
+          const timestamp = '2026-08-04T00:00:00.000Z'
+          process.stdout.write(JSON.stringify({
+            id: 'ci-service', name: 'CI service', containerName: 'ci-service', dockerImage: 'example/ci:1',
+            description: 'Container persistence proof', applicationUrl: '', status: 'active', hostId: 'ci-host',
+            internalUrl: '', ports: [{ id: 'web', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: 'HTTP' }],
+            paths: [{ id: 'config', hostPath: '/srv/ci', containerPath: '/config', purpose: 'Configuration', readOnly: false }],
+            network: 'ci', exposure: 'local', dependencyIds: [], notes: '', createdAt: timestamp, updatedAt: timestamp,
+          }))
+          NODE
+          curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-service.json http://127.0.0.1:8088/api/v1/services >/tmp/created-service.json
+          grep --quiet 'ci-service' /tmp/created-service.json
           metadata_before_restart="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(JSON.stringify(db.prepare('SELECT key,value FROM application_metadata ORDER BY key').all()))")"
 
           docker restart stackmap-validation >/dev/null
@@ -188,6 +224,13 @@ jobs:
           test "$persisted_id" = "$installation_id"
           metadata_after_restart="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(JSON.stringify(db.prepare('SELECT key,value FROM application_metadata ORDER BY key').all()))")"
           test "$metadata_after_restart" = "$metadata_before_restart"
+          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/services | grep --quiet 'ci-service'
+
+          docker rm --force stackmap-validation >/dev/null
+          docker run --detach --name stackmap-validation --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --mount "type=bind,source=$config_directory,target=/config" --publish 8088:8080 stackmap:validation
+          wait_for_health
+          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/hosts | grep --quiet 'ci-host'
+          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/services | grep --quiet 'ci-service'
           docker stop --time 10 stackmap-validation >/dev/null
           docker logs stackmap-validation > /tmp/stackmap-container.log 2>&1
           grep --quiet 'graceful shutdown started' /tmp/stackmap-container.log
@@ -214,7 +257,7 @@ jobs:
             type=sha,format=short,prefix=sha-
           labels: |
             org.opencontainers.image.title=StackMap
-            org.opencontainers.image.description=A local-first homelab planning application
+            org.opencontainers.image.description=A self-hosted homelab inventory application
             org.opencontainers.image.source=https://github.com/five2seven/stackmap
 
       - name: Publish image

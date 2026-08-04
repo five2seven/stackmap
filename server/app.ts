@@ -19,6 +19,12 @@ function isApiRequest(url: string): boolean {
 
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: options.logger ?? false })
+  app.setErrorHandler(async (error, request, reply) => {
+    if (isApiRequest(request.url)) {
+      return sendApiError(error, request, reply)
+    }
+    return reply.send(error)
+  })
   const inventoryRepository = new SqliteInventoryRepository(options.database.connection)
 
   app.addHook('onSend', async (request, reply, payload) => {
@@ -78,13 +84,6 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     }
     if (staticAvailable && request.method === 'GET') return reply.sendFile('index.html')
     return reply.code(404).send({ message: 'Route not found' })
-  })
-
-  app.setErrorHandler(async (error, request, reply) => {
-    if (isApiRequest(request.url)) {
-      return sendApiError(error, request, reply)
-    }
-    return reply.send(error)
   })
 
   app.addHook('onClose', async () => options.database.checkpointAndClose())

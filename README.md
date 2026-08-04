@@ -19,8 +19,8 @@ Only a service name is required, so incomplete plans can be recorded and refined
 - Port Map grouped by host, with search, filtering, conflicts, and edit actions
 - Path Map grouped by host and path, with shared-path details, warnings, search, filtering, and edit actions
 - Service search and filters for status, host, network, and exposure
-- Versioned JSON backup and restore with import validation
-- Local browser storage through IndexedDB
+- Versioned JSON export of the current server inventory
+- Shared durable inventory in SQLite through the same-origin API
 
 ## Screenshots
 
@@ -70,18 +70,18 @@ services:
       - ALL
 ```
 
-During the current migration phase, StackMap still stores inventory data in the browser using IndexedDB. The required `/config` mount stores only SQLite infrastructure metadata; it does not yet contain or back up inventory. Use JSON export for inventory backups and keep the same hostname, protocol, and port when upgrading. Replace `/path/to/stackmap/config` with a writable persistent directory on the Docker host.
+StackMap stores its authoritative inventory in `/config/stackmap.db`. Replace `/path/to/stackmap/config` with a writable persistent directory on the Docker host and include that directory in normal host-level backups.
 
 The left side of `"8088:8080"` is the host port. For example, use `"8090:8080"` to expose StackMap on port 8090. Change `TZ=America/Chicago` to the appropriate IANA timezone for the Docker host.
 
-The browser URL is part of the storage identity. Changing the hostname, IP address, protocol, or port creates a different browser origin and may show a separate empty inventory. Other browsers and devices do not automatically share the same data.
+Browsers and devices using the same StackMap server share its SQLite inventory. Existing browser-local IndexedDB data is detected and preserved for the later explicit migration workflow; it is never imported automatically.
 
 ### Updating in Portainer
 
 1. Open the StackMap stack.
 2. Re-pull the latest image.
 3. Update the stack.
-4. Keep the same URL when practical.
+4. Keep the same `/config` mount.
 5. Refresh the browser after the container becomes healthy.
 
 ## Usage
@@ -95,15 +95,15 @@ The browser URL is part of the storage identity. Changing the hostname, IP addre
 
 ## Data Storage
 
-StackMap still stores its inventory in IndexedDB in the current browser during this migration phase. The server creates `/config/stackmap.db` for infrastructure metadata only; no inventory records are written there yet. Restarting or recreating the container at the same URL normally leaves browser data intact, but clearing browser site data can delete it.
+StackMap stores all normal production inventory in SQLite at `/config/stackmap.db`. The React application reads and writes that inventory only through the same-origin HTTP API. Container restart or recreation with the same `/config` mount preserves inventory, and independent browsers see the same records.
 
-Data does not synchronize between browsers or devices. Use one stable canonical URL to avoid unintentionally opening a different browser storage origin.
+Legacy IndexedDB records remain browser-local and untouched. When detected, StackMap blocks normal editing until the user exports a legacy backup or deliberately continues to the server inventory without importing it.
 
 ## Backup and Restore
 
-Use **Export JSON** to download a versioned backup containing the complete local dataset. Use **Import JSON** to validate and review a backup before replacing the current browser data.
+Use **Export server inventory** to download a versioned JSON copy of the current server-authoritative dataset. This interim export is not a full server backup/restore system; server-authoritative restore is planned for a later migration task.
 
-The `/config` mount does not yet contain or protect inventory. Export JSON before clearing site data, changing browsers, moving to another device, or changing the URL used to access StackMap.
+When legacy browser data is detected, use **Export legacy browser data** to download it without reading or modifying SQLite. The legacy and server export actions are deliberately separate and clearly identify their source.
 
 ## Build from Source
 
@@ -129,7 +129,7 @@ Additional validation commands are `npm run lint`, `npm run build`, and `npm run
 
 ## Current Limitations
 
-- Data is local to one browser origin.
+- Legacy IndexedDB migration and server-authoritative restore are not implemented yet.
 - There are no user accounts or cloud synchronization.
 - StackMap does not connect to or manage remote Docker hosts.
 - There is no container monitoring or automatic discovery.

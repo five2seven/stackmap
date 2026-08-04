@@ -18,7 +18,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev:vite -- --host 127.0.0.1 --port 4173',
+    command: 'npm run build && node scripts/run-e2e-server.mjs',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,
   },

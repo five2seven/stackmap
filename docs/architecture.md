@@ -2,17 +2,17 @@
 
 ## Current implementation
 
-StackMap currently runs as a React, TypeScript, and Vite single-page application. Inventory remains in browser IndexedDB through Dexie, and the existing self-hosted image serves static assets from nginx without an application-data volume. This is transitional implementation state, not the approved final architecture.
+StackMap runs as a React, TypeScript, and Vite single-page application served by a Node.js 24/Fastify 5 process. The frontend uses a typed same-origin HTTP repository, and SQLite at `/config/stackmap.db` is authoritative for all normal inventory reads and writes. Multiple browsers share the same server inventory.
 
-The current JSON export schema is version 3. Import accepts compatible versions 1 through 3, validates uploaded data before replacement, and migrates legacy identity and path fields without mutating uploaded objects. Dexie database version 4 similarly converts legacy path fields while preserving timestamps. IndexedDB and JSON schema versions are independent.
+The current JSON export schema is version 3. Server inventory and legacy browser data have explicitly separate export actions. Server-authoritative restore remains deferred. Dexie remains installed only at the legacy boundary; detection and export use read-only IndexedDB access so legacy records are not upgraded, imported, deleted, or otherwise modified.
 
 ## Approved target architecture
 
-StackMap will become a self-hosted Docker web application while retaining the React, TypeScript, and Vite frontend. A Node.js 24 LTS and TypeScript server using Fastify 5 will serve a same-origin API and the compiled frontend. SQLite, accessed with better-sqlite3, will become the durable primary datastore at `/config/stackmap.db`.
+StackMap is a self-hosted Docker web application retaining the React, TypeScript, and Vite frontend. A Node.js 24 LTS and TypeScript server using Fastify 5 serves a same-origin API and the compiled frontend. SQLite, accessed with better-sqlite3, is the durable primary datastore at `/config/stackmap.db`.
 
-The production deployment should remain one non-root container and one process when practical. A `/config` bind mount will be required so inventory survives container recreation and can participate in normal Docker or NAS backup procedures. Multiple browsers and devices will share the server inventory.
+The production deployment remains one non-root container and one process. A `/config` bind mount is required so inventory survives container recreation and can participate in normal Docker or NAS backup procedures.
 
-IndexedDB is transitional legacy storage only. It remains authoritative until a coordinated frontend cutover and is retained afterward only long enough to support an explicit, data-safe legacy migration. The migration plan must never split normal inventory authority between IndexedDB and SQLite.
+IndexedDB is transitional legacy storage only and is retained for the later explicit, data-safe migration. A blocking interstitial prevents ambiguous editing when legacy records exist; deliberate continuation starts the HTTP-only application without writing either a migration or synchronization result to IndexedDB.
 
 JSON export remains a portable backup format. The application does not require an external database, cloud service, account system, telemetry, or Docker socket access.
 
@@ -39,4 +39,4 @@ Use Vitest and Testing Library for unit and component behavior, Playwright for c
 - Validate imports rather than trusting uploaded JSON.
 - Do not store credentials or secrets in client code.
 - Do not add authentication, external persistence, telemetry, or Docker socket access without explicit approval.
-- Treat the target architecture as approved direction, not as already implemented behavior.
+- Keep IndexedDB isolated to explicit legacy detection, export, and later migration behavior.

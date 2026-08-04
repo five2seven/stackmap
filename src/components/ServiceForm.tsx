@@ -21,6 +21,7 @@ interface ServiceFormProps {
 }
 
 const emptyPort = (): ServicePort => ({
+  id: createUuid(),
   protocol: 'tcp',
   description: '',
 })
