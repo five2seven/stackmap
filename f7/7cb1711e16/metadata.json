@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f77cb1711e16",
+  "strategy": "manual-commit",
+  "branch": "codex/http-repository-cutover",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/f7/7cb1711e16/0/metadata.json",
+      "transcript": "/f7/7cb1711e16/0/full.jsonl",
+      "compact_transcript": "/f7/7cb1711e16/0/transcript.jsonl",
+      "content_hash": "/f7/7cb1711e16/0/content_hash.txt",
+      "prompt": "/f7/7cb1711e16/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 541022,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 21755136,
+    "output_tokens": 49424,
+    "api_call_count": 156
+  }
+}

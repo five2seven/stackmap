@@ -1,0 +1,17 @@
+# Files mentioned by the user:
+
+## Continue the active StackMap migration task defined in AGENTS.md and docs/curre…: C:\Users\rae\.codex/attachments/8f7d840a-7037-4a0b-a89b-1c296a09f38b/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Review StackMap draft PR #7 according to AGENTS.md and docs/current-task.md. Re…: C:\Users\rae\.codex/attachments/060588de-7578-4e40-9fbe-624a18449208/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
