@@ -1,5 +1,8 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import type { NewInventoryHost, NewInventoryService } from './inventory.js'
 import { openDatabase, type StackMapDatabase } from './database.js'
 import {
@@ -13,9 +16,11 @@ const timestamp = '2026-08-03T12:00:00.000Z'
 const later = '2026-08-03T13:00:00.000Z'
 const cleanupTime = '2026-08-03T14:00:00.000Z'
 const databases: StackMapDatabase[] = []
+const temporaryDirectories: string[] = []
 
 afterEach(() => {
   for (const database of databases.splice(0)) database.checkpointAndClose()
+  for (const directory of temporaryDirectories.splice(0)) fs.rmSync(directory, { recursive: true, force: true })
 })
 
 function fixture() {
@@ -63,6 +68,29 @@ function service(id: string, details: Partial<NewInventoryService> = {}): NewInv
 }
 
 describe('SqliteInventoryRepository', () => {
+  it.each(['host', 'service'] as const)('reads a coherent snapshot across an interleaved %s mutation', (kind) => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'stackmap-snapshot-'))
+    temporaryDirectories.push(directory)
+    const filename = path.join(directory, 'stackmap.db')
+    const firstDatabase = openDatabase(filename)
+    const secondDatabase = openDatabase(filename)
+    databases.push(firstDatabase, secondDatabase)
+    const reader = new SqliteInventoryRepository(firstDatabase.connection)
+    const writer = new SqliteInventoryRepository(secondDatabase.connection)
+    reader.createHost(host())
+    const expectedRevision = reader.inventoryRevision()
+
+    const snapshot = reader.inventorySnapshot(() => {
+      if (kind === 'host') writer.createHost(host('host-2', 'Later host'))
+      else writer.createService(service('later-service'))
+    })
+
+    expect(snapshot.revision).toBe(expectedRevision)
+    expect(snapshot.hosts.map(({ id }) => id)).toEqual(['host-1'])
+    expect(snapshot.services).toEqual([])
+    expect(reader.inventoryRevision()).toBe(expectedRevision + 1)
+  })
+
   it('round-trips complete records with stable IDs, timestamps, and child ordering', () => {
     const { repository } = fixture()
     expect(repository.inventoryRevision()).toBe(0)

@@ -1,6 +1,11 @@
 import type { FastifyInstance } from 'fastify'
 import { applicationVersion } from './version.js'
-import { BackupValidationError, createBackup, RestorePreviewStore } from './backup.js'
+import {
+  BackupValidationError,
+  createBackup,
+  RestorePreviewCapacityError,
+  RestorePreviewStore,
+} from './backup.js'
 import { RestoreConflictError, SqliteInventoryRepository } from './repository.js'
 
 export function registerBackupApi(
@@ -42,6 +47,13 @@ function exact(value: unknown, keys: string[]): Record<string, unknown> {
 export function backupApiError(error: unknown): { status: number; code: string; message: string } | undefined {
   if (error instanceof BackupValidationError) {
     return { status: 400, code: 'BACKUP_VALIDATION_ERROR', message: 'The backup is invalid or unsupported.' }
+  }
+  if (error instanceof RestorePreviewCapacityError) {
+    return {
+      status: 503,
+      code: 'RESTORE_PREVIEW_CAPACITY',
+      message: 'Too many restore previews are active. Try again after an existing preview expires.',
+    }
   }
   if (error instanceof RestoreConflictError) {
     return {

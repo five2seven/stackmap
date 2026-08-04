@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import type { FastifyInstance } from 'fastify'
 import { buildApp } from './app.js'
 import { openDatabase, type StackMapDatabase } from './database.js'
 
 const fixtures: Array<{ app: FastifyInstance; database: StackMapDatabase }> = []
+const temporaryDirectories: string[] = []
 
-async function fixture() {
-  const database = openDatabase(':memory:')
+async function fixture(filename = ':memory:') {
+  const database = openDatabase(filename)
   const app = await buildApp({ database, staticRoot: 'missing' })
   fixtures.push({ app, database })
   return { app, database }
@@ -14,6 +18,7 @@ async function fixture() {
 
 afterEach(async () => {
   for (const { app } of fixtures.splice(0)) await app.close()
+  for (const directory of temporaryDirectories.splice(0)) fs.rmSync(directory, { recursive: true, force: true })
 })
 
 const timestamp = '2026-08-04T12:00:00.000Z'
@@ -145,4 +150,89 @@ describe('server backup and restore API', () => {
     expect(retried.statusCode).toBe(200)
     expect((await app.inject({ method: 'GET', url: '/api/v1/hosts' })).json()).toMatchObject({ data: [{ name: 'Restored name', revision: 1 }], meta: { inventoryRevision: 3 } })
   })
+
+  it('round-trips server-generated backups with service-scoped port and path IDs', async () => {
+    const { app } = await fixture()
+    const firstCreated = await app.inject({ method: 'POST', url: '/api/v1/services', payload: {
+      ...service, hostId: undefined,
+    } })
+    const secondCreated = await app.inject({ method: 'POST', url: '/api/v1/services', payload: {
+      ...service, id: 'service-2', name: 'Second', hostId: undefined,
+    } })
+    expect(firstCreated.statusCode).toBe(201)
+    expect(secondCreated.statusCode).toBe(201)
+    const backup = (await app.inject({ method: 'GET', url: '/api/v1/backup' })).json()
+    const preview = (await app.inject({ method: 'POST', url: '/api/v1/restore/preview', payload: backup })).json().data
+    const confirmed = await app.inject({ method: 'POST', url: '/api/v1/restore/confirm', payload: {
+      previewToken: preview.previewToken, expectedInventoryRevision: preview.expectedInventoryRevision,
+    } })
+    expect(confirmed.statusCode).toBe(200)
+    const restored = (await app.inject({ method: 'GET', url: '/api/v1/services' })).json().data
+    expect(restored.map(({ ports, paths }: typeof service) => [ports[0].id, paths[0].id])).toEqual([
+      ['port-1', 'path-1'], ['port-1', 'path-1'],
+    ])
+  })
+
+  it('returns a stable safe error when preview capacity is reached and keeps app stores isolated', async () => {
+    const { app } = await fixture()
+    for (let index = 0; index < 8; index += 1) {
+      expect((await app.inject({ method: 'POST', url: '/api/v1/restore/preview', payload: emptyBackup() })).statusCode).toBe(200)
+    }
+    const full = await app.inject({ method: 'POST', url: '/api/v1/restore/preview', payload: emptyBackup() })
+    expect(full.statusCode).toBe(503)
+    expect(full.json().error).toMatchObject({
+      code: 'RESTORE_PREVIEW_CAPACITY',
+      message: 'Too many restore previews are active. Try again after an existing preview expires.',
+    })
+    expect(full.json().error.requestId).toBeTruthy()
+    expect(full.body).not.toMatch(/token|schemaVersion/i)
+
+    const { app: separateApp } = await fixture()
+    expect((await separateApp.inject({ method: 'POST', url: '/api/v1/restore/preview', payload: emptyBackup() })).statusCode).toBe(200)
+  })
+
+  it('fails closed at the maximum safe global revision without mutation', async () => {
+    const { app, database } = await fixture()
+    await seed(app)
+    database.connection.prepare("UPDATE application_metadata SET value = ? WHERE key = 'inventory_revision'")
+      .run(String(Number.MAX_SAFE_INTEGER))
+    const backup = (await app.inject({ method: 'GET', url: '/api/v1/backup' })).json()
+    const preview = (await app.inject({ method: 'POST', url: '/api/v1/restore/preview', payload: backup })).json().data
+    expect(preview.expectedInventoryRevision).toBe(Number.MAX_SAFE_INTEGER)
+    const response = await app.inject({ method: 'POST', url: '/api/v1/restore/confirm', payload: {
+      previewToken: preview.previewToken, expectedInventoryRevision: preview.expectedInventoryRevision,
+    } })
+    expect(response.statusCode).toBe(500)
+    expect(response.json().error).toMatchObject({ code: 'INTERNAL_ERROR' })
+    expect((await app.inject({ method: 'GET', url: '/api/v1/hosts' })).json().data[0].name).toBe('Host')
+    expect((await app.inject({ method: 'GET', url: '/api/v1/meta' })).json().inventoryRevision).toBe(Number.MAX_SAFE_INTEGER)
+  })
+
+  it('allows at most one confirmation across two app instances sharing one SQLite database', async () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'stackmap-restore-'))
+    temporaryDirectories.push(directory)
+    const filename = path.join(directory, 'stackmap.db')
+    const { app: firstApp } = await fixture(filename)
+    const { app: secondApp } = await fixture(filename)
+    await seed(firstApp)
+    const backup = (await firstApp.inject({ method: 'GET', url: '/api/v1/backup' })).json()
+    const first = (await firstApp.inject({ method: 'POST', url: '/api/v1/restore/preview', payload: backup })).json().data
+    const second = (await secondApp.inject({ method: 'POST', url: '/api/v1/restore/preview', payload: backup })).json().data
+    const responses = await Promise.all([
+      firstApp.inject({ method: 'POST', url: '/api/v1/restore/confirm', payload: { previewToken: first.previewToken, expectedInventoryRevision: first.expectedInventoryRevision } }),
+      secondApp.inject({ method: 'POST', url: '/api/v1/restore/confirm', payload: { previewToken: second.previewToken, expectedInventoryRevision: second.expectedInventoryRevision } }),
+    ])
+    expect(responses.filter(({ statusCode }) => statusCode === 200)).toHaveLength(1)
+    expect(responses.filter(({ statusCode }) => statusCode === 409 || statusCode === 500)).toHaveLength(1)
+    expect((await firstApp.inject({ method: 'GET', url: '/api/v1/meta' })).json().inventoryRevision).toBe(3)
+    expect((await secondApp.inject({ method: 'GET', url: '/api/v1/services' })).json().data).toHaveLength(1)
+  })
 })
+
+function emptyBackup() {
+  return {
+    schemaVersion: 1,
+    metadata: { exportedAt: timestamp, sourceInstallationId: 'source', sourceInventoryRevision: 0, applicationVersion: '1.0.0' },
+    hosts: [], services: [],
+  }
+}

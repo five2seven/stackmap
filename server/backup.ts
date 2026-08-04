@@ -7,6 +7,7 @@ import { RestoreConflictError, SqliteInventoryRepository } from './repository.js
 
 export const BACKUP_SCHEMA_VERSION = 1
 export const RESTORE_PREVIEW_TTL_MS = 5 * 60 * 1000
+export const RESTORE_PREVIEW_CAPACITY = 8
 
 export interface StackMapBackup {
   schemaVersion: 1
@@ -36,6 +37,7 @@ type ValidatedBackup = { backup: StackMapBackup; hosts: NewInventoryHost[]; serv
 type Preview = ValidatedBackup & { expiresAt: number; expectedRevision: number }
 
 export class BackupValidationError extends Error {}
+export class RestorePreviewCapacityError extends Error {}
 
 export class RestorePreviewStore {
   private readonly previews = new Map<string, Preview>()
@@ -45,11 +47,13 @@ export class RestorePreviewStore {
     private readonly repository: SqliteInventoryRepository,
     private readonly now: () => number = Date.now,
     private readonly ttlMs = RESTORE_PREVIEW_TTL_MS,
+    private readonly capacity = RESTORE_PREVIEW_CAPACITY,
   ) {}
 
   preview(value: unknown) {
     const validated = validateBackup(value)
     this.cleanup()
+    if (this.previews.size >= this.capacity) throw new RestorePreviewCapacityError()
     const token = randomBytes(32).toString('base64url')
     const expectedRevision = this.repository.inventoryRevision()
     this.previews.set(token, { ...validated, expectedRevision, expiresAt: this.now() + this.ttlMs })
@@ -92,16 +96,17 @@ export function createBackup(
   applicationVersion: string,
   exportedAt = new Date().toISOString(),
 ): StackMapBackup {
+  const snapshot = repository.inventorySnapshot()
   return {
     schemaVersion: BACKUP_SCHEMA_VERSION,
     metadata: {
       exportedAt,
       sourceInstallationId: installationId,
-      sourceInventoryRevision: repository.inventoryRevision(),
+      sourceInventoryRevision: snapshot.revision,
       applicationVersion,
     },
-    hosts: repository.listHosts().map((host) => ({ ...host })),
-    services: repository.listServices().map((service) => ({
+    hosts: snapshot.hosts.map((host) => ({ ...host })),
+    services: snapshot.services.map((service) => ({
       ...service,
       ports: service.ports.map((port) => ({ ...port })),
       paths: service.paths.map((path) => ({ ...path })),
@@ -137,11 +142,11 @@ function validateDataset(backup: StackMapBackup) {
   unique(backup.hosts.map(({ id }) => id))
   unique(backup.services.map(({ id }) => id))
   unique([...backup.hosts, ...backup.services].map(({ id }) => id))
-  unique(backup.services.flatMap(({ ports }) => ports.map(({ id }) => id)))
-  unique(backup.services.flatMap(({ paths }) => paths.map(({ id }) => id)))
   const hostIds = new Set(backup.hosts.map(({ id }) => id))
   const serviceIds = new Set(backup.services.map(({ id }) => id))
   for (const service of backup.services) {
+    unique(service.ports.map(({ id }) => id))
+    unique(service.paths.map(({ id }) => id))
     if (service.hostId !== undefined && !hostIds.has(service.hostId)) invalid()
     unique(service.dependencyIds)
     if (service.dependencyIds.includes(service.id)) invalid()

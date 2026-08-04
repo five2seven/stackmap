@@ -4,7 +4,7 @@
 
 StackMap runs as a React, TypeScript, and Vite single-page application served by a Node.js 24/Fastify 5 process. The frontend uses a typed same-origin HTTP repository, and SQLite at `/config/stackmap.db` is authoritative for all normal inventory reads and writes. Multiple browsers share the same server inventory.
 
-The current JSON export schema is version 3. Server inventory and legacy browser data have explicitly separate export actions. Server-authoritative restore remains deferred. Dexie remains installed only at the legacy boundary; detection and export use read-only IndexedDB access so legacy records are not upgraded, imported, deleted, or otherwise modified.
+Server inventory and legacy browser data use separate JSON formats and explicitly separate export actions. Server-authoritative export and restore use exact-shape server backup schema version 1. Legacy browser export remains schema version 3 only for preservation and the future Task 6 migration; server restore does not accept it. Dexie remains installed only at the legacy boundary, where detection and export use read-only IndexedDB access so legacy records are not upgraded, imported, deleted, or otherwise modified.
 
 ## Approved target architecture
 
@@ -56,3 +56,7 @@ Restore uses non-mutating preview followed by an opaque, single-use, five-minute
 revision observed at preview. Confirmation replaces the complete inventory in one SQLite transaction,
 then advances the target inventory revision exactly once. The target installation identity, database
 creation time, migrations, pragmas, WAL state, path, and filesystem state are outside the backup format.
+Preview tokens and their validated backups are held in memory per application instance. At most eight
+unused previews may be active, limiting retained upload data to a conservative bound for a self-hosted
+single-process deployment. Expired and consumed previews free capacity; process restart invalidates all
+previews. A capacity-full server rejects new previews safely instead of evicting one under review.

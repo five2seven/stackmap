@@ -233,6 +233,7 @@ jobs:
           }))
           NODE
           curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-service.json http://127.0.0.1:8088/api/v1/services >/tmp/created-service.json
+          created_at_before_restore="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(db.prepare(\"SELECT value FROM application_metadata WHERE key = 'created_at'\").pluck().get())")"
           curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/backup >/tmp/stackmap-backup.json
           restore_revision_before="$(node -e "const b=require('/tmp/stackmap-backup.json'); process.stdout.write(String(b.metadata.sourceInventoryRevision))")"
           restore_installation_before="$(node -e "const b=require('/tmp/stackmap-backup.json'); process.stdout.write(b.metadata.sourceInstallationId)")"
@@ -246,6 +247,8 @@ jobs:
           }))
           NODE
           curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/restore-confirm.json http://127.0.0.1:8088/api/v1/restore/confirm >/tmp/restore-result.json
+          created_at_after_restore="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(db.prepare(\"SELECT value FROM application_metadata WHERE key = 'created_at'\").pluck().get())")"
+          test "$created_at_after_restore" = "$created_at_before_restore"
           RESTORE_REVISION_BEFORE="$restore_revision_before" node <<'NODE'
           const assert = require('node:assert/strict')
           const preview = require('/tmp/restore-preview.json').data
@@ -308,11 +311,15 @@ jobs:
           test "$persisted_id" = "$installation_id"
           metadata_after_restart="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(JSON.stringify(db.prepare('SELECT key,value FROM application_metadata ORDER BY key').all()))")"
           test "$metadata_after_restart" = "$metadata_before_restart"
+          created_at_after_restart="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(db.prepare(\"SELECT value FROM application_metadata WHERE key = 'created_at'\").pluck().get())")"
+          test "$created_at_after_restart" = "$created_at_before_restore"
           assert_inventory 'after restart'
 
           docker rm --force stackmap-validation >/dev/null
           docker run --detach --name stackmap-validation --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --mount "type=bind,source=$config_directory,target=/config" --publish 8088:8080 stackmap:validation
           wait_for_health
+          created_at_after_recreation="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(db.prepare(\"SELECT value FROM application_metadata WHERE key = 'created_at'\").pluck().get())")"
+          test "$created_at_after_recreation" = "$created_at_before_restore"
           assert_inventory 'after recreation'
           docker stop --time 10 stackmap-validation >/dev/null
           docker logs stackmap-validation > /tmp/stackmap-container.log 2>&1

@@ -131,7 +131,9 @@ Additional validation commands are `npm run lint`, `npm run build`, and `npm run
 
 ## Current Limitations
 
-- Legacy IndexedDB migration and server-authoritative restore are not implemented yet.
+- Server-authoritative JSON backup and restore are implemented for exact-shape server backup schema version 1. Restore is manual and destructive, and requires preview plus explicit confirmation; it is not a raw SQLite database-file backup.
+- Scheduled, cloud, incremental, partial, and merge backup or restore are not implemented.
+- Legacy browser-data migration remains separate and is not implemented yet.
 - There are no user accounts or cloud synchronization.
 - StackMap does not connect to or manage remote Docker hosts.
 - There is no container monitoring or automatic discovery.

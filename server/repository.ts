@@ -51,6 +51,12 @@ export class RestoreConflictError extends Error {
   }
 }
 
+export interface InventorySnapshot {
+  revision: number
+  hosts: InventoryHost[]
+  services: InventoryService[]
+}
+
 export class SqliteInventoryRepository {
   constructor(
     private readonly connection: Database.Database,
@@ -59,6 +65,18 @@ export class SqliteInventoryRepository {
 
   inventoryRevision(): number {
     return this.readInventoryRevision().revision
+  }
+
+  inventorySnapshot(afterRevisionRead?: () => void): InventorySnapshot {
+    return this.connection.transaction(() => {
+      const revision = this.readInventoryRevision().revision
+      afterRevisionRead?.()
+      return {
+        revision,
+        hosts: this.listHosts(),
+        services: this.listServices(),
+      }
+    })()
   }
 
   replaceInventory(
