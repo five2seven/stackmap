@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "e2dc50328819",
+  "strategy": "manual-commit",
+  "branch": "codex/server-backup-restore",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/workflows/publish-container.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e2/dc50328819/0/metadata.json",
+      "transcript": "/e2/dc50328819/0/full.jsonl",
+      "compact_transcript": "/e2/dc50328819/0/transcript.jsonl",
+      "content_hash": "/e2/dc50328819/0/content_hash.txt",
+      "prompt": "/e2/dc50328819/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 601514,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 25411840,
+    "output_tokens": 53238,
+    "api_call_count": 212
+  }
+}
