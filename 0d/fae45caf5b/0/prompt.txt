@@ -1,0 +1,120 @@
+# Files mentioned by the user:
+
+## Perform the initial read-only review of StackMap draft PR #9 according to AGENT…: C:\Users\rae\.codex/attachments/49ab2a24-a3d2-4aa7-9602-171d1a54d984/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Fix only the recorded PR #9 review findings on the existing branch: codex/serve…: C:\Users\rae\.codex/attachments/0eb54d9c-bb56-4125-8035-476de00597e2/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Perform the final re-review of StackMap draft PR #9 and merge it only if every …: C:\Users\rae\.codex/attachments/6956cf44-44e0-4377-81d1-c04218e82cbe/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Perform the final re-review of StackMap draft PR #9 and merge it only if every …: C:\Users\rae\.codex/attachments/fda43eaf-99d7-427f-a45f-78fe4fd13b1c/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+Advance the SQLite migration planning after Task 5.
+
+Follow AGENTS.md exactly.
+
+This is a PLANNING ADVANCEMENT task only. Do NOT implement Task 6.
+
+Preconditions:
+- Verify local `main` is clean and synchronized with `origin/main`.
+- Verify Task 5 has already been merged into `main` (merge commit `d1b7218e440386c992ecc7dc1e9628f5af85389a`).
+- If these preconditions are not true, stop and report why.
+
+Create a new planning branch:
+
+codex/advance-sqlite-plan-task-5
+
+Only modify:
+- docs/current-task.md
+- docs/sqlite-migration-plan.md
+
+Required planning updates:
+- Mark Task 5 Complete.
+- Record:
+  - implementation branch
+  - implementation commits
+  - final implementation head
+  - Entire checkpoints
+  - PR number
+  - merge commit
+  - validation results
+  - datastore authority
+  - known limitations (if any)
+- Mark Task 6 Ready.
+- Leave Tasks 7–10 Blocked.
+- Record that:
+  - SQLite remains the sole production-authoritative datastore.
+  - Backup/restore is complete.
+  - Legacy IndexedDB remains read-only and isolated.
+  - Task 6 is responsible only for legacy import/migration and removal of Dexie from normal application paths.
+- Do not modify AGENTS.md, README, architecture, implementation code, tests, workflows, dependencies, Docker, or configuration.
+
+Validation:
+- Run git diff --check.
+- If a Markdown lint command exists, run it. Otherwise report that none exists.
+- Ensure only the two planning documents changed.
+
+Commit:
+Advance SQLite migration plan after Task 5
+
+Create a normal (non-draft) PR.
+
+Do NOT merge it.
+
+Return:
+- branch
+- commit
+- Entire checkpoint
+- validation results
+- PR URL
+- confirmation that Task 6 was NOT implemented
+- confirmation that only the planning documents changed
+
+---
+
+# Files mentioned by the user:
+
+## Review and merge StackMap planning PR #10 according to AGENTS.md. Repository: C…: C:\Users\rae\.codex/attachments/731f6f0b-16cc-4963-819c-1aeaa149596a/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+# Files mentioned by the user:
+
+## Fix only the recorded PR #10 planning findings on the existing branch: codex/ad…: C:\Users\rae\.codex/attachments/595f1c86-dd5a-477b-9ed3-92bbe57fb5d3/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
