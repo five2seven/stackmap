@@ -1,15 +1,5 @@
 # Files mentioned by the user:
 
-## Review StackMap draft PR #7 according to AGENTS.md and docs/current-task.md. Re…: C:\Users\rae\.codex/attachments/b87842ca-838e-4dd9-8435-3766df71bfdb/pasted-text.txt
-
-The attached pasted text file(s) contain the user's request. Read and act on that content.
-
-## My request for Codex:
-
----
-
-# Files mentioned by the user:
-
 ## Fix only the recorded PR #7 review findings on the existing branch: codex/http-…: C:\Users\rae\.codex/attachments/574102e6-22fb-4941-9b51-69d4fbc9a0b5/pasted-text.txt
 
 The attached pasted text file(s) contain the user's request. Read and act on that content.
