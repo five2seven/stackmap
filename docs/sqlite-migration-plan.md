@@ -145,7 +145,7 @@ Tasks 1 through 5 are Complete, and Task 6 is Ready. Tasks 7 through 10 remain B
 ## Defaults and open decisions
 
 - Use integer revisions for optimistic concurrency.
-- Migrate legacy data into an empty server by default and require additional destructive confirmation for a populated server.
+- Permit legacy migration only when SQLite contains no hosts or services. If either exists, preview fails closed with `LEGACY_MIGRATION_TARGET_NOT_EMPTY`, issues no token, mutates neither datastore, and does not increment the global inventory revision. Task 6 must not replace, merge, append to, partially import into, overwrite, or implicitly reuse Task 5 restore against a populated target; the user must first back up and intentionally clear or otherwise handle existing server inventory through a separate approved workflow.
 - Begin with a 10 MiB JSON import limit.
 - Initially document cold `/config` backup and defer live SQLite-aware automation.
 - Migrate database schemas forward only; image rollback may require a matching database backup.
