@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "aff0ab58da32",
+  "strategy": "manual-commit",
+  "branch": "codex/indexeddb-migration",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/workflows/publish-container.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/af/f0ab58da32/0/metadata.json",
+      "transcript": "/af/f0ab58da32/0/full.jsonl",
+      "compact_transcript": "/af/f0ab58da32/0/transcript.jsonl",
+      "content_hash": "/af/f0ab58da32/0/content_hash.txt",
+      "prompt": "/af/f0ab58da32/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 538615,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 32239360,
+    "output_tokens": 70632,
+    "api_call_count": 278
+  }
+}

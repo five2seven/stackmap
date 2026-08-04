@@ -1,0 +1,39 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "aff0ab58da32",
+  "session_id": "019fce20-2913-7860-9136-9bcb18ea59de",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-04T22:45:00.4504358Z",
+  "branch": "codex/indexeddb-migration",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "ffb3f00515b5",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 538615,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 32239360,
+    "output_tokens": 70632,
+    "api_call_count": 278
+  },
+  "session_metrics": {
+    "turn_count": 10
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-04T22:45:00.2562337Z",
+    "agent_lines": 0,
+    "agent_removed": 2,
+    "human_added": 1,
+    "human_modified": 362,
+    "human_removed": 0,
+    "total_committed": 363,
+    "total_lines_changed": 365,
+    "agent_percentage": 0.547945205479452,
+    "metric_version": 2
+  }
+}
