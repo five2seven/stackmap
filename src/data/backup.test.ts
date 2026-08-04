@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createService } from '../domain/serviceUtils'
-import { createExport, parseImport } from './backup'
+import { createExport, parseImport, serializeLegacyExport } from './backup'
 
 describe('JSON import and export', () => {
   it('creates the documented export shape', () => {
@@ -80,6 +80,37 @@ describe('JSON import and export', () => {
     }
     const exported = createExport({ services: [service], hosts: [] }, '2026-07-28T12:00:00.000Z')
     expect(parseImport(JSON.stringify(exported)).services[0]).toEqual(service)
+  })
+
+  it('preserves distinct port and path identities in order without mutating repeated server exports', () => {
+    const service = {
+      ...createService('Identity export'),
+      ports: [
+        { id: 'port-a', hostPort: 80, protocol: 'tcp' as const, description: 'first' },
+        { id: 'port-b', containerPort: 443, protocol: 'udp' as const, description: 'second' },
+      ],
+      paths: [
+        { id: 'path-a', hostPath: '/a', containerPath: '/one', purpose: 'First', readOnly: false },
+        { id: 'path-b', hostPath: '/b', containerPath: '/two', purpose: 'Second', readOnly: true },
+      ],
+    }
+    const before = structuredClone(service)
+    const first = createExport({ services: [service], hosts: [] }, '2026-07-28T12:00:00.000Z')
+    const second = createExport({ services: [service], hosts: [] }, '2026-07-28T12:00:00.000Z')
+    expect(first.services[0].ports.map((port) => port.id)).toEqual(['port-a', 'port-b'])
+    expect(first.services[0].paths.map((path) => path.id)).toEqual(['path-a', 'path-b'])
+    expect(second).toEqual(first)
+    expect(service).toEqual(before)
+  })
+
+  it('retains the legacy schema-three behavior of omitting server-only port identities', () => {
+    const service = {
+      ...createService('Legacy export'),
+      ports: [{ id: 'server-port', hostPort: 80, protocol: 'tcp' as const, description: '' }],
+    }
+    const exported = JSON.parse(serializeLegacyExport({ services: [service], hosts: [] }))
+    expect(exported.services[0].ports).toEqual([{ hostPort: 80, protocol: 'tcp', description: '' }])
+    expect(service.ports[0].id).toBe('server-port')
   })
 
   it.each(['containerName', 'dockerImage', 'description', 'applicationUrl'] as const)(

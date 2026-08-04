@@ -31,11 +31,11 @@ describe('server application', () => {
       status: 'ok',
       applicationVersion: '0.0.0',
       databaseSchemaVersion: 2,
-      datastoreAuthority: 'indexeddb',
+      datastoreAuthority: 'sqlite',
     })
     expect((await app.inject('/api/v1/meta')).json()).toMatchObject({
       application: 'stackmap',
-      datastoreAuthority: 'indexeddb',
+      datastoreAuthority: 'sqlite',
       schemaVersion: 2,
     })
     await app.close()
@@ -55,7 +55,7 @@ describe('server application', () => {
       status: 'unavailable',
       applicationVersion: '0.0.0',
       databaseSchemaVersion: null,
-      datastoreAuthority: 'indexeddb',
+      datastoreAuthority: 'sqlite',
     })
     expect(response.body).not.toContain('private')
     prepare.mockRestore()
@@ -69,6 +69,7 @@ describe('server application', () => {
     expect(asset.body).toBe('asset')
     expect(asset.headers['cache-control']).toBe('public, max-age=31536000, immutable')
     expect(fallback.body).toContain('StackMap shell')
+    expect(fallback.body).not.toContain('indexeddb')
     expect(fallback.headers['cache-control']).toBe('no-store')
     expect(fallback.headers['x-content-type-options']).toBe('nosniff')
     const missingApi = await app.inject('/api/v1/missing')

@@ -5,13 +5,33 @@ export function createExport(data: StackMapData, exportedAt = new Date().toISOSt
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     exportedAt,
-    services: data.services,
+    services: data.services.map((service) => ({
+      ...service,
+      ports: service.ports.map((port) => ({ ...port })),
+      paths: service.paths.map((path) => ({ ...path })),
+      dependencyIds: [...service.dependencyIds],
+    })),
     hosts: data.hosts,
   }
 }
 
 export function serializeExport(data: StackMapData) {
   return JSON.stringify(createExport(data), null, 2)
+}
+
+export function serializeLegacyExport(data: StackMapData) {
+  const exported = createExport(data)
+  return JSON.stringify({
+    ...exported,
+    services: exported.services.map((service) => ({
+      ...service,
+      ports: service.ports.map((port) => {
+        const legacyPort = { ...port }
+        delete legacyPort.id
+        return legacyPort
+      }),
+    })),
+  }, null, 2)
 }
 
 export function parseImport(text: string): StackMapExport {
@@ -23,4 +43,3 @@ export function parseImport(text: string): StackMapExport {
   }
   return validateImport(parsed)
 }
-

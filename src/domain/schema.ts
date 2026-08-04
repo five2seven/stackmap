@@ -85,7 +85,8 @@ function isServiceShape(value: unknown, schemaVersion: 1 | 2 | 3): boolean {
       if (!port || typeof port !== 'object') return false
       const item = port as Record<string, unknown>
       return (
-        hasExactKeys(item, ['hostPort', 'containerPort', 'protocol', 'description']) &&
+        hasExactKeys(item, ['id', 'hostPort', 'containerPort', 'protocol', 'description']) &&
+        (item.id === undefined || isNonEmptyString(item.id)) &&
         (item.hostPort === undefined ||
           (Number.isInteger(item.hostPort) && Number(item.hostPort) > 0 && Number(item.hostPort) <= 65535)) &&
         (item.containerPort === undefined ||

@@ -84,7 +84,7 @@ describe('inventory API', () => {
   it('exposes inventory metadata and complete deterministic host CRUD contracts', async () => {
     const { app } = await fixture()
     expect((await app.inject('/api/v1/meta')).json()).toMatchObject({
-      datastoreAuthority: 'indexeddb',
+      datastoreAuthority: 'sqlite',
       inventoryRevision: 0,
     })
 

@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 const browserIssues = new WeakMap<Page, string[]>()
 
 test.beforeEach(async ({ page }) => {
+  await clearServerInventory(page)
   const issues: string[] = []
   browserIssues.set(page, issues)
   page.on('console', (message) => {
@@ -12,6 +13,25 @@ test.beforeEach(async ({ page }) => {
   })
   page.on('pageerror', (error) => issues.push(`pageerror: ${error.message}`))
 })
+
+async function clearServerInventory(page: Page) {
+  for (;;) {
+    const response = await page.request.get('/api/v1/services')
+    const services = (await response.json()).data as Array<{ id: string; revision: number }>
+    if (!services.length) break
+    const service = services[0]
+    await page.request.delete(`/api/v1/services/${encodeURIComponent(service.id)}`, {
+      data: { expectedRevision: service.revision },
+    })
+  }
+  const response = await page.request.get('/api/v1/hosts')
+  const hosts = (await response.json()).data as Array<{ id: string; revision: number }>
+  for (const host of hosts) {
+    await page.request.delete(`/api/v1/hosts/${encodeURIComponent(host.id)}`, {
+      data: { expectedRevision: host.revision },
+    })
+  }
+}
 
 test.afterEach(async ({ page }) => {
   expect(browserIssues.get(page)).toEqual([])
@@ -148,12 +168,12 @@ test('manages complete service, host, conflicts, search, filters, retirement, an
   await expect(page.getByRole('status')).toContainText('Plex permanently deleted.')
 })
 
-test('exports data and imports it only after preview confirmation', async ({ page }) => {
+test('exports current server-authoritative inventory with an explicit source', async ({ page }) => {
   await page.goto('/')
   await addNameOnlyService(page, 'Exported service')
 
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Export JSON' }).click()
+  await page.getByRole('button', { name: 'Export current StackMap server inventory' }).click()
   const download = await downloadPromise
   const exported = JSON.parse(await (await import('node:fs/promises')).readFile(await download.path(), 'utf8'))
 
@@ -163,109 +183,6 @@ test('exports data and imports it only after preview confirmation', async ({ pag
     hosts: [],
   })
   expect(Date.parse(exported.exportedAt)).not.toBeNaN()
-
-  const importedService = {
-    ...exported.services[0],
-    id: 'imported-service',
-    name: 'Imported service',
-    createdAt: '2026-07-28T12:00:00.000Z',
-    updatedAt: '2026-07-28T12:00:00.000Z',
-    configPath: '/legacy/config',
-    dataPath: '',
-  }
-  delete importedService.paths
-  const importPayload = JSON.stringify({
-    schemaVersion: 2,
-    exportedAt: '2026-07-28T12:00:00.000Z',
-    services: [importedService],
-    hosts: [],
-  })
-
-  await page.getByLabel('Choose JSON backup').setInputFiles({
-    name: 'stackmap.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(importPayload),
-  })
-  const preview = page.getByRole('alertdialog', { name: 'Review imported data' })
-  await expect(preview).toContainText('1 services')
-  await preview.getByRole('button', { name: 'Cancel' }).click()
-  await expect(serviceCard(page, 'Exported service')).toBeVisible()
-
-  await page.getByLabel('Choose JSON backup').setInputFiles({
-    name: 'stackmap.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(importPayload),
-  })
-  await page.getByRole('button', { name: 'Replace current data' }).click()
-  await expect(serviceCard(page, 'Imported service')).toBeVisible()
-  await expect(serviceCard(page, 'Exported service')).toHaveCount(0)
-  await page.reload()
-  await expect(serviceCard(page, 'Imported service')).toBeVisible()
-})
-
-test('rejects malformed and incompatible imports without replacing data', async ({ page }) => {
-  await page.goto('/')
-  await addNameOnlyService(page, 'Keep existing')
-
-  await page.getByLabel('Choose JSON backup').setInputFiles({
-    name: 'malformed.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from('{'),
-  })
-  await expect(page.getByRole('alert')).toContainText('not valid JSON')
-  await expect(serviceCard(page, 'Keep existing')).toBeVisible()
-
-  const timestamp = '2026-07-28T12:00:00.000Z'
-  await page.getByLabel('Choose JSON backup').setInputFiles({
-    name: 'blank-path.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(
-      JSON.stringify({
-        schemaVersion: 3,
-        exportedAt: timestamp,
-        services: [
-          {
-            id: 'blank-path-service',
-            name: 'Blank path service',
-            containerName: '',
-            dockerImage: '',
-            description: '',
-            applicationUrl: '',
-            status: 'active',
-            internalUrl: '',
-            ports: [],
-            paths: [
-              { id: 'blank-path', hostPath: ' ', containerPath: '', purpose: '', readOnly: true },
-            ],
-            network: '',
-            exposure: 'unknown',
-            dependencyIds: [],
-            notes: '',
-            createdAt: timestamp,
-            updatedAt: timestamp,
-          },
-        ],
-        hosts: [],
-      }),
-    ),
-  })
-  await expect(page.getByRole('alert')).toContainText('blank path mapping')
-  await expect(serviceCard(page, 'Keep existing')).toBeVisible()
-
-  await page.getByLabel('Choose JSON backup').setInputFiles({
-    name: 'incompatible.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(
-      JSON.stringify({
-        schemaVersion: 99,
-        exportedAt: '2026-07-28T12:00:00.000Z',
-        services: [],
-        hosts: [],
-      }),
-    ),
-  })
-  await expect(page.getByRole('alert')).toContainText('Unsupported schema version')
-  await expect(serviceCard(page, 'Keep existing')).toBeVisible()
 })
 
 test('persists created data after refresh', async ({ page }) => {
@@ -278,6 +195,81 @@ test('persists created data after refresh', async ({ page }) => {
   await expect(serviceCard(page, 'Refresh service')).toBeVisible()
   await page.getByRole('button', { name: 'Manage hosts' }).click()
   await expect(page.getByRole('button', { name: 'Edit host refresh-host' })).toBeVisible()
+})
+
+test('shares server inventory across independent browser contexts and protects stale edits', async ({ browser, page }) => {
+  await page.goto('/')
+  await addNameOnlyService(page, 'Shared service')
+
+  const secondContext = await browser.newContext()
+  const secondPage = await secondContext.newPage()
+  await secondPage.goto('/')
+  await expect(serviceCard(secondPage, 'Shared service')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Edit Shared service' }).click()
+  await secondPage.getByRole('button', { name: 'Edit Shared service' }).click()
+  await page.getByLabel('Notes').fill('Saved in first browser')
+  await page.getByRole('button', { name: 'Save changes' }).click()
+  await expect(page.getByRole('status')).toContainText('Shared service saved.')
+  await secondPage.getByLabel('Notes').fill('Unsaved second-browser edit')
+  const conflictResponse = secondPage.waitForResponse((response) => response.request().method() === 'PUT' && response.url().includes('/api/v1/services/'))
+  await secondPage.getByRole('button', { name: 'Save changes' }).click()
+  expect(await (await conflictResponse).json()).toMatchObject({ error: { code: 'REVISION_CONFLICT' } })
+  await expect(secondPage.getByRole('alert')).toContainText('changed in another browser')
+  await expect(secondPage.getByLabel('Notes')).toHaveValue('Unsaved second-browser edit')
+  await secondContext.close()
+})
+
+test('blocks on legacy IndexedDB, exports it separately, and continues without mutation', async ({ page }) => {
+  await page.goto('/')
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('stackmap', 4)
+      request.onupgradeneeded = () => {
+        const database = request.result
+        database.createObjectStore('services', { keyPath: 'id' })
+        database.createObjectStore('hosts', { keyPath: 'id' })
+        database.createObjectStore('metadata', { keyPath: 'key' })
+      }
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const database = request.result
+        const transaction = database.transaction(['services'], 'readwrite')
+        transaction.objectStore('services').put({
+          id: 'legacy-service', name: 'Legacy service', containerName: '', dockerImage: '',
+          description: '', applicationUrl: '', status: 'active', internalUrl: '', ports: [], paths: [],
+          network: '', exposure: 'unknown', dependencyIds: [], notes: '',
+          createdAt: '2026-08-04T00:00:00.000Z', updatedAt: '2026-08-04T00:00:00.000Z',
+        })
+        transaction.oncomplete = () => { database.close(); resolve() }
+        transaction.onerror = () => reject(transaction.error)
+      }
+    })
+  })
+  await page.reload()
+  const interstitial = page.getByRole('alertdialog', { name: 'Choose how to continue safely' })
+  await expect(interstitial).toContainText('not stored in SQLite')
+  expect((await (await page.request.get('/api/v1/services')).json()).data).toEqual([])
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export legacy browser data from IndexedDB' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toContain('legacy-browser-data')
+  await page.getByRole('button', { name: 'Continue to StackMap server inventory without importing' }).click()
+  await expect(page.getByRole('button', { name: 'Export current StackMap server inventory' })).toBeVisible()
+  expect((await (await page.request.get('/api/v1/services')).json()).data).toEqual([])
+  expect(await page.evaluate(async () => new Promise<number>((resolve, reject) => {
+    const request = indexedDB.open('stackmap')
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => {
+      const database = request.result
+      const count = database.transaction('services').objectStore('services').count()
+      count.onsuccess = () => { database.close(); resolve(count.result) }
+      count.onerror = () => reject(count.error)
+    }
+  }))).toBe(1)
+  await page.reload()
+  await expect(page.getByRole('alertdialog', { name: 'Choose how to continue safely' })).toBeVisible()
 })
 
 test('persists identity fields and flags duplicate container names per host', async ({ page }) => {
