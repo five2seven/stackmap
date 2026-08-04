@@ -204,18 +204,81 @@ jobs:
           }))
           NODE
           curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-host.json http://127.0.0.1:8088/api/v1/hosts >/tmp/created-host.json
+          node <<'NODE' >/tmp/stackmap-dependency.json
+          const timestamp = '2026-08-04T00:00:00.000Z'
+          process.stdout.write(JSON.stringify({
+            id: 'ci-dependency', name: 'CI dependency', containerName: 'ci-dependency', dockerImage: 'example/dependency:1',
+            description: 'Dependency persistence proof', applicationUrl: '', status: 'active', internalUrl: '',
+            ports: [], paths: [], network: 'backend', exposure: 'local', dependencyIds: [], notes: 'dependency notes',
+            createdAt: timestamp, updatedAt: timestamp,
+          }))
+          NODE
+          curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-dependency.json http://127.0.0.1:8088/api/v1/services >/tmp/created-dependency.json
           node <<'NODE' >/tmp/stackmap-service.json
           const timestamp = '2026-08-04T00:00:00.000Z'
           process.stdout.write(JSON.stringify({
             id: 'ci-service', name: 'CI service', containerName: 'ci-service', dockerImage: 'example/ci:1',
-            description: 'Container persistence proof', applicationUrl: '', status: 'active', hostId: 'ci-host',
-            internalUrl: '', ports: [{ id: 'web', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: 'HTTP' }],
-            paths: [{ id: 'config', hostPath: '/srv/ci', containerPath: '/config', purpose: 'Configuration', readOnly: false }],
-            network: 'ci', exposure: 'local', dependencyIds: [], notes: '', createdAt: timestamp, updatedAt: timestamp,
+            description: 'Container persistence proof', applicationUrl: 'https://ci.example.test', status: 'active', hostId: 'ci-host',
+            internalUrl: 'http://ci-service:80',
+            ports: [
+              { id: 'web-http', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: 'HTTP' },
+              { id: 'discovery', hostPort: 1900, containerPort: 1900, protocol: 'udp', description: 'Discovery' },
+            ],
+            paths: [
+              { id: 'config', hostPath: '/srv/ci/config', containerPath: '/config', purpose: 'Configuration', readOnly: false },
+              { id: 'media', hostPath: '/srv/ci/media', containerPath: '/media', purpose: 'Media', readOnly: true },
+            ],
+            network: 'ci', exposure: 'reverse-proxy', dependencyIds: ['ci-dependency'], notes: 'primary notes',
+            createdAt: timestamp, updatedAt: timestamp,
           }))
           NODE
           curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-service.json http://127.0.0.1:8088/api/v1/services >/tmp/created-service.json
-          grep --quiet 'ci-service' /tmp/created-service.json
+          assert_inventory() {
+            local phase="$1"
+            curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/hosts >/tmp/assert-hosts.json
+            curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/services >/tmp/assert-services.json
+            curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/meta >/tmp/assert-meta.json
+            ASSERT_PHASE="$phase" node <<'NODE'
+          const fs = require('node:fs')
+          const phase = process.env.ASSERT_PHASE
+          const hosts = JSON.parse(fs.readFileSync('/tmp/assert-hosts.json', 'utf8'))
+          const services = JSON.parse(fs.readFileSync('/tmp/assert-services.json', 'utf8'))
+          const meta = JSON.parse(fs.readFileSync('/tmp/assert-meta.json', 'utf8'))
+          const fail = (field, actual, expected) => {
+            if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+              throw new Error(`${phase} ${field}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`)
+            }
+          }
+          fail('host', hosts.data.find(({ id }) => id === 'ci-host'), {
+            id: 'ci-host', name: 'CI host', type: 'nas', ipAddress: '192.0.2.10', operatingSystem: 'Linux', notes: '',
+            createdAt: '2026-08-04T00:00:00.000Z', updatedAt: '2026-08-04T00:00:00.000Z', revision: 1,
+          })
+          const dependency = services.data.find(({ id }) => id === 'ci-dependency')
+          fail('dependency service id', dependency?.id, 'ci-dependency')
+          fail('dependency service revision', dependency?.revision, 1)
+          const service = services.data.find(({ id }) => id === 'ci-service')
+          for (const [field, expected] of Object.entries({
+            name: 'CI service', containerName: 'ci-service', dockerImage: 'example/ci:1', description: 'Container persistence proof',
+            applicationUrl: 'https://ci.example.test', status: 'active', hostId: 'ci-host', internalUrl: 'http://ci-service:80',
+            network: 'ci', exposure: 'reverse-proxy', notes: 'primary notes', createdAt: '2026-08-04T00:00:00.000Z',
+            updatedAt: '2026-08-04T00:00:00.000Z', revision: 1,
+          })) fail(`primary service ${field}`, service?.[field], expected)
+          fail('primary service ports', service?.ports, [
+            { id: 'web-http', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: 'HTTP' },
+            { id: 'discovery', hostPort: 1900, containerPort: 1900, protocol: 'udp', description: 'Discovery' },
+          ])
+          fail('primary service paths', service?.paths, [
+            { id: 'config', hostPath: '/srv/ci/config', containerPath: '/config', purpose: 'Configuration', readOnly: false },
+            { id: 'media', hostPath: '/srv/ci/media', containerPath: '/media', purpose: 'Media', readOnly: true },
+          ])
+          fail('primary service dependencies', service?.dependencyIds, ['ci-dependency'])
+          if (!Number.isSafeInteger(hosts.meta.inventoryRevision) || hosts.meta.inventoryRevision < 3) throw new Error(`${phase} invalid host inventory revision`)
+          fail('list inventory revisions', services.meta.inventoryRevision, hosts.meta.inventoryRevision)
+          fail('meta inventory revision', meta.inventoryRevision, hosts.meta.inventoryRevision)
+          fail('datastore authority', meta.datastoreAuthority, 'sqlite')
+          NODE
+          }
+          assert_inventory 'immediately after creation'
           metadata_before_restart="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(JSON.stringify(db.prepare('SELECT key,value FROM application_metadata ORDER BY key').all()))")"
 
           docker restart stackmap-validation >/dev/null
@@ -224,13 +287,12 @@ jobs:
           test "$persisted_id" = "$installation_id"
           metadata_after_restart="$(docker exec stackmap-validation node -e "const Database=require('better-sqlite3'); const db=new Database('/config/stackmap.db',{readonly:true}); process.stdout.write(JSON.stringify(db.prepare('SELECT key,value FROM application_metadata ORDER BY key').all()))")"
           test "$metadata_after_restart" = "$metadata_before_restart"
-          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/services | grep --quiet 'ci-service'
+          assert_inventory 'after restart'
 
           docker rm --force stackmap-validation >/dev/null
           docker run --detach --name stackmap-validation --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --mount "type=bind,source=$config_directory,target=/config" --publish 8088:8080 stackmap:validation
           wait_for_health
-          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/hosts | grep --quiet 'ci-host'
-          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/services | grep --quiet 'ci-service'
+          assert_inventory 'after recreation'
           docker stop --time 10 stackmap-validation >/dev/null
           docker logs stackmap-validation > /tmp/stackmap-container.log 2>&1
           grep --quiet 'graceful shutdown started' /tmp/stackmap-container.log

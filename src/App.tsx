@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { serializeExport } from './data/backup'
+import { serializeExport, serializeLegacyExport } from './data/backup'
 import { repository as defaultRepository } from './data/httpRepository'
 import {
   legacyInventoryReader as defaultLegacyReader,
+  LegacyInventoryError,
   type LegacyInventoryReader,
 } from './data/legacyInventory'
 import type { StackMapRepository } from './data/repository'
@@ -52,6 +53,7 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
   const [legacyBlocked, setLegacyBlocked] = useState(false)
+  const [legacyDetectionFailure, setLegacyDetectionFailure] = useState<'unsupported' | 'transient' | null>(null)
   const [activeView, setActiveView] = useState<'services' | 'port-map' | 'path-map'>('services')
   const [portMapHostFilter, setPortMapHostFilter] = useState('all')
   const [pathMapHostFilter, setPathMapHostFilter] = useState('all')
@@ -82,6 +84,30 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
     }
   }
 
+  async function retryLegacyDetection() {
+    setLoading(true)
+    setLoadFailed(false)
+    setLegacyDetectionFailure(null)
+    try {
+      const hasLegacyInventory = await legacyReader.detect()
+      if (hasLegacyInventory) {
+        setLegacyBlocked(true)
+        setLoading(false)
+        return
+      }
+      await loadServerInventory()
+    } catch (caught) {
+      setError('StackMap could not safely check for legacy browser data. Server editing remains blocked.')
+      setLegacyDetectionFailure(
+        caught instanceof LegacyInventoryError && caught.code === 'UNSUPPORTED_ENUMERATION'
+          ? 'unsupported'
+          : 'transient',
+      )
+      setLoadFailed(true)
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     let active = true
     legacyReader.detect().then(async (hasLegacyInventory) => {
@@ -103,9 +129,14 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
       } finally {
         if (active) setLoading(false)
       }
-    }).catch(() => {
+    }).catch((caught) => {
       if (!active) return
       setError('StackMap could not safely check for legacy browser data. Server editing remains blocked.')
+      setLegacyDetectionFailure(
+        caught instanceof LegacyInventoryError && caught.code === 'UNSUPPORTED_ENUMERATION'
+          ? 'unsupported'
+          : 'transient',
+      )
       setLoadFailed(true)
       setLoading(false)
     })
@@ -230,8 +261,8 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
     }
   }
 
-  function downloadExport(data: { services: Service[]; hosts: Host[] }, filename: string) {
-    const blob = new Blob([serializeExport(data)], { type: 'application/json' })
+  function downloadExport(serialized: string, filename: string) {
+    const blob = new Blob([serialized], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -243,7 +274,7 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
   async function exportServerInventory() {
     try {
       const data = await repository.getAll()
-      downloadExport(data, `stackmap-server-inventory-${new Date().toISOString().slice(0, 10)}.json`)
+      downloadExport(serializeExport(data), `stackmap-server-inventory-${new Date().toISOString().slice(0, 10)}.json`)
       setError('')
       setMessage('Current StackMap server inventory exported.')
     } catch {
@@ -254,7 +285,7 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
   async function exportLegacyInventory() {
     try {
       const data = await legacyReader.read()
-      downloadExport(data, `stackmap-legacy-browser-data-${new Date().toISOString().slice(0, 10)}.json`)
+      downloadExport(serializeLegacyExport(data), `stackmap-legacy-browser-data-${new Date().toISOString().slice(0, 10)}.json`)
       setError('')
       setMessage('Legacy browser-data backup exported. The browser data was not changed.')
     } catch (caught) {
@@ -289,6 +320,28 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
   }
 
   if (loadFailed) {
+    if (legacyDetectionFailure) {
+      return (
+        <main className="blocking-state" role="alert" aria-labelledby="legacy-check-error-title">
+          <h1 id="legacy-check-error-title">Legacy browser-data safety check unavailable</h1>
+          {legacyDetectionFailure === 'unsupported' ? (
+            <>
+              <p>This browser cannot safely list its legacy browser databases, so StackMap cannot determine whether older browser-local inventory exists without risking creation or modification.</p>
+              <p>Use a current version of Chrome, Edge, or another Chromium-based browser for automatic safe detection.</p>
+              <p>Legacy browser data might still be present. Continuing will not import or delete it, and the StackMap server inventory may be empty or different.</p>
+            </>
+          ) : <p>{error} This may be temporary.</p>}
+          <div className="blocking-actions">
+            <button className="button ghost" type="button" onClick={retryLegacyDetection}>Retry legacy browser-data check</button>
+            {legacyDetectionFailure === 'unsupported' && (
+              <button className="button primary" type="button" onClick={loadServerInventory}>
+                Continue to server inventory; leave possible legacy data untouched
+              </button>
+            )}
+          </div>
+        </main>
+      )
+    }
     return (
       <main className="blocking-state" role="alert" aria-labelledby="load-error-title">
         <h1 id="load-error-title">Server inventory unavailable</h1>
@@ -676,8 +729,8 @@ function App({ repository = defaultRepository, legacyReader = defaultLegacyReade
       </main>
 
       <footer>
-        <span>Data stays in this browser.</span>
-        <span>Export a backup before clearing site data or changing browsers.</span>
+        <span>Inventory is stored in server SQLite and shared by connected browsers.</span>
+        <span>Keep the persistent /config mount; legacy browser data remains separate until migration.</span>
       </footer>
     </div>
   )

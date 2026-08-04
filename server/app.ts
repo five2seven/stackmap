@@ -47,20 +47,20 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         status: 'ok',
         applicationVersion,
         databaseSchemaVersion: options.database.schemaVersion(),
-        datastoreAuthority: 'indexeddb',
+        datastoreAuthority: 'sqlite',
       })
     } catch {
       return reply.code(503).send({
         status: 'unavailable',
         applicationVersion,
         databaseSchemaVersion: null,
-        datastoreAuthority: 'indexeddb',
+        datastoreAuthority: 'sqlite',
       })
     }
   })
   app.get('/api/v1/meta', async () => ({
     application: 'stackmap',
-    datastoreAuthority: 'indexeddb',
+    datastoreAuthority: 'sqlite',
     installationId: options.database.installationId(),
     schemaVersion: options.database.schemaVersion(),
     inventoryRevision: inventoryRepository.inventoryRevision(),

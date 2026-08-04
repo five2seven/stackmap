@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import type { LegacyInventoryReader } from './data/legacyInventory'
+import { LegacyInventoryError, type LegacyInventoryReader } from './data/legacyInventory'
 import type { StackMapRepository } from './data/repository'
 import { createService } from './domain/serviceUtils'
 import type { StackMapData } from './domain/types'
@@ -58,5 +58,40 @@ describe('coordinated cutover boundary', () => {
     await user.click(await screen.findByRole('button', { name: 'Export legacy browser data from IndexedDB' }))
     await waitFor(() => expect(read).toHaveBeenCalledOnce())
     expect(screen.getByRole('status')).toHaveTextContent('Legacy browser-data backup exported')
+  })
+
+  it('offers explicit supported-browser recovery without server access before acknowledgement', async () => {
+    const user = userEvent.setup()
+    const getAll = vi.fn(async () => emptyData)
+    const detect = vi.fn(async () => {
+      throw new LegacyInventoryError('unsupported', 'UNSUPPORTED_ENUMERATION')
+    })
+    render(<App repository={repository(getAll)} legacyReader={{ detect, read: async () => emptyData }} />)
+    expect(await screen.findByText(/current version of Chrome, Edge/)).toBeInTheDocument()
+    expect(screen.getByText(/Legacy browser data might still be present/)).toBeInTheDocument()
+    expect(getAll).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Retry legacy browser-data check' }))
+    await waitFor(() => expect(detect).toHaveBeenCalledTimes(2))
+    expect(getAll).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: /Continue to server inventory/ }))
+    await screen.findByRole('button', { name: 'Add service' })
+    expect(getAll).toHaveBeenCalledOnce()
+  })
+
+  it('keeps transient detection failures fail-closed with retry only', async () => {
+    render(<App repository={repository()} legacyReader={{
+      detect: async () => { throw new LegacyInventoryError('timeout', 'TIMEOUT') },
+      read: async () => emptyData,
+    }} />)
+    await screen.findByText(/This may be temporary/)
+    expect(screen.getByRole('button', { name: 'Retry legacy browser-data check' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: /Continue to server inventory/ })).not.toBeInTheDocument()
+  })
+
+  it('shows the corrected SQLite server footer', async () => {
+    render(<App repository={repository()} legacyReader={{ detect: async () => false, read: async () => emptyData }} />)
+    expect(await screen.findByText(/Inventory is stored in server SQLite/)).toBeInTheDocument()
+    expect(screen.getByText(/persistent \/config mount/)).toBeInTheDocument()
+    expect(screen.queryByText(/Data stays in this browser/)).not.toBeInTheDocument()
   })
 })

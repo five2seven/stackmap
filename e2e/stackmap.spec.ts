@@ -268,6 +268,8 @@ test('blocks on legacy IndexedDB, exports it separately, and continues without m
       count.onerror = () => reject(count.error)
     }
   }))).toBe(1)
+  await page.reload()
+  await expect(page.getByRole('alertdialog', { name: 'Choose how to continue safely' })).toBeVisible()
 })
 
 test('persists identity fields and flags duplicate container names per host', async ({ page }) => {
