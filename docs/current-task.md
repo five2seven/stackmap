@@ -1,114 +1,146 @@
 # Current Migration Task
 
-## Task 4: HTTP repository and coordinated frontend cutover
+## Task 5: Server-authoritative JSON backup and restore
 
 - **Status:** Ready
-- **Branch:** `codex/http-repository-cutover`
-- **Dependency:** Task 3 — Complete
-- **Goal:** Replace the production React application’s IndexedDB inventory repository with the same-origin HTTP API in one coordinated, complete-model cutover so SQLite becomes the sole authoritative production inventory datastore.
+- **Branch:** `codex/server-backup-restore`
+- **Dependency:** Task 4 — Complete
+- **Goal:** Implement safe, complete, server-authoritative JSON export and atomic restore for the SQLite inventory without using IndexedDB as an active inventory source.
 
-### Critical cutover rule
+### Authority rules
 
-- Hosts, services, ports, paths, and dependencies must cut over together.
-- No partial host-only or service-only cutover is permitted.
-- No production operation may write to both IndexedDB and SQLite.
-- After the cutover, normal production inventory reads and writes use the HTTP API only.
-- IndexedDB remains accessible only for a later explicit legacy migration task.
-- The cutover must not silently discard existing browser data.
+- SQLite remains the sole authoritative production inventory datastore.
+- Export reads only from the server-authoritative SQLite inventory.
+- Restore writes only to SQLite through the server.
+- IndexedDB is not an active backup or restore source.
+- Legacy browser export remains available only through the read-only legacy-data boundary until Task 6.
+- No dual write or restore fallback to IndexedDB is permitted.
 
 ### Scope
 
-- HTTP inventory repository implementation
-- Typed API client
-- Host list, get, create, update, and delete
-- Service list, get, create, update, and delete
-- Complete nested ports, paths, and dependencies
-- Inventory revision propagation
-- Expected-revision concurrency
-- Safe API error handling
-- Loading states
-- Error states
-- Retry or recovery behavior where appropriate
-- Application startup against the HTTP repository
-- Complete replacement of normal Dexie inventory reads and writes
-- Services view
-- Host management
-- Port Map
-- Path Map
-- Search
-- Filters
-- Editing workflows
-- Explicitly separated legacy browser-data and server-inventory JSON exports
-- Clear handling when legacy IndexedDB data exists
-- Same-origin API usage
-- Component tests
-- Integration tests
-- Browser E2E tests
-- Multi-browser consistency validation
-- Container restart persistence validation
+- Versioned server backup schema and documented schema versioning
+- Complete export of hosts, services, ordered ports, ordered paths, and dependencies
+- Exact preservation of validated record IDs and timestamps
+- Explicit record and global inventory revision policy
+- Target installation identity preservation and exact-shape informational backup metadata
+- Validation before replacement and exact-shape validation
+- Duplicate-ID, referential-integrity, port, path, and dependency validation
+- Atomic full-dataset replacement with rollback on any validation or write failure
+- Safe API routes for export and restore
+- Backup download and restore upload through the production UI
+- Safe user confirmation and a clear destructive-action warning before restore
+- Accessible progress, success, and error states
+- Container persistence and multi-browser visibility after restore
+- Unit, integration, browser E2E, and container persistence coverage
 
-### Legacy data safety boundary
+### Restore identity, revision, and metadata policy
 
-Until Task 6 provides the explicit migration workflow, Task 4 must use this safe temporary behavior:
+- Preserve every restored host, service, port, path, and dependency ID exactly; preserve every record's `createdAt` and `updatedAt` exactly from the validated backup. Do not regenerate IDs or timestamps during restore, and reject invalid, duplicate, or conflicting IDs before mutation.
+- Treat source record revisions as informational only and do not restore them. Every successfully restored host and service starts at revision `1`; ports, paths, and dependencies retain the existing model and receive no independent record revision.
+- Capture the target installation's current global inventory revision during preview. A successful restore advances it exactly once to the pre-restore revision plus one. Validation failure, cancellation, stale confirmation, transaction failure, or concurrent restore conflict does not increment it. A source global inventory revision is informational only and is never copied into the target database.
+- Preserve the target installation's current `installation_id` and the target database's current `created_at`; never restore or overwrite either from the backup.
+- Do not restore schema migration records, SQLite pragmas, file paths, WAL state, or other infrastructure metadata. Source installation and infrastructure metadata is informational only and is ignored during replacement.
+- Backup metadata is informational and non-authoritative. Its allowed exact shape consists of the backup schema version, `exportedAt`, source installation ID, source inventory revision, and application version when available. Reject unknown metadata fields.
+- Backup metadata cannot affect restored record IDs or timestamps, target installation identity, target database creation time, schema migrations, or target global inventory revision. It never substitutes for validation of the actual inventory records.
 
-- At application startup, detect whether legacy IndexedDB contains any hosts or services.
-- If no legacy inventory exists, proceed normally with the server-backed SQLite inventory.
-- If legacy inventory exists, show a blocking legacy-data interstitial before the normal inventory UI becomes editable.
-- The interstitial must clearly state that browser-local legacy data was found, that it is not yet stored in SQLite, that the current server inventory may be empty or different, that automatic migration is unavailable in Task 4, and that the legacy data will remain untouched.
-- The interstitial must provide a clearly labeled **Export legacy browser data** action. This action reads only from legacy IndexedDB, preserves the existing browser-local JSON schema and behavior, does not read from SQLite, does not modify either datastore, and clearly identifies the action and downloaded file as a legacy browser-data backup.
-- The interstitial must provide a separate, deliberate acknowledgement action to continue to the server-backed inventory without importing legacy data. Accidental dismissal must not enable editing.
-- Until the user deliberately acknowledges and continues, block normal host and service editing and all normal Port Map and Path Map editing paths, and do not mutate the server inventory.
-- Acknowledgement may be session-scoped for Task 4. Do not provide permanent suppression or a “do not show again” mechanism.
-- After deliberate continuation, the normal application uses only the HTTP API, performs no IndexedDB writes, and leaves legacy IndexedDB untouched.
-- After deliberate continuation, the normal export action exports only the current server-authoritative inventory returned by the HTTP API, does not read from IndexedDB, and is clearly labeled as exporting the current StackMap server inventory.
-- The legacy browser export and server inventory export must use distinct visible text and accessible names, must identify their data source before download, and must never silently select a source.
-- The server inventory export is not a full server backup/restore system; server-authoritative restore remains excluded until Task 5.
-- Do not implement legacy migration, merge, import, deletion, or synchronization behavior. Preserve IndexedDB untouched for Task 6.
+### Preview, confirmation, and concurrency policy
+
+1. The server validates the uploaded backup without mutating inventory.
+2. A successful preview returns a safe restore summary, the current target inventory revision, and a short-lived opaque backup-specific validation token or equivalent server-side handle.
+3. The UI presents the summary and destructive-action warning, then requires explicit confirmation.
+4. Confirmation sends both the preview token or validation handle and the expected target inventory revision returned by preview.
+5. Before mutation, the server verifies that the token is valid, matches the exact validated backup, has not expired or been used, the current inventory revision still equals the expected revision, and no other restore is committing.
+6. If any guard fails, return a safe conflict without mutation or revision increment and require a new preview.
+
+### Restore safety boundary
+
+- Fully validate the uploaded backup before any production inventory mutation.
+- Reject invalid, duplicate, or conflicting record IDs and preserve validated IDs and timestamps exactly.
+- Treat source record revisions and the source global inventory revision as informational; initialize restored hosts and services at revision `1` and advance the target global inventory revision exactly once on success.
+- Preserve the target `installation_id` and database `created_at`; ignore source migration, SQLite, filesystem, WAL, and other infrastructure metadata.
+- Exact-shape validate informational backup metadata and reject unknown metadata without trusting metadata in place of inventory validation.
+- Separate non-mutating preview from explicit confirmation and require a short-lived, opaque, single-use, backup-specific preview token plus the preview's expected target inventory revision.
+- If any host, service, port, path, or dependency changes after preview, fail confirmation as stale rather than overwriting newer inventory; require a new preview.
+- Serialize restore commits through the SQLite transaction boundary and an explicit restore-operation guard where needed. Two concurrent confirmations cannot both succeed.
+- Reject duplicate submissions and timed-out retries idempotently after the first successful use so the same confirmation cannot restore twice.
+- Check the expected inventory revision, replace hosts, services, ports, paths, and dependencies, and write the new global inventory revision in the same transaction.
+- Do not allow partial, incremental, or merge restore.
+- Leave existing inventory untouched when validation fails or any database write fails.
+- On any transaction failure, roll back inventory records, child records, dependencies, record revisions, the global inventory revision, and token consumption state when it is transactionally stored.
+- Return the pre-restore global inventory revision plus one after success; failed validation, cancellation, stale confirmation, transaction failure, and concurrency conflict do not increment it.
+- Show the user a clear summary before confirmation.
+- Require explicit acknowledgement that current server inventory will be replaced.
+- Disable confirmation while submission is active and prevent repeated clicks from sending multiple confirmations.
+- Cancellation, closing, or refreshing before confirmation leaves inventory unchanged.
+- After a stale or invalid confirmation, preserve the selected file and summary when practical, disable confirmation, explain that a new preview is required, and never reuse the old token.
+- Return distinct safe conflict codes such as `RESTORE_PREVIEW_STALE` for stale expected state and `RESTORE_PREVIEW_INVALID` for invalid, expired, reused, or mismatched previews.
+- Include a request ID and safe message in API errors without exposing SQL, raw SQLite errors, stack traces, filesystem paths, secrets, preview-token contents, or internal details.
+- Make restored inventory visible to connected browsers after reload or refresh.
 
 ### Explicit exclusions
 
-- Automatic IndexedDB migration
+- Legacy IndexedDB migration
+- Automatic browser-data import
 - Deleting legacy IndexedDB data
-- Server-authoritative JSON restore
-- Full server backup/restore replacement
-- Dexie package removal
-- Public demo mode
+- Dexie removal
 - Authentication
 - CORS
 - User accounts
-- Task 5 implementation
+- Scheduled backups
+- Cloud backup destinations
+- Incremental backup
+- Partial restore
+- Merge restore
 - Task 6 implementation
-- New unrelated user-facing features
+- Public demo mode
+- Unrelated features
 
 ### Acceptance criteria
 
-- The production React UI uses the HTTP API for all normal host and service operations.
-- Hosts, services, ports, paths, and dependencies cut over together.
-- No normal production inventory operation uses IndexedDB.
-- No dual-write behavior exists.
-- SQLite becomes the sole authoritative production inventory datastore.
-- Port Map and Path Map continue working.
-- Search and filters continue working.
-- Editing workflows continue working.
-- Stable IDs and timestamps are preserved through API operations.
-- Optimistic concurrency conflicts are shown safely to the user.
-- API failures do not silently lose edits.
-- Loading and error states are accessible.
-- Multiple browsers see the same server inventory.
-- Container restart and recreation preserve inventory through `/config`.
-- Startup detection distinguishes an IndexedDB inventory containing hosts or services from one containing no legacy inventory.
-- When legacy inventory exists, a blocking interstitial presents all required legacy/server distinctions before the normal inventory UI is editable.
-- Normal host, service, Port Map, and Path Map editing and all server mutations remain blocked until a separate deliberate acknowledgement continues to the server-backed application.
-- Accidental dismissal cannot acknowledge the warning; acknowledgement may be session-scoped but cannot be permanently suppressed in Task 4.
-- After acknowledgement, normal inventory operations use only the HTTP API, perform no IndexedDB writes, and leave legacy IndexedDB unmodified.
-- No automatic migration occurs.
-- **Export legacy browser data** reads only legacy IndexedDB, preserves the browser-local JSON schema and behavior, clearly identifies the download as a legacy backup, and modifies neither datastore.
-- The normal server inventory export reads only the HTTP repository, clearly identifies the download as the current StackMap server inventory, and modifies neither datastore.
-- Legacy and server export actions have distinguishable visible text and accessible names, identify their source before download, and never silently select a datastore.
-- Server-authoritative restore remains excluded until Task 5, and the full opt-in migration workflow remains excluded until Task 6.
-- Tests prove that legacy export reads only IndexedDB, server export reads only the HTTP repository, neither export mutates data, and both actions are distinguishable by visible text and accessible name.
-- Tests prove that server editing remains blocked and no API mutation occurs from the legacy interstitial before acknowledgement, then acknowledgement enables server-backed operation without writing to IndexedDB.
+- Server export contains the complete authoritative inventory.
+- Export preserves all IDs, timestamps, ports, paths, dependencies, ordering, and supported metadata.
+- The backup schema is versioned and documented.
+- Restore validates the entire backup before mutation.
+- Restore preserves validated record IDs and timestamps exactly, rejects invalid, duplicate, or conflicting IDs, and assigns revision `1` to restored hosts and services without importing source record revisions.
+- Source record and global inventory revisions are informational only. Success advances the target global inventory revision exactly once to its pre-restore value plus one; every unsuccessful or cancelled path leaves it unchanged.
+- Restore preserves the target `installation_id` and database `created_at`, and cannot import source migrations, pragmas, paths, WAL state, or other infrastructure metadata.
+- Informational backup metadata has the defined exact shape, rejects unknown fields, cannot override authoritative target or record state, and cannot replace inventory validation.
+- Preview is non-mutating and confirmation requires a valid, unexpired, unused, backup-specific opaque token and the expected target inventory revision.
+- Inventory changes after preview produce a safe stale-preview conflict and require re-preview rather than overwriting newer changes.
+- Concurrent restores serialize, at most one competing confirmation succeeds, and duplicate submissions or retries cannot apply a restore twice.
+- Invalid backups never change current inventory.
+- Restore is atomic across the complete inventory model and preserves referential integrity; the expected-revision check, replacement, and single global-revision increment share one transaction and fully roll back on failure.
+- Duplicate IDs and invalid nested records are rejected.
+- Incompatible future versions fail closed.
+- Known older supported versions migrate safely without mutating the uploaded object.
+- Successful restore is visible across browsers and survives container restart and recreation with the same `/config`.
+- SQLite remains authoritative, no IndexedDB write occurs, and legacy IndexedDB remains untouched.
 - All required tests pass.
+
+### Required tests
+
+- Valid current-version backups and complete nested export
+- Malformed backups and incompatible future versions
+- Duplicate host, service, port, path, and dependency IDs
+- Exact ID and timestamp preservation, conflicting IDs, restored host and service revision `1`, and no independent nested-record revisions
+- Informational source record/global revisions and target global revision incrementing exactly once only on success
+- Target `installation_id` and database `created_at` preservation, with source migration and infrastructure metadata ignored
+- Exact-shape informational backup metadata, unknown metadata rejection, and proof that metadata cannot override authoritative inventory or target state
+- Invalid host and dependency references
+- Invalid ports and paths
+- Supported legacy backup versions that remain in contract
+- Atomic rollback on validation and database-write failure, including records, children, dependencies, revisions, and transactional token state
+- Non-mutating preview and confirmation requiring the backup-specific token and expected inventory revision
+- Inventory change after preview and stale expected-revision conflicts
+- Two concurrent restore confirmations, where no more than one succeeds
+- Duplicate confirmation submission and timed-out confirmation retry without double restore
+- Reused, expired, and different-backup preview tokens
+- Failed confirmation and cancelled restore without a global inventory revision increment
+- Successful restore incrementing the global inventory revision exactly once
+- Safe conflict codes, request IDs, cancellation, progress, success, errors, disabled in-flight confirmation, and repeated-click protection
+- Browser E2E restore, two-browser visibility, and two-browser stale-preview behavior
+- Container restart and recreation after restore
+- No IndexedDB writes and untouched legacy browser data
 
 ### Validation
 
@@ -121,21 +153,19 @@ Run:
 - `npm audit --omit=dev`
 - `git diff --check`
 
-Docker and container validation is required because Task 4 changes production persistence behavior. Validate:
+Docker and container validation is required because restore changes durable production data. Validate:
 
-- Fresh install
-- Existing Task 3 database
-- Container restart
-- Container recreation with the same `/config` volume
-- Two independent browser contexts sharing inventory
-- Legacy IndexedDB detection
-- No dual writes
-- No silent IndexedDB deletion
-- Complete host and service workflows
-- Port Map and Path Map
-- JSON export behavior
-- API failure handling
-- Optimistic concurrency conflicts
+- Fresh and nonempty server exports
+- Complete nested-model export
+- Valid restore
+- Malformed restore
+- Duplicate IDs and invalid references
+- Unsupported future versions and any retained supported older versions
+- Atomic rollback and post-restore inventory revision
+- Two-browser visibility
+- Container restart and recreation with the same `/config` after restore
+- No IndexedDB writes and untouched legacy data
+- Safe confirmation and accessible success/error states
 
 ## Reusable operator prompts
 
@@ -145,7 +175,7 @@ Implement only the active StackMap migration task in AGENTS.md and docs/current-
 
 ### Review prompt
 
-Review the completed feature branch or pull request against origin/main. Do not modify files during the initial review. Report Blocking, Important, Minor, and No issue findings, and merge only if the recommendation is Ready to merge. After merging, do not modify planning files directly on main; stop and report the merge result.
+Review the completed feature branch or pull request against origin/main. Do not modify files during the initial review. Report Blocking, Important, Minor, and No issue findings, and merge only if the recommendation is Ready to merge. After merging, do not modify planning files directly on main or begin another implementation task.
 
 ### Fix prompt
 
