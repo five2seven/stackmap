@@ -3,8 +3,23 @@
   "checkpoint_id": "1799c92113b9",
   "strategy": "manual-commit",
   "branch": "codex/http-repository-cutover",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "e2e/stackmap.spec.ts",
+    "server/app.test.ts",
+    "server/app.ts",
+    "server/inventory-api.test.ts",
+    "src/App.cutover.test.tsx",
+    "src/App.tsx",
+    "src/data/backup.test.ts",
+    "src/data/backup.ts",
+    "src/data/httpRepository.test.ts",
+    "src/data/httpRepository.ts",
+    "src/data/legacyInventory.test.ts",
+    "src/data/legacyInventory.ts",
+    "src/domain/schema.ts"
+  ],
   "sessions": [
     {
       "metadata": "/17/99c92113b9/0/metadata.json",
@@ -12,13 +27,20 @@
       "compact_transcript": "/17/99c92113b9/0/transcript.jsonl",
       "content_hash": "/17/99c92113b9/0/content_hash.txt",
       "prompt": "/17/99c92113b9/0/prompt.txt"
+    },
+    {
+      "metadata": "/17/99c92113b9/1/metadata.json",
+      "transcript": "/17/99c92113b9/1/full.jsonl",
+      "compact_transcript": "/17/99c92113b9/1/transcript.jsonl",
+      "content_hash": "/17/99c92113b9/1/content_hash.txt",
+      "prompt": "/17/99c92113b9/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 236345,
+    "input_tokens": 403360,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 4761856,
-    "output_tokens": 4044,
-    "api_call_count": 24
+    "cache_read_tokens": 11119616,
+    "output_tokens": 29033,
+    "api_call_count": 97
   }
 }
