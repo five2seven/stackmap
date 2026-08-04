@@ -1,0 +1,317 @@
+Continue the active StackMap migration task defined in AGENTS.md and docs/current-task.md.
+
+Implement only Task 3.
+
+Follow all repository instructions for Git safety, Entire checkpoint tracking, scope control, validation, documentation, data safety, and pull request creation.
+
+Task 3:
+
+Complete inventory API
+
+Expected branch:
+
+codex/inventory-api
+
+Critical boundaries:
+
+- IndexedDB remains authoritative for all production inventory.
+- Do not connect the React frontend to the API.
+- Do not change production UI behavior.
+- Do not add CORS.
+- Do not add authentication or user accounts.
+- Do not change JSON backup or restore behavior.
+- Do not begin Task 4.
+- Do not advance the migration plan.
+- Do not merge the pull request.
+
+Required implementation scope:
+
+- Versioned Fastify routes under /api/v1
+- Host list, get, create, update, and delete
+- Service list, get, create, update, and delete
+- Complete nested ports
+- Complete nested paths
+- Complete dependencies
+- Inventory revision metadata
+- Optimistic concurrency using expected revision values
+- Request validation before repository mutation
+- Safe and stable error mapping
+- 404 responses for missing records
+- 409 responses for stale revisions
+- Safe responses for invalid references and validation failures
+- Transactional integration with the existing SQLite repository
+- Stable response contracts
+- Deterministic ordering
+- Route tests
+- API integration tests
+- Failure-path tests
+- Concurrency tests
+- Referential-integrity tests
+
+Security and error-handling requirements:
+
+- Do not expose raw SQLite errors.
+- Do not expose SQL.
+- Do not expose stack traces.
+- Do not expose filesystem paths.
+- Do not expose secrets.
+- Do not expose internal implementation details unnecessarily.
+- Preserve request IDs in safe error responses.
+- Preserve SPA fallback for non-API routes.
+- Do not add cross-origin support.
+
+Datastore authority requirements:
+
+- IndexedDB remains the sole authoritative production inventory datastore.
+- The new API may read and write SQLite, but the production React UI must not use it.
+- No production inventory cutover occurs in Task 3.
+- No split-brain production behavior is introduced.
+
+When complete:
+
+1. Run all validation required by AGENTS.md and docs/current-task.md.
+2. Review the full diff against origin/main.
+3. Confirm no unrelated files, generated artifacts, secrets, frontend changes, dependency changes, lockfile changes, Docker changes, workflow changes, or configuration changes were introduced unless explicitly required by Task 3.
+4. Commit the completed task.
+5. Push codex/inventory-api.
+6. Open a pull request into main.
+7. Include in the pull request description:
+   - Task name and goal
+   - Scope implemented
+   - Explicit exclusions
+   - Files created and modified
+   - Route inventory
+   - Request and response contracts
+   - Validation behavior
+   - Error mapping
+   - Optimistic-concurrency behavior
+   - Referential-integrity behavior
+   - Transaction behavior
+   - Datastore-authority state
+   - Validation commands and results
+   - Known limitations
+   - Implementation commit ID
+   - Entire checkpoint ID
+   - Confirmation that no frontend cutover, UI, backup/restore, IndexedDB migration, Dexie removal, CORS, authentication, accounts, demo, Task 4, or unrelated work was added
+8. Do not merge.
+9. Do not advance the migration plan.
+10. Do not begin another task.
+
+Stop after opening the pull request.
+
+---
+
+# Files mentioned by the user:
+
+## Review and merge StackMap PR #5 according to AGENTS.md and docs/current-task.md…: C:\Users\rae\.codex/attachments/496f47bd-0f17-4a7c-8c66-7cb6526fecb6/pasted-text.txt
+
+The attached pasted text file(s) contain the user's request. Read and act on that content.
+
+## My request for Codex:
+
+---
+
+Fix only the single PR #5 review finding on the existing branch:
+
+codex/inventory-api
+
+Repository:
+
+C:\Code\Projects\APP-StackMap
+
+Do not create a new branch.
+Do not merge PR #5.
+Do not advance the migration plan.
+Do not begin Task 4.
+
+## Preconditions
+
+1. Confirm the repository root.
+2. Confirm the working tree is clean.
+3. Fetch and prune origin.
+4. Confirm codex/inventory-api matches origin/codex/inventory-api.
+5. Confirm local main matches origin/main.
+6. Confirm Entire is enabled and available.
+7. Confirm PR #5 remains open.
+8. Confirm the current PR head is:
+   16998f9a5fe3e71cb9fa83f0dccb0f812385cdd1
+
+Stop if the repository is not clean or synchronized.
+
+## Required fix
+
+Update:
+
+- server/inventory-api.ts
+- server/inventory-api.test.ts
+
+The current error handler preserves Fastify’s HTTP 415 status for unsupported media types while returning the public code `VALIDATION_ERROR`.
+
+This conflicts with the approved stable API contract:
+
+- HTTP 400
+- code: VALIDATION_ERROR
+- user-safe message
+- requestId
+
+Normalize unsupported-media request failures to that contract.
+
+## Behavior requirements
+
+For unsupported content types on inventory mutation routes:
+
+- Return HTTP 400.
+- Return this safe envelope shape:
+
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "The request is invalid.",
+    "requestId": "..."
+  }
+}
+
+- Do not expose Fastify’s internal error message.
+- Do not expose content-type parser details.
+- Do not expose stack traces or implementation details.
+- Preserve the request ID.
+- Do not alter the behavior of genuine unexpected 500 errors.
+- Do not change 404 or 409 mappings.
+- Preserve existing malformed-body and validation behavior.
+- Preserve SPA fallback and non-API error behavior.
+
+Implement the narrowest reliable classification needed for Fastify unsupported-media errors.
+
+Do not broadly map every 415 from arbitrary future code unless it is clearly an input-validation failure.
+
+## Focused regression test
+
+Add a focused API test that:
+
+1. Sends a mutation request such as POST /api/v1/hosts.
+2. Uses an unsupported Content-Type such as text/plain.
+3. Supplies a payload that reaches Fastify’s unsupported-media handling.
+4. Asserts:
+   - HTTP 400
+   - code VALIDATION_ERROR
+   - safe message
+   - requestId present
+   - no internal Fastify parser message or content-type detail is exposed
+5. Confirms no host was created.
+6. Confirms inventoryRevision did not change.
+
+Also confirm existing tests still cover:
+
+- malformed and exact-shape validation
+- 404 NOT_FOUND
+- 409 REVISION_CONFLICT
+- 409 INVALID_REFERENCE
+- 409 RECORD_CONFLICT
+- 500 INTERNAL_ERROR
+- unknown API route handling
+- SPA fallback
+
+## Scope boundaries
+
+Do not add or change:
+
+- React integration
+- Frontend persistence cutover
+- UI behavior
+- JSON backup or restore
+- IndexedDB migration
+- Dexie removal
+- CORS
+- Authentication
+- Accounts
+- Public demo work
+- Task 4 functionality
+- Dependencies
+- Lockfile
+- Dockerfile
+- Compose
+- Workflows
+- Planning documents
+- README
+- Architecture or decision documents
+
+If another file appears necessary, stop and report why instead of broadening scope.
+
+## Validation
+
+Run:
+
+npm run lint
+npm test
+npm run build
+npm run test:e2e
+npm audit --omit=dev
+git diff --check
+
+Run the focused inventory API test separately as well.
+
+Push the fix and wait for the exact-head GitHub Actions workflow to complete.
+
+Do not claim PR #5 is ready for re-review until CI passes.
+
+## Diff review
+
+Before committing:
+
+1. Review the complete diff from:
+   16998f9a5fe3e71cb9fa83f0dccb0f812385cdd1
+2. Confirm every change addresses only the unsupported-media contract issue.
+3. Confirm no unrelated files changed.
+4. Confirm IndexedDB remains production-authoritative.
+5. Confirm Task 4 was not started.
+6. Update the PR description with:
+   - the unsupported-media root cause
+   - the normalization fix
+   - the regression test
+   - final validation
+   - exact-head workflow result
+
+## Commit and push
+
+Commit with:
+
+Fix unsupported media API contract
+
+Push to:
+
+codex/inventory-api
+
+Allow Entire to associate the commit normally.
+
+Do not merge PR #5.
+
+## Required completion report
+
+Report:
+
+1. Initial Git state
+2. Entire status
+3. Files modified
+4. Unsupported-media root cause
+5. Error-mapping change
+6. Regression test added
+7. No-mutation assertion
+8. Inventory revision assertion
+9. Focused test result
+10. Lint result
+11. Full test result
+12. Build result
+13. End-to-end result
+14. Audit result
+15. Commit ID
+16. Entire checkpoint ID
+17. Push result
+18. New workflow run ID
+19. Final workflow status
+20. PR update result
+21. Final working-tree status
+22. Confirmation that PR #5 is ready for re-review only if CI passed
+23. Confirmation that Task 4 was not started
+24. Confirmation that no unrelated functionality was added
+
+Stop after the workflow completes and PR #5 has been updated.

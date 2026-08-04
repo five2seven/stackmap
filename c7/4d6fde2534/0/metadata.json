@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "c74d6fde2534",
+  "session_id": "019fc945-c12f-7472-a9bc-a1cc0931bc32",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-04T00:20:00.0200748Z",
+  "branch": "codex/inventory-api",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "server/inventory-api.test.ts",
+    "server/inventory-api.ts"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "a554db0866bc",
+  "checkpoint_transcript_start": 330,
+  "transcript_lines_at_start": 330,
+  "compact_transcript_start": 53,
+  "token_usage": {
+    "input_tokens": 155959,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3851264,
+    "output_tokens": 8246,
+    "api_call_count": 28
+  },
+  "session_metrics": {
+    "turn_count": 5
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-04T00:19:59.8673059Z",
+    "agent_lines": 21,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 21,
+    "total_lines_changed": 21,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
