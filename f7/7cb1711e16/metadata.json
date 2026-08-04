@@ -3,8 +3,10 @@
   "checkpoint_id": "f77cb1711e16",
   "strategy": "manual-commit",
   "branch": "codex/http-repository-cutover",
-  "checkpoints_count": 1,
-  "files_touched": null,
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/workflows/publish-container.yml"
+  ],
   "sessions": [
     {
       "metadata": "/f7/7cb1711e16/0/metadata.json",
@@ -12,13 +14,20 @@
       "compact_transcript": "/f7/7cb1711e16/0/transcript.jsonl",
       "content_hash": "/f7/7cb1711e16/0/content_hash.txt",
       "prompt": "/f7/7cb1711e16/0/prompt.txt"
+    },
+    {
+      "metadata": "/f7/7cb1711e16/1/metadata.json",
+      "transcript": "/f7/7cb1711e16/1/full.jsonl",
+      "compact_transcript": "/f7/7cb1711e16/1/transcript.jsonl",
+      "content_hash": "/f7/7cb1711e16/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
-    "input_tokens": 541022,
+    "input_tokens": 589426,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 21755136,
-    "output_tokens": 49424,
-    "api_call_count": 156
+    "cache_read_tokens": 26202368,
+    "output_tokens": 52558,
+    "api_call_count": 192
   }
 }

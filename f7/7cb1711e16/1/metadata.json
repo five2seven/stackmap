@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f77cb1711e16",
+  "session_id": "019fccf2-8862-7f91-98f4-b3156ccc4b72",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-04T13:57:42.1422979Z",
+  "branch": "codex/http-repository-cutover",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "7c4641c5e9fc",
+  "checkpoint_transcript_start": 318,
+  "transcript_lines_at_start": 318,
+  "compact_transcript_start": 76,
+  "token_usage": {
+    "input_tokens": 48404,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 4447232,
+    "output_tokens": 3134,
+    "api_call_count": 36
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-04T13:57:42.0430441Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 0,
+    "human_modified": 2,
+    "human_removed": 1,
+    "total_committed": 0,
+    "total_lines_changed": 3,
+    "agent_percentage": 0,
+    "metric_version": 2
+  }
+}
