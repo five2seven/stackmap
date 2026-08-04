@@ -1,0 +1,44 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "5f15fb6cf573",
+  "strategy": "manual-commit",
+  "branch": "codex/http-repository-cutover",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "README.md",
+    "docs/architecture.md",
+    "e2e/stackmap.spec.ts",
+    "playwright.config.ts",
+    "scripts/run-e2e-server.mjs",
+    "server/app.ts",
+    "src/App.css",
+    "src/App.cutover.test.tsx",
+    "src/App.tsx",
+    "src/components/ServiceForm.tsx",
+    "src/data/backup.ts",
+    "src/data/database.ts",
+    "src/data/httpRepository.test.ts",
+    "src/data/httpRepository.ts",
+    "src/data/legacyInventory.test.ts",
+    "src/data/legacyInventory.ts",
+    "src/data/repository.ts",
+    "src/domain/types.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/5f/15fb6cf573/0/metadata.json",
+      "transcript": "/5f/15fb6cf573/0/full.jsonl",
+      "compact_transcript": "/5f/15fb6cf573/0/transcript.jsonl",
+      "content_hash": "/5f/15fb6cf573/0/content_hash.txt",
+      "prompt": "/5f/15fb6cf573/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 233706,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 16158976,
+    "output_tokens": 37510,
+    "api_call_count": 111
+  }
+}
