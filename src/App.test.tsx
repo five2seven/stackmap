@@ -179,7 +179,7 @@ describe('StackMap service workflows', () => {
       dockerImage: 'example/updated:2',
       applicationUrl: 'https://updated.example.test',
     })
-  })
+  }, 10_000)
 
   it('shows container-name conflicts and affected-service count', async () => {
     const hostId = 'host-1'

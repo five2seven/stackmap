@@ -233,6 +233,28 @@ jobs:
           }))
           NODE
           curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-service.json http://127.0.0.1:8088/api/v1/services >/tmp/created-service.json
+          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/backup >/tmp/stackmap-backup.json
+          restore_revision_before="$(node -e "const b=require('/tmp/stackmap-backup.json'); process.stdout.write(String(b.metadata.sourceInventoryRevision))")"
+          restore_installation_before="$(node -e "const b=require('/tmp/stackmap-backup.json'); process.stdout.write(b.metadata.sourceInstallationId)")"
+          test "$restore_installation_before" = "$installation_id"
+          curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-backup.json http://127.0.0.1:8088/api/v1/restore/preview >/tmp/restore-preview.json
+          node <<'NODE' >/tmp/restore-confirm.json
+          const preview = require('/tmp/restore-preview.json').data
+          process.stdout.write(JSON.stringify({
+            previewToken: preview.previewToken,
+            expectedInventoryRevision: preview.expectedInventoryRevision,
+          }))
+          NODE
+          curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/restore-confirm.json http://127.0.0.1:8088/api/v1/restore/confirm >/tmp/restore-result.json
+          RESTORE_REVISION_BEFORE="$restore_revision_before" node <<'NODE'
+          const assert = require('node:assert/strict')
+          const preview = require('/tmp/restore-preview.json').data
+          const restored = require('/tmp/restore-result.json').data
+          const before = Number(process.env.RESTORE_REVISION_BEFORE)
+          assert.equal(preview.expectedInventoryRevision, before)
+          assert.equal(restored.inventoryRevision, before + 1)
+          assert.deepEqual(restored.summary, preview.summary)
+          NODE
           assert_inventory() {
             local phase="$1"
             curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/hosts >/tmp/assert-hosts.json

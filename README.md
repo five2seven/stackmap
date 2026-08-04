@@ -101,9 +101,11 @@ Legacy IndexedDB records remain browser-local and untouched. When detected, Stac
 
 ## Backup and Restore
 
-Use **Export server inventory** to download a versioned JSON copy of the current server-authoritative dataset. This interim export is not a full server backup/restore system; server-authoritative restore is planned for a later migration task.
+Use **Download server backup** to save a versioned JSON backup of the authoritative SQLite inventory. The file contains complete hosts and services, including ordered ports, paths, dependencies, IDs, and timestamps; it is not a raw SQLite database file.
 
-When legacy browser data is detected, use **Export legacy browser data** to download it without reading or modifying SQLite. The legacy and server export actions are deliberately separate and clearly identify their source.
+To restore, select a server-backup JSON file, preview its summary, read the destructive warning, and explicitly acknowledge replacement. Restore replaces the complete server inventory atomically. If inventory changes after preview, StackMap rejects confirmation and requires a new preview. Keep `/config` persistently mounted so restored data survives container replacement.
+
+When legacy browser data is detected, use **Export legacy browser data** to download it without reading or modifying SQLite. The legacy and server backup actions are deliberately separate; a legacy browser export cannot be restored through the server workflow.
 
 ## Build from Source
 

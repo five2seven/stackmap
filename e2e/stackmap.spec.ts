@@ -173,16 +173,42 @@ test('exports current server-authoritative inventory with an explicit source', a
   await addNameOnlyService(page, 'Exported service')
 
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Export current StackMap server inventory' }).click()
+  await page.getByRole('button', { name: 'Download current StackMap server backup' }).click()
   const download = await downloadPromise
   const exported = JSON.parse(await (await import('node:fs/promises')).readFile(await download.path(), 'utf8'))
 
   expect(exported).toMatchObject({
-    schemaVersion: 3,
+    schemaVersion: 1,
     services: [expect.objectContaining({ name: 'Exported service' })],
     hosts: [],
+    metadata: expect.objectContaining({ sourceInventoryRevision: expect.any(Number) }),
   })
-  expect(Date.parse(exported.exportedAt)).not.toBeNaN()
+  expect(Date.parse(exported.metadata.exportedAt)).not.toBeNaN()
+})
+
+test('previews, confirms, and shares a destructive server restore', async ({ browser, page }) => {
+  await page.goto('/')
+  const emptyBackup = await (await page.request.get('/api/v1/backup')).json()
+  await addNameOnlyService(page, 'Removed by restore')
+
+  const secondContext = await browser.newContext()
+  const secondPage = await secondContext.newPage()
+  await secondPage.goto('/')
+  await expect(serviceCard(secondPage, 'Removed by restore')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Restore backup' }).click()
+  await page.getByLabel('Backup JSON file').setInputFiles({
+    name: 'stackmap-backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(emptyBackup)),
+  })
+  await page.getByRole('button', { name: 'Preview restore' }).click()
+  await expect(page.getByText('Current server inventory will be fully replaced.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Replace server inventory' })).toBeDisabled()
+  await page.getByLabel('I understand that the current server inventory will be replaced.').check()
+  await page.getByRole('button', { name: 'Replace server inventory' }).click()
+  await expect(page.getByRole('status')).toContainText('Restore complete')
+  await secondPage.reload()
+  await expect(serviceCard(secondPage, 'Removed by restore')).toHaveCount(0)
+  await secondContext.close()
 })
 
 test('persists created data after refresh', async ({ page }) => {
@@ -256,7 +282,7 @@ test('blocks on legacy IndexedDB, exports it separately, and continues without m
   const download = await downloadPromise
   expect(download.suggestedFilename()).toContain('legacy-browser-data')
   await page.getByRole('button', { name: 'Continue to StackMap server inventory without importing' }).click()
-  await expect(page.getByRole('button', { name: 'Export current StackMap server inventory' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Download current StackMap server backup' })).toBeVisible()
   expect((await (await page.request.get('/api/v1/services')).json()).data).toEqual([])
   expect(await page.evaluate(async () => new Promise<number>((resolve, reject) => {
     const request = indexedDB.open('stackmap')

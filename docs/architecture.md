@@ -40,3 +40,19 @@ Use Vitest and Testing Library for unit and component behavior, Playwright for c
 - Do not store credentials or secrets in client code.
 - Do not add authentication, external persistence, telemetry, or Docker socket access without explicit approval.
 - Keep IndexedDB isolated to explicit legacy detection, export, and later migration behavior.
+# Server backup format
+
+Task 5 defines server backup schema version `1`. A backup is JSON with the exact top-level keys
+`schemaVersion`, `metadata`, `hosts`, and `services`. Metadata has the exact keys `exportedAt`,
+`sourceInstallationId`, `sourceInventoryRevision`, and `applicationVersion`; all are informational.
+Hosts and services use the complete production API record shape, including source record revisions,
+IDs, timestamps, ordered ports, ordered paths, and ordered dependency IDs. Source record revisions are
+not restored: hosts and services start at revision 1. The source installation and inventory revision
+never replace target metadata.
+
+Only schema version 1 is supported. Unknown fields, older versions, and future versions fail closed.
+Adding a version requires an explicit parser and immutable conversion to the current validated model.
+Restore uses non-mutating preview followed by an opaque, single-use, five-minute token and the target
+revision observed at preview. Confirmation replaces the complete inventory in one SQLite transaction,
+then advances the target inventory revision exactly once. The target installation identity, database
+creation time, migrations, pragmas, WAL state, path, and filesystem state are outside the backup format.
