@@ -1,0 +1,11 @@
+Implement Task 7 on branch codex/remove-primary-indexeddb.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Retire the remaining legacy IndexedDB/Dexie compatibility boundary without deleting browser data. Preserve SQLite authority, Task 5 backup/restore, and completed Task 6 migration behavior where still applicable.
+
+Validate, commit, push, open a draft PR, and wait for exact-head CI.
+
+Do not merge, advance planning, begin Task 8, or add unrelated work.
+
+Return commit, Entire checkpoint, PR URL, CI result, validation summary, and confirmation that Task 8 and planning were untouched.

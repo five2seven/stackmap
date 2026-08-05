@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "06b46c95c7d8",
+  "strategy": "manual-commit",
+  "branch": "codex/remove-primary-indexeddb",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md",
+    "docs/architecture.md",
+    "docs/decisions.md",
+    "e2e/stackmap.spec.ts",
+    "server/app.test.ts",
+    "server/app.ts",
+    "server/indexeddb-retirement.test.ts",
+    "server/legacy-migration-api.test.ts",
+    "server/legacy-migration-api.ts",
+    "server/legacy-migration.test.ts",
+    "server/legacy-migration.ts",
+    "server/repository.ts",
+    "src/App.cutover.test.tsx",
+    "src/App.test.tsx",
+    "src/App.tsx",
+    "src/data/database.test.ts",
+    "src/data/database.ts",
+    "src/data/legacyInventory.test.ts",
+    "src/data/legacyInventory.ts",
+    "src/data/legacyMigration.test.ts",
+    "src/data/legacyMigration.ts",
+    "src/test/setup.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/06/b46c95c7d8/0/metadata.json",
+      "transcript": "/06/b46c95c7d8/0/full.jsonl",
+      "compact_transcript": "/06/b46c95c7d8/0/transcript.jsonl",
+      "content_hash": "/06/b46c95c7d8/0/content_hash.txt",
+      "prompt": "/06/b46c95c7d8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 128862,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 3160832,
+    "output_tokens": 12461,
+    "api_call_count": 39
+  }
+}
