@@ -197,50 +197,23 @@ jobs:
             'fresh inventory table counts',
           )
           NODE
-          node <<'NODE' >/tmp/stackmap-legacy.json
-          const timestamp = '2026-08-04T00:00:00.000Z'
-          process.stdout.write(JSON.stringify({ schemaVersion: 3, exportedAt: timestamp,
-            hosts: [{ id: 'legacy-host', name: 'Legacy host', type: 'nas', ipAddress: '192.0.2.20', operatingSystem: 'Linux', notes: 'legacy host notes', createdAt: timestamp, updatedAt: timestamp }],
-            services: [
-              { id: 'legacy-dependency', name: 'Legacy dependency', containerName: 'legacy-dependency', dockerImage: 'example/dependency:1', description: '', applicationUrl: '', status: 'active', internalUrl: '', ports: [], paths: [], network: 'legacy', exposure: 'local', dependencyIds: [], notes: '', createdAt: timestamp, updatedAt: timestamp },
-              { id: 'legacy-service', name: 'Legacy service', containerName: 'legacy-service', dockerImage: 'example/legacy:1', description: 'migration proof', applicationUrl: 'https://legacy.example.test', status: 'active', hostId: 'legacy-host', internalUrl: 'http://legacy-service:80', ports: [{ id: 'http', hostPort: 8081, containerPort: 80, protocol: 'tcp', description: 'HTTP' }, { id: 'dns', hostPort: 5353, containerPort: 53, protocol: 'udp', description: 'DNS' }], paths: [{ id: 'config', hostPath: '/srv/legacy', containerPath: '/config', purpose: 'Configuration', readOnly: true }, { id: 'data', hostPath: '/srv/legacy-data', containerPath: '/data', purpose: 'Data', readOnly: false }], network: 'legacy', exposure: 'reverse-proxy', dependencyIds: ['legacy-dependency'], notes: 'legacy service notes', createdAt: timestamp, updatedAt: timestamp },
-            ],
-          }))
-          NODE
-          curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-legacy.json http://127.0.0.1:8088/api/v1/legacy-migration/preview >/tmp/legacy-preview.json
-          node <<'NODE' >/tmp/legacy-confirm.json
-          const preview = require('/tmp/legacy-preview.json').data
-          const legacyData = require('/tmp/stackmap-legacy.json')
-          process.stdout.write(JSON.stringify({ previewToken: preview.previewToken, expectedInventoryRevision: preview.expectedInventoryRevision, acknowledged: true, legacyData }))
-          NODE
-          curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/legacy-confirm.json http://127.0.0.1:8088/api/v1/legacy-migration/confirm >/tmp/legacy-result.json
-          curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @/tmp/stackmap-legacy.json http://127.0.0.1:8088/api/v1/legacy-migration/status >/tmp/legacy-status.json
-          node <<'NODE'
-          const assert = require('node:assert/strict')
-          const preview = require('/tmp/legacy-preview.json').data
-          const result = require('/tmp/legacy-result.json').data
-          const status = require('/tmp/legacy-status.json').data
-          assert.deepEqual(preview.summary, { legacySchemaVersion: 3, legacyExportedAt: '2026-08-04T00:00:00.000Z', hostCount: 1, serviceCount: 2, portCount: 2, pathCount: 2, dependencyCount: 1 })
-          assert.equal(preview.expectedInventoryRevision, 0)
-          assert.match(preview.previewToken, /^[A-Za-z0-9_-]+$/)
-          assert.equal(result.inventoryRevision, 1)
-          assert.deepEqual(result.summary, preview.summary)
-          assert.deepEqual(status, { status: 'matched' })
-          NODE
+          for legacy_path in status preview confirm; do
+            response_code="$(curl --silent --show-error --output /tmp/legacy-retired.json --write-out '%{http_code}' \
+              -H 'content-type: application/json' --data '{}' \
+              "http://127.0.0.1:8088/api/v1/legacy-migration/${legacy_path}")"
+            test "$response_code" = '404'
+            node -e "const assert=require('node:assert/strict');assert.equal(require('/tmp/legacy-retired.json').error.code,'API_ROUTE_NOT_FOUND')"
+          done
           docker exec --interactive stackmap-validation node <<'NODE'
           const assert = require('node:assert/strict')
           const Database = require('better-sqlite3')
-          const db = new Database('/config/stackmap.db', { readonly: true })
-          const host = db.prepare("SELECT * FROM hosts WHERE id='legacy-host'").get()
-          const service = db.prepare("SELECT * FROM services WHERE id='legacy-service'").get()
-          assert.deepEqual(host, { id: 'legacy-host', name: 'Legacy host', type: 'nas', ip_address: '192.0.2.20', operating_system: 'Linux', notes: 'legacy host notes', revision: 1, created_at: '2026-08-04T00:00:00.000Z', updated_at: '2026-08-04T00:00:00.000Z' })
-          assert.deepEqual(service, { id: 'legacy-service', name: 'Legacy service', container_name: 'legacy-service', docker_image: 'example/legacy:1', description: 'migration proof', application_url: 'https://legacy.example.test', status: 'active', host_id: 'legacy-host', internal_url: 'http://legacy-service:80', network: 'legacy', exposure: 'reverse-proxy', notes: 'legacy service notes', revision: 1, created_at: '2026-08-04T00:00:00.000Z', updated_at: '2026-08-04T00:00:00.000Z' })
-          assert.deepEqual(db.prepare("SELECT id,host_port,container_port,protocol,description FROM service_ports WHERE service_id='legacy-service' ORDER BY position").all(), [{ id: 'http', host_port: 8081, container_port: 80, protocol: 'tcp', description: 'HTTP' }, { id: 'dns', host_port: 5353, container_port: 53, protocol: 'udp', description: 'DNS' }])
-          assert.deepEqual(db.prepare("SELECT id,host_path,container_path,purpose,read_only FROM service_paths WHERE service_id='legacy-service' ORDER BY position").all(), [{ id: 'config', host_path: '/srv/legacy', container_path: '/config', purpose: 'Configuration', read_only: 1 }, { id: 'data', host_path: '/srv/legacy-data', container_path: '/data', purpose: 'Data', read_only: 0 }])
-          assert.deepEqual(db.prepare("SELECT dependency_id FROM service_dependencies WHERE service_id='legacy-service'").pluck().all(), ['legacy-dependency'])
+          const db = new Database('/config/stackmap.db')
+          db.prepare(`INSERT INTO legacy_migration_receipt
+            (singleton, fingerprint, imported_at, inventory_revision, legacy_schema_version)
+            VALUES (1, ?, ?, 0, 3)`).run('a'.repeat(64), '2026-08-04T00:00:00.000Z')
           const receipt = db.prepare('SELECT fingerprint, imported_at, inventory_revision, legacy_schema_version FROM legacy_migration_receipt WHERE singleton=1').get()
           assert.match(receipt.fingerprint, /^[0-9a-f]{64}$/)
-          assert.equal(receipt.inventory_revision, 1)
+          assert.equal(receipt.inventory_revision, 0)
           assert.equal(receipt.legacy_schema_version, 3)
           assert.ok(!Number.isNaN(Date.parse(receipt.imported_at)))
           db.close()
