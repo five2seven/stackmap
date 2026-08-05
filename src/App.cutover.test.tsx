@@ -6,10 +6,21 @@ import { LegacyInventoryError, type LegacyInventoryReader } from './data/legacyI
 import type { StackMapRepository } from './data/repository'
 import { createService } from './domain/serviceUtils'
 import type { StackMapData } from './domain/types'
+import type { LegacyMigrationClient } from './data/legacyMigration'
 
 const emptyData: StackMapData = { services: [], hosts: [] }
 const repository = (getAll = vi.fn(async () => emptyData)): StackMapRepository => ({
   getAll, putService: vi.fn(), deleteService: vi.fn(), putHost: vi.fn(), deleteHost: vi.fn(),
+})
+const migrationClient = (overrides: Partial<LegacyMigrationClient> = {}): LegacyMigrationClient => ({
+  status: vi.fn(async () => ({ status: 'missing' as const })),
+  preview: vi.fn(async () => ({
+    summary: { legacySchemaVersion: 3, legacyExportedAt: '2026-01-01T00:00:00.000Z', hostCount: 0, serviceCount: 1, portCount: 0, pathCount: 0, dependencyCount: 0 },
+    expectedInventoryRevision: 0, previewToken: 'opaque',
+  })),
+  confirm: vi.fn(async () => ({
+    summary: { legacySchemaVersion: 3, legacyExportedAt: '2026-01-01T00:00:00.000Z', hostCount: 0, serviceCount: 1, portCount: 0, pathCount: 0, dependencyCount: 0 }, inventoryRevision: 1,
+  })), ...overrides,
 })
 
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
@@ -22,29 +33,28 @@ describe('coordinated cutover boundary', () => {
     expect(getAll).toHaveBeenCalledOnce()
   })
 
-  it('blocks all server access until deliberate acknowledgement and never writes IndexedDB', async () => {
+  it('blocks server access until explicit migration confirmation', async () => {
     const user = userEvent.setup()
     const getAll = vi.fn(async () => emptyData)
     const read = vi.fn(async () => ({ services: [createService('Legacy app')], hosts: [] }))
     const legacyReader: LegacyInventoryReader = { detect: vi.fn(async () => true), read }
-    render(<App repository={repository(getAll)} legacyReader={legacyReader} />)
+    render(<App repository={repository(getAll)} legacyReader={legacyReader} migrationClient={migrationClient()} />)
     const dialog = await screen.findByRole('alertdialog', { name: 'Choose how to continue safely' })
-    expect(dialog).toHaveTextContent('not stored in SQLite')
-    expect(dialog).toHaveTextContent('may be empty or different')
+    expect(dialog).toHaveTextContent('empty SQLite server inventory')
     expect(screen.queryByRole('button', { name: 'Add service' })).not.toBeInTheDocument()
     expect(getAll).not.toHaveBeenCalled()
-    await user.click(screen.getByRole('button', { name: 'Continue to StackMap server inventory without importing' }))
+    await user.click(screen.getByRole('button', { name: 'Preview migration' }))
+    await user.click(await screen.findByRole('checkbox'))
+    await user.click(screen.getByRole('button', { name: 'Confirm migration' }))
     await screen.findByRole('button', { name: 'Add service' })
     expect(getAll).toHaveBeenCalledOnce()
-    expect(read).not.toHaveBeenCalled()
+    expect(read).toHaveBeenCalled()
   })
 
-  it('keeps editing blocked when the acknowledged server load fails', async () => {
-    const user = userEvent.setup()
+  it('keeps editing blocked when receipt lookup fails', async () => {
     const getAll = vi.fn(async () => { throw new Error('internal') })
-    render(<App repository={repository(getAll)} legacyReader={{ detect: async () => true, read: async () => emptyData }} />)
-    await user.click(await screen.findByRole('button', { name: 'Continue to StackMap server inventory without importing' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('could not load the server inventory')
+    render(<App repository={repository(getAll)} legacyReader={{ detect: async () => true, read: async () => emptyData }} migrationClient={migrationClient({ status: vi.fn(async () => { throw new Error('unavailable') }) })} />)
+    expect(await screen.findByRole('alert')).toHaveTextContent('safely check for legacy browser data')
     expect(screen.queryByRole('button', { name: 'Add service' })).not.toBeInTheDocument()
   })
 
@@ -54,10 +64,43 @@ describe('coordinated cutover boundary', () => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
-    render(<App repository={repository()} legacyReader={{ detect: async () => true, read }} />)
+    render(<App repository={repository()} legacyReader={{ detect: async () => true, read }} migrationClient={migrationClient()} />)
     await user.click(await screen.findByRole('button', { name: 'Export legacy browser data from IndexedDB' }))
-    await waitFor(() => expect(read).toHaveBeenCalledOnce())
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(2))
     expect(screen.getByRole('status')).toHaveTextContent('Legacy browser-data backup exported')
+  })
+
+  it('returns focus to preview after cancelling without reading or migrating again', async () => {
+    const user = userEvent.setup()
+    const read = vi.fn(async () => ({ services: [createService('Legacy app')], hosts: [] }))
+    const client = migrationClient()
+    render(<App repository={repository()} legacyReader={{ detect: async () => true, read }} migrationClient={client} />)
+    const previewButton = await screen.findByRole('button', { name: 'Preview migration' })
+    await user.click(previewButton)
+    const callsAfterPreview = read.mock.calls.length
+    const cancel = await screen.findByRole('button', { name: 'Cancel' })
+    cancel.focus()
+    expect(cancel).toHaveFocus()
+    await user.keyboard('{Enter}')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Preview migration' })).toHaveFocus())
+    expect(read).toHaveBeenCalledTimes(callsAfterPreview)
+    expect(client.preview).toHaveBeenCalledOnce()
+    expect(client.confirm).not.toHaveBeenCalled()
+    expect(screen.queryByRole('region', { name: 'Legacy migration preview' })).not.toBeInTheDocument()
+  })
+
+  it('uses a matching server receipt to bypass repeat blocking', async () => {
+    const getAll = vi.fn(async () => ({ services: [createService('Migrated app')], hosts: [] }))
+    render(<App repository={repository(getAll)} legacyReader={{ detect: async () => true, read: async () => ({ services: [createService('Migrated app')], hosts: [] }) }} migrationClient={migrationClient({ status: vi.fn(async () => ({ status: 'matched' as const })) })} />)
+    expect(await screen.findByRole('heading', { name: 'Migrated app' })).toBeVisible()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
+
+  it('fails closed when the legacy fingerprint differs from the receipt', async () => {
+    const getAll = vi.fn(async () => emptyData)
+    render(<App repository={repository(getAll)} legacyReader={{ detect: async () => true, read: async () => ({ services: [createService('Changed legacy')], hosts: [] }) }} migrationClient={migrationClient({ status: vi.fn(async () => ({ status: 'changed' as const })) })} />)
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('differs from the dataset previously migrated')
+    expect(getAll).not.toHaveBeenCalled()
   })
 
   it('offers explicit supported-browser recovery without server access before acknowledgement', async () => {

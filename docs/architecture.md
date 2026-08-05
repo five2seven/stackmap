@@ -4,7 +4,7 @@
 
 StackMap runs as a React, TypeScript, and Vite single-page application served by a Node.js 24/Fastify 5 process. The frontend uses a typed same-origin HTTP repository, and SQLite at `/config/stackmap.db` is authoritative for all normal inventory reads and writes. Multiple browsers share the same server inventory.
 
-Server inventory and legacy browser data use separate JSON formats and explicitly separate export actions. Server-authoritative export and restore use exact-shape server backup schema version 1. Legacy browser export remains schema version 3 only for preservation and the future Task 6 migration; server restore does not accept it. Dexie remains installed only at the legacy boundary, where detection and export use read-only IndexedDB access so legacy records are not upgraded, imported, deleted, or otherwise modified.
+Server inventory and legacy browser data use separate JSON formats and explicitly separate export actions. Server-authoritative export and restore use exact-shape server backup schema version 1. Legacy browser export and migration accept exact schema version 3; server restore does not. The legacy boundary uses read-only IndexedDB access so records are not upgraded, deleted, or otherwise modified.
 
 ## Approved target architecture
 
@@ -12,7 +12,7 @@ StackMap is a self-hosted Docker web application retaining the React, TypeScript
 
 The production deployment remains one non-root container and one process. A `/config` bind mount is required so inventory survives container recreation and can participate in normal Docker or NAS backup procedures.
 
-IndexedDB is transitional legacy storage only and is retained for the later explicit, data-safe migration. A blocking interstitial prevents ambiguous editing when legacy records exist; deliberate continuation starts the HTTP-only application without writing either a migration or synchronization result to IndexedDB.
+IndexedDB is transitional legacy storage only. A blocking interstitial prevents ambiguous editing when legacy records exist and offers explicit export or transactional migration into an empty SQLite inventory. A matching server receipt bypasses repeat migration; deliberate continuation starts the HTTP-only application without writing a migration or synchronization result to IndexedDB.
 
 JSON export remains a portable backup format. The application does not require an external database, cloud service, account system, telemetry, or Docker socket access.
 
@@ -39,7 +39,7 @@ Use Vitest and Testing Library for unit and component behavior, Playwright for c
 - Validate imports rather than trusting uploaded JSON.
 - Do not store credentials or secrets in client code.
 - Do not add authentication, external persistence, telemetry, or Docker socket access without explicit approval.
-- Keep IndexedDB isolated to explicit legacy detection, export, and later migration behavior.
+- Keep IndexedDB isolated to explicit read-only legacy detection, export, and migration behavior.
 # Server backup format
 
 Task 5 defines server backup schema version `1`. A backup is JSON with the exact top-level keys
@@ -60,3 +60,27 @@ Preview tokens and their validated backups are held in memory per application in
 unused previews may be active, limiting retained upload data to a conservative bound for a self-hosted
 single-process deployment. Expired and consumed previews free capacity; process restart invalidates all
 previews. A capacity-full server rejects new previews safely instead of evicting one under review.
+
+## Legacy browser migration
+
+Database schema migration 3 adds the singleton `legacy_migration_receipt` table. Its SHA-256 dataset
+fingerprint, import timestamp, resulting inventory revision, and legacy schema version identify the one
+legacy dataset most recently imported; receipt metadata is deliberately excluded from Task 5 server
+backups. The status endpoint compares a freshly validated fingerprint without exposing it. An unchanged
+dataset with a matching receipt no longer blocks startup, while changed legacy data fails closed and
+requires a new preview.
+
+Only the exact legacy schema version 3 shape is accepted. IndexedDB enumeration, detection, export, and
+confirmation rereads use the read-only browser boundary and abort any open request that would create or
+upgrade a database. Migration is manual: preview verifies that every SQLite inventory table is empty,
+returns summary counts, the coherent target revision, and an opaque single-use token, then confirmation
+rereads and fingerprints the complete legacy dataset. Tokens live for five minutes and at most eight may
+be active per process.
+
+Confirmation rechecks the revision and all-table emptiness inside the import transaction. A process guard
+and SQLite transaction allow at most one successful confirmation. Hosts, services, ordered ports, paths,
+and dependencies are inserted atomically with IDs and timestamps preserved; host and service record
+revisions start at 1, the global inventory revision advances exactly once, and the receipt is written in
+the same transaction. Migration never merges, overwrites, or deletes IndexedDB. SQLite remains the sole
+production authority. Task 7 retains responsibility for removing the remaining legacy compatibility
+boundary after its retirement criteria are approved.

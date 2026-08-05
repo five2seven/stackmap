@@ -46,6 +46,49 @@ describe('IndexedDbLegacyInventoryReader', () => {
     database.close()
   })
 
+  it('aborts a creation upgrade when the database disappears after enumeration', async () => {
+    const name = `deleted-race-${crypto.randomUUID()}`
+    names.push(name)
+    vi.spyOn(indexedDB, 'databases').mockResolvedValue([{ name, version: 4 }])
+    await expect(new IndexedDbLegacyInventoryReader(name).read()).rejects.toMatchObject({ code: 'DETECTION_FAILED' })
+    expect(await Dexie.exists(name)).toBe(false)
+  })
+
+  it('aborts and closes a late creation upgrade after timeout', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(indexedDB, 'databases').mockResolvedValue([{ name: 'stackmap', version: 4 }])
+    const request: Partial<IDBOpenDBRequest> = {}
+    vi.spyOn(indexedDB, 'open').mockReturnValue(request as IDBOpenDBRequest)
+    const pending = new IndexedDbLegacyInventoryReader('stackmap', 100).read()
+    const assertion = expect(pending).rejects.toMatchObject({ code: 'TIMEOUT' })
+    await vi.advanceTimersByTimeAsync(100)
+    await assertion
+    const abort = vi.fn()
+    const close = vi.fn()
+    Object.defineProperty(request, 'transaction', { value: { abort } })
+    Object.defineProperty(request, 'result', { value: { close } })
+    request.onupgradeneeded?.call(request as IDBOpenDBRequest, new Event('upgradeneeded') as IDBVersionChangeEvent)
+    expect(abort).toHaveBeenCalledOnce()
+    expect(close).toHaveBeenCalledOnce()
+  })
+
+  it('fails closed when legacy storage is not exact browser schema version 3', async () => {
+    const name = `legacy-old-${crypto.randomUUID()}`
+    names.push(name)
+    class OldDatabase extends Dexie {
+      constructor() {
+        super(name)
+        this.version(3).stores({ services: 'id', hosts: 'id' })
+      }
+    }
+    const database = new OldDatabase()
+    await database.table('services').put({ id: 'old-service' })
+    database.close()
+    const reader = new IndexedDbLegacyInventoryReader(name)
+    expect(await reader.detect()).toBe(true)
+    await expect(reader.read()).rejects.toMatchObject({ code: 'UNSUPPORTED_SCHEMA' })
+  })
+
   it('times out enumeration and allows a later retry', async () => {
     vi.useFakeTimers()
     const databases = vi.spyOn(indexedDB, 'databases')

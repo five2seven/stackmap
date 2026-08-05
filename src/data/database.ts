@@ -156,5 +156,3 @@ export class DexieStackMapRepository implements StackMapRepository {
     return metadata.value
   }
 }
-
-export const repository = new DexieStackMapRepository()

@@ -7,6 +7,7 @@ import { registerInventoryApi, sendApiError } from './inventory-api.js'
 import { backupApiError, registerBackupApi } from './backup-api.js'
 import { SqliteInventoryRepository } from './repository.js'
 import { applicationVersion } from './version.js'
+import { legacyMigrationApiError, registerLegacyMigrationApi } from './legacy-migration-api.js'
 
 export interface BuildAppOptions {
   database: StackMapDatabase
@@ -22,6 +23,10 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const app = Fastify({ logger: options.logger ?? false })
   app.setErrorHandler(async (error, request, reply) => {
     if (isApiRequest(request.url)) {
+      const migrationError = legacyMigrationApiError(error)
+      if (migrationError) return reply.code(migrationError.status).send({
+        error: { code: migrationError.code, message: migrationError.message, requestId: request.id },
+      })
       const backupError = backupApiError(error)
       if (backupError) return reply.code(backupError.status).send({
         error: { code: backupError.code, message: backupError.message, requestId: request.id },
@@ -72,6 +77,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   }))
   registerInventoryApi(app, inventoryRepository)
   registerBackupApi(app, inventoryRepository, options.database.installationId)
+  registerLegacyMigrationApi(app, inventoryRepository)
 
   const staticAvailable = fs.existsSync(path.join(options.staticRoot, 'index.html'))
   if (staticAvailable) {
