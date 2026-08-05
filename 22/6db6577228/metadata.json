@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "226db6577228",
+  "strategy": "manual-commit",
+  "branch": "codex/remove-primary-indexeddb",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/22/6db6577228/0/metadata.json",
+      "transcript": "/22/6db6577228/0/full.jsonl",
+      "compact_transcript": "/22/6db6577228/0/transcript.jsonl",
+      "content_hash": "/22/6db6577228/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 27181,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 2272512,
+    "output_tokens": 1217,
+    "api_call_count": 15
+  }
+}
