@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ebefeddc2042",
+  "strategy": "manual-commit",
+  "branch": "codex/sqlite-deployment-validation",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "README.md",
+    "docs/architecture.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/eb/efeddc2042/0/metadata.json",
+      "transcript": "/eb/efeddc2042/0/full.jsonl",
+      "compact_transcript": "/eb/efeddc2042/0/transcript.jsonl",
+      "content_hash": "/eb/efeddc2042/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 3138,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 79616,
+    "output_tokens": 94,
+    "api_call_count": 1
+  }
+}
