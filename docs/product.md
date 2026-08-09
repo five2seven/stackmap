@@ -4,7 +4,7 @@
 
 `StackMap` is described as:
 
-> A local-first homelab planning application
+> A self-hosted homelab inventory and planning application
 
 ## Primary User
 
@@ -88,9 +88,9 @@ The first useful version of StackMap should include:
 - Detection of duplicate non-retired container names on the same host
 - Warnings for incomplete mappings, mixed path styles, and missing configuration-purpose mappings
 - Clear indication when a service record is incomplete
-- Local storage so the app works without an account or hosted backend
+- Shared server-authoritative storage without an account or external service
 - JSON export for backup and portability
-- JSON import for restore or migration
+- Explicit server backup and restore
 
 The MVP should prioritize fast entry, clear organization, and useful warnings over visual complexity.
 
@@ -102,9 +102,13 @@ The Path Map preserves blank and partial mappings, groups conservatively without
 
 Portainer Stack deployment from the published `ghcr.io/five2seven/stackmap` image is a supported distribution method. End users paste the documented image-based Compose stack into Portainer and do not need a repository clone. Source-based Docker Compose remains available for developers.
 
-The container is a stateless static-file server. Inventory remains in the current browser's IndexedDB; there is no application database or inventory volume inside the container. Container restarts and recreation at the same URL normally leave browser-local data intact, but Docker volumes are not backups. JSON export is the current backup mechanism.
+The container runs one non-root Node.js process that serves the React application and same-origin API. SQLite at `/config/stackmap.db` is authoritative for inventory, and a persistent `/config` bind mount keeps application data across container restarts, recreation, and upgrades. Operators should include `/config` in normal Docker or NAS backup procedures.
 
-Inventory does not synchronize between browsers or devices. Clearing browser site data can delete it, and a change to the hostname, IP address, protocol, or port selects a different browser origin that may contain an empty inventory. Users should keep one stable canonical URL, especially across image upgrades and reverse-proxy changes.
+Browsers and devices connected to the same StackMap server share its SQLite inventory. Normal reads and writes use only the same-origin HTTP API; there is no browser fallback, dual write, or synchronization boundary.
+
+IndexedDB and Dexie are retired from the application. StackMap does not enumerate, read, modify, migrate, or delete browser-local data. The legacy migration UI and API are also retired. Inventory migrated into SQLite by the earlier migration workflow remains normal authoritative inventory, and its migration receipt remains compatible with current database startup, backup, restore, restart, and recreation behavior.
+
+Users can download a versioned JSON backup of the server inventory and explicitly preview and confirm a complete server restore. Restore operates only on authoritative SQLite inventory and does not inspect or modify browser storage.
 
 ## MVP Non-Goals
 
@@ -126,7 +130,7 @@ The MVP will not include:
 - Secrets or credential storage
 - Automatic import from Docker Compose files
 - Infrastructure diagrams generated from live systems
-- Server-side persistence for self-hosted deployments
+- Authentication or external persistence services
 - Automatic container updates
 
-These may be considered later, but they are intentionally excluded so the MVP remains local-first, easy to build, and easy to test.
+These may be considered later, but they are intentionally excluded so the self-hosted product remains focused, easy to operate, and easy to test.
