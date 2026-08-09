@@ -116,13 +116,13 @@ log "Validate unsupported-schema upgrade fails closed"
 docker stop --time 15 "$container" >/dev/null
 docker run --rm --user 10001:10001 --mount "type=bind,source=$root/cold-restore,target=/config" "$image" \
   node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db');d.prepare('INSERT INTO schema_migrations(version,name,checksum,applied_at) VALUES(999,?,?,?)').run('future schema','future','2026-08-09T00:00:00.000Z');d.close()"
-before="$(docker run --rm --mount "type=bind,source=$root/cold-restore,target=/config,readonly" "$image" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(JSON.stringify({hosts:d.prepare('SELECT * FROM hosts ORDER BY id').all(),revision:d.prepare(\"SELECT value FROM application_metadata WHERE key='inventory_revision'\").pluck().get(),migrations:d.prepare('SELECT version,name,checksum,applied_at FROM schema_migrations ORDER BY version').all()}));d.close()")"
+before="$(docker run --rm --mount "type=bind,source=$root/cold-restore,target=/config" "$image" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(JSON.stringify({hosts:d.prepare('SELECT * FROM hosts ORDER BY id').all(),revision:d.prepare(\"SELECT value FROM application_metadata WHERE key='inventory_revision'\").pluck().get(),migrations:d.prepare('SELECT version,name,checksum,applied_at FROM schema_migrations ORDER BY version').all()}));d.close()")"
 run_container "$root/cold-restore"
 if wait_for_health; then echo 'unsupported database unexpectedly became healthy' >&2; exit 1; fi
 test "$(docker inspect --format='{{.State.ExitCode}}' "$container")" != 0
 docker logs "$container" >"$root/unsupported.log" 2>&1
 grep --quiet 'unsupported migration version(s): 999' "$root/unsupported.log"
-after="$(docker run --rm --mount "type=bind,source=$root/cold-restore,target=/config,readonly" "$image" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(JSON.stringify({hosts:d.prepare('SELECT * FROM hosts ORDER BY id').all(),revision:d.prepare(\"SELECT value FROM application_metadata WHERE key='inventory_revision'\").pluck().get(),migrations:d.prepare('SELECT version,name,checksum,applied_at FROM schema_migrations ORDER BY version').all()}));d.close()")"
+after="$(docker run --rm --mount "type=bind,source=$root/cold-restore,target=/config" "$image" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(JSON.stringify({hosts:d.prepare('SELECT * FROM hosts ORDER BY id').all(),revision:d.prepare(\"SELECT value FROM application_metadata WHERE key='inventory_revision'\").pluck().get(),migrations:d.prepare('SELECT version,name,checksum,applied_at FROM schema_migrations ORDER BY version').all()}));d.close()")"
 test "$after" = "$before"
 
 log "Validate unwritable /config fails with actionable diagnostics"
