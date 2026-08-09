@@ -104,6 +104,8 @@ grep --quiet 'graceful shutdown completed' "$root/shutdown.log"
 mkdir "$root/cold-restore"
 cp -a "$upgrade/." "$root/cold-restore/"
 chmod 0777 "$root/cold-restore"
+docker run --rm --user 0:0 --mount "type=bind,source=$root/cold-restore,target=/config" "$image" \
+  chown -R 10001:10001 /config
 run_container "$root/cold-restore"
 wait_for_health
 test "$(meta_value installation_id)" = "$installation"
