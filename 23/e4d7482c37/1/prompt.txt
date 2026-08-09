@@ -1,0 +1,63 @@
+Fix only the recorded PR #13 review finding.
+
+Branch:
+codex/remove-primary-indexeddb
+
+Follow AGENTS.md.
+
+Update docs/product.md so current product documentation matches the implemented SQLite/server-authoritative architecture and Task 7 retirement:
+
+- SQLite is authoritative
+- browsers share server inventory
+- /config persists application data
+- IndexedDB/Dexie are retired from the application
+- browser data is not read, modified, or deleted
+- legacy migration APIs/UI are retired
+- previously migrated SQLite data and receipts remain compatible
+- server backup/restore remains current
+- remove stale claims that the container is stateless, IndexedDB is authoritative, browsers are isolated, or server persistence is a non-goal
+
+Do not change implementation, planning, or unrelated documentation.
+
+Validate, commit, push, and keep PR #13 draft.
+
+Return commit, Entire checkpoint, validation, and confirmation PR #13 is ready for re-review.
+
+---
+
+Final re-review PR #13 at head 43f714cc7e96041363e7f8023efdfa8eb104a042.
+
+Follow AGENTS.md.
+
+Verify the sole prior finding is resolved: docs/product.md now matches the SQLite/server-authoritative architecture and Task 7 retirement.
+
+Also confirm exact-head CI and Semgrep passed.
+
+If ready:
+- mark PR #13 ready
+- merge normally
+- sync local main with origin/main
+
+Do not advance planning or begin Task 8.
+
+If findings remain, do not modify or merge; report them.
+
+Return recommendation, findings, validation, merge commit if created, and final main state.
+
+---
+
+Advance planning after Task 7.
+
+Follow AGENTS.md.
+
+Create a planning branch and PR that:
+
+- marks Task 7 Complete
+- records its commits, Entire checkpoints, PR #13, merge commit de336ac09fac3cb4976d6d7425e327ac8fb66dc9, validation, authority state, and limitations
+- marks Task 8 Ready
+- leaves Tasks 9–10 Blocked
+
+Do not implement Task 8.
+Do not merge the planning PR.
+
+Return branch, commit, Entire checkpoint, validation, and PR URL.

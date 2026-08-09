@@ -3,8 +3,9 @@
   "checkpoint_id": "23e4d7482c37",
   "strategy": "manual-commit",
   "branch": "codex/complete-task-7-planning",
-  "checkpoints_count": 2,
+  "checkpoints_count": 4,
   "files_touched": [
+    "docs/current-task.md",
     "docs/sqlite-migration-plan.md"
   ],
   "sessions": [
@@ -14,13 +15,20 @@
       "compact_transcript": "/23/e4d7482c37/0/transcript.jsonl",
       "content_hash": "/23/e4d7482c37/0/content_hash.txt",
       "prompt": "/23/e4d7482c37/0/prompt.txt"
+    },
+    {
+      "metadata": "/23/e4d7482c37/1/metadata.json",
+      "transcript": "/23/e4d7482c37/1/full.jsonl",
+      "compact_transcript": "/23/e4d7482c37/1/transcript.jsonl",
+      "content_hash": "/23/e4d7482c37/1/content_hash.txt",
+      "prompt": "/23/e4d7482c37/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 158447,
+    "input_tokens": 196806,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 1699840,
-    "output_tokens": 9473,
-    "api_call_count": 36
+    "cache_read_tokens": 4214528,
+    "output_tokens": 14164,
+    "api_call_count": 50
   }
 }
