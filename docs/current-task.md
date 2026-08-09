@@ -1,64 +1,63 @@
 # Current Migration Task
 
-## Task 7: Remove IndexedDB from normal persistence paths
+## Task 8: Deployment, backup, and upgrade validation
 
 - **Status:** Ready
-- **Branch:** `codex/remove-primary-indexeddb`
-- **Dependency:** Task 6 — Complete
-- **Goal:** Retire the remaining legacy-only compatibility code after the approved migration boundary is no longer required.
+- **Branch:** `codex/sqlite-deployment-validation`
+- **Dependency:** Task 7 — Complete
+- **Goal:** Validate durable production behavior and failure handling end to end.
 
 ### Authority rules
 
 - SQLite remains the sole production-authoritative inventory datastore.
 - Normal application persistence continues to use only the same-origin HTTP API and SQLite.
-- The remaining IndexedDB and Dexie code is confined to the read-only legacy migration compatibility boundary inherited from Task 6.
-- Task 7 must not delete browser data or reintroduce automatic migration, dual writes, fallback, synchronization, or split authority.
+- IndexedDB and Dexie application access and the legacy migration UI/API remain retired.
+- Task 8 must not delete or inspect browser data, reintroduce legacy migration, or create dual-write, fallback, synchronization, or split authority.
 
 ### Scope
 
-- Remove the Dexie dependency only when no migration boundary requires it.
-- Remove obsolete legacy readers, adapters, and tests.
-- Verify that no IndexedDB access remains anywhere.
-- Clean up documentation associated with complete legacy retirement.
-- Preserve all server-authoritative inventory, backup, restore, and migration safety behavior unless the approved retirement design explicitly supersedes the legacy boundary.
+- Validate container restart and recreation with the durable `/config` mount.
+- Validate multi-browser shared inventory, database migrations, failed upgrades, cold backup and restore, unwritable-volume behavior, graceful shutdown, and Portainer-relevant deployment behavior.
+- Document operational guarantees, failure diagnostics, backup boundaries, and rollback limits only where Task 8 validation changes or confirms current documented behavior.
+- Preserve Task 5 server backup/restore, completed Task 6 migrated inventory and receipt compatibility, and Task 7 retirement behavior.
 
 ### Explicit exclusions
 
-- Deleting browser data
-- Unrelated refactors or product features
-- Deployment validation, public demo, or release work from Tasks 8–10
-- Authentication, CORS, accounts, telemetry, or external persistence
-- Planning advancement beyond Task 7 readiness
+- New product features or live backup automation
+- Cloud provisioning or release publication
+- Public demo work from Task 9
+- Release-preparation work from Task 10
+- Authentication, CORS, accounts, telemetry, external persistence, or Docker socket access
+- Planning advancement beyond Task 8 readiness
 
 ### Acceptance criteria
 
-- No normal workflow reads or writes IndexedDB.
-- The remaining approved legacy compatibility boundary is retired without deleting browser data.
-- SQLite remains the sole production-authoritative inventory datastore.
-- Server backup and restore behavior remains intact.
-- Task 6 migration safety and completed-data behavior are preserved or deliberately retired according to the approved Task 7 design.
+- Production-like restart, recreation, upgrade, backup, restore, and failure scenarios pass without data loss.
+- Permission and upgrade failures fail closed and provide actionable diagnostics.
+- `/config` persistence and backup and rollback limits are explicit and verified.
+- SQLite remains the sole production-authoritative inventory datastore across browsers and container lifecycle events.
+- Retired IndexedDB and legacy migration paths remain absent and browser data remains untouched.
 - All required validation passes.
 
 ### Required tests
 
-- Dependency checks proving Dexie is removed when no longer required
-- Repository and component regression suites
-- Legacy migration and retirement regression coverage
-- Full browser E2E suite
-- Production build and standard validation
+- Full lint, unit/integration/component, production build, and browser E2E suites
+- Linux/amd64 production image build
+- Container recreation, migration, restore, concurrency, permissions, health, shutdown, and smoke validation
+- Production dependency audit and `git diff --check`
 
-### Task 6 completion record
+### Task 7 completion record
 
-- **Implementation branch:** `codex/indexeddb-migration`
-- **Implementation commits:** `b50046496b2c577abf5638a4b351b9b006573018`, `95f17fac9faa39025c48f2a1f430f07260902582`, `044cfd1a6c05ebe015fb9cb9d0910ef811524dcc`, `d431b6145fbe61b2406b7d88714eadfbfc94e926`
-- **Final implementation head:** `d431b6145fbe61b2406b7d88714eadfbfc94e926`
-- **Entire checkpoints:** `76f09cdbb3db`, `aff0ab58da32`, `0e00b1c79cef`, `b60c95606231`
-- **Pull request:** #11
-- **Merge commit:** `26c1447701ba598f9f5928414fd8c2fbc33a5540`
-- **Validation:** lint; 230 unit/integration/component tests; production build; 11 browser E2E tests; production audit with zero vulnerabilities; `git diff --check`; exact-head GitHub Actions run 30959183764; Linux/amd64 image build; container migration, schema, receipt, restart, and recreation checks.
-- **Datastore authority:** SQLite is the sole production-authoritative inventory datastore. Normal application reads and writes use only HTTP and SQLite. Legacy IndexedDB remains an isolated read-only migration source pending Task 7 retirement and is never silently modified or deleted.
-- **Known limitations:** Only exact legacy browser schema version 3 is supported. Migration is manual and requires an empty SQLite target; merge, append, partial import, overwrite, automatic migration, and automatic retry are not supported. The read-only legacy compatibility reader and Dexie dependency remain until Task 7. Authentication, CORS, accounts, telemetry, external persistence, and ARM64 validation remain absent.
-- **Advancement decision:** Task 7 is Ready because Task 6 is Complete with required validation and no unresolved dependency. Tasks 8–10 remain Blocked by their listed dependencies.
+- **Implementation branch:** `codex/remove-primary-indexeddb`
+- **Implementation commits:** `9bdf2efd7fbff5ac9ac5d59eefa8127096713af7`, `076f7de4ba5e309e8082e75cea44bb47031b8508`, `c646b767a8f21f802ef2034a3c65b1e374aaf868`, `43f714cc7e96041363e7f8023efdfa8eb104a042`
+- **Final implementation head:** `43f714cc7e96041363e7f8023efdfa8eb104a042`
+- **Entire checkpoints:** `06b46c95c7d8`, `89af69597d5b`, `226db6577228`, `519eabad1c4a`
+- **Pull request:** #13
+- **Merge commit:** `de336ac09fac3cb4976d6d7425e327ac8fb66dc9`
+- **Validation:** lint; 162 unit/integration/component tests; production build; 11 browser E2E tests; production audit with zero vulnerabilities; `git diff --check`; exact-head GitHub Actions run 31337842065; Semgrep; Linux/amd64 image build; container schema, retired-API, receipt, backup/restore, restart, and recreation checks.
+- **Datastore authority:** SQLite is the sole production-authoritative inventory datastore. Normal application reads and writes use only HTTP and SQLite. IndexedDB and Dexie application access and the legacy migration UI/API are retired without reading, modifying, or deleting browser data. Existing Task 6 migrated inventory and receipt-bearing databases remain compatible.
+- **Known limitations:** Current releases cannot migrate browser-local data that was not migrated before retirement; recovery requires a compatible older release or an existing JSON export. Browser data remains untouched. Server restore supports only backup schema version 1 and remains manual and destructive. Authentication, CORS, accounts, telemetry, external persistence, and ARM64 validation remain absent.
+- **Advancement decision:** Task 8 is Ready because Task 7 is Complete with required exact-head validation and no unresolved dependency. Tasks 9 and 10 remain Blocked by their listed dependencies.
 
 ## Reusable operator prompts
 
