@@ -1,0 +1,58 @@
+Final re-review PR #11 at head d431b6145fbe61b2406b7d88714eadfbfc94e926.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Verify the recorded review findings are resolved and exact-head CI run 30959183764 passed.
+
+If ready:
+- mark PR #11 ready
+- merge with a normal merge commit titled:
+  Merge opt-in legacy IndexedDB migration
+- require the expected head
+- sync local main with origin/main
+
+If findings remain, do not modify or merge; report them.
+
+Do not advance planning or begin Task 7.
+
+Return recommendation, findings, validation, merge commit if created, final main state, and confirmation that planning and Task 7 were untouched.
+
+---
+
+Advance planning after Task 6.
+
+Follow AGENTS.md.
+
+Create a planning branch and PR that:
+
+- marks Task 6 Complete
+- records commits, checkpoints, PR #11, merge commit 26c1447701ba598f9f5928414fd8c2fbc33a5540, validation, authority state, and limitations
+- marks Task 7 Ready
+- leaves Tasks 8–10 Blocked
+
+Do not implement Task 7.
+Do not merge the planning PR.
+
+Return branch, commit, Entire checkpoint, validation, and PR URL.
+
+---
+
+Review planning PR #12.
+
+Follow AGENTS.md.
+
+Verify:
+- Task 6 is accurately recorded Complete
+- Task 7 is the only Ready task
+- Tasks 8–10 remain Blocked
+- only planning files changed
+- no Task 7 implementation began
+
+If ready:
+- mark PR #12 ready
+- merge with a normal merge commit
+- sync local main with origin/main
+
+Do not begin Task 7.
+
+Return findings, validation, merge commit, and final main state.
