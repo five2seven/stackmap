@@ -1,0 +1,60 @@
+Implement Task 7 on branch codex/remove-primary-indexeddb.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Retire the remaining legacy IndexedDB/Dexie compatibility boundary without deleting browser data. Preserve SQLite authority, Task 5 backup/restore, and completed Task 6 migration behavior where still applicable.
+
+Validate, commit, push, open a draft PR, and wait for exact-head CI.
+
+Do not merge, advance planning, begin Task 8, or add unrelated work.
+
+Return commit, Entire checkpoint, PR URL, CI result, validation summary, and confirmation that Task 8 and planning were untouched.
+
+---
+
+Initial read-only review of draft PR #13 at head c646b767a8f21f802ef2034a3c65b1e374aaf868.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Verify Task 7 fully retires IndexedDB/Dexie application access without deleting browser data, while preserving:
+- SQLite authority
+- Task 5 backup/restore
+- existing Task 6 migrated inventory and receipt compatibility
+- JSON import compatibility
+- retired migration APIs returning safe 404s
+- clean dependency removal
+- documentation accuracy
+- required tests and exact-head CI run 31018185362
+
+Pay particular attention to whether removing migration APIs or readers could break existing deployments with migration receipts or previously migrated data.
+
+Report Blocking, Important, Minor, and No issue findings.
+
+Do not modify files, mark ready, merge, advance planning, or begin Task 8.
+
+---
+
+Fix only the recorded PR #13 review finding.
+
+Branch:
+codex/remove-primary-indexeddb
+
+Follow AGENTS.md.
+
+Update docs/product.md so current product documentation matches the implemented SQLite/server-authoritative architecture and Task 7 retirement:
+
+- SQLite is authoritative
+- browsers share server inventory
+- /config persists application data
+- IndexedDB/Dexie are retired from the application
+- browser data is not read, modified, or deleted
+- legacy migration APIs/UI are retired
+- previously migrated SQLite data and receipts remain compatible
+- server backup/restore remains current
+- remove stale claims that the container is stateless, IndexedDB is authoritative, browsers are isolated, or server persistence is a non-goal
+
+Do not change implementation, planning, or unrelated documentation.
+
+Validate, commit, push, and keep PR #13 draft.
+
+Return commit, Entire checkpoint, validation, and confirmation PR #13 is ready for re-review.
