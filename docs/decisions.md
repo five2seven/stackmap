@@ -192,6 +192,18 @@ A non-empty host path is informationally shared only when more than one distinct
 
 **Consequences:** A backend and persistent application-data bind mount are required. Cloudflare Pages can no longer represent the full production product. Database migrations, bind-mount permissions, backup procedures, and upgrade compatibility become product responsibilities. The React UI and most domain behavior can remain. Existing IndexedDB users require an explicit, data-safe migration path.
 
+## ADR-007: Retire the legacy IndexedDB migration boundary
+
+**Status:** Accepted
+
+**Date:** 2026-08-05
+
+**Context:** Task 6 provided a temporary, explicit migration path from exact legacy browser schema version 3 into an empty SQLite inventory. Task 7 ends that compatibility window after SQLite became the sole production-authoritative datastore.
+
+**Decision:** Remove all IndexedDB and Dexie application access, the browser migration user interface, and the legacy migration API. Do not delete or modify browser data. Keep database migration 3 and its receipt table unchanged so databases produced during Task 6 continue to open normally. Preserve server backup and restore and JSON import compatibility.
+
+**Consequences:** StackMap starts directly from the same-origin HTTP API and SQLite regardless of browser-local data. Operators who did not complete migration must recover legacy data with a compatible older release or an existing JSON export. Completed Task 6 data remains authoritative and usable, but no new browser migration can be initiated by the current application.
+
 ## New decision template
 
 Copy this section for future decisions:

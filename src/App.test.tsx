@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import type { StackMapRepository } from './data/database'
+import type { StackMapRepository } from './data/repository'
 import { createService } from './domain/serviceUtils'
 import type { Host, Service, StackMapData } from './domain/types'
 

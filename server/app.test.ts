@@ -84,6 +84,22 @@ describe('server application', () => {
     await app.close()
   })
 
+  it('retires the legacy migration API', async () => {
+    const app = await fixture()
+    for (const path of ['status', 'preview', 'confirm']) {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/v1/legacy-migration/${path}`,
+        payload: {},
+      })
+      expect(response.statusCode).toBe(404)
+      expect(response.json()).toMatchObject({
+        error: { code: 'API_ROUTE_NOT_FOUND' },
+      })
+    }
+    await app.close()
+  })
+
   it('returns a safe envelope for unexpected API failures', async () => {
     const database = openDatabase(':memory:')
     database.installationId = () => {
