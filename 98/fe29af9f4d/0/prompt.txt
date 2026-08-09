@@ -1,0 +1,11 @@
+Implement Task 8 on branch codex/sqlite-deployment-validation.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Focus only on deployment, backup, upgrade, persistence, failure handling, and Portainer-relevant validation. Preserve SQLite authority, Task 5 backup/restore, Task 6 migrated-data compatibility, and Task 7 IndexedDB retirement.
+
+Validate all required production/container scenarios, update documentation only where validation changes or confirms operational behavior, then commit, push, open a draft PR, and wait for exact-head CI.
+
+Do not implement Task 9, publish a release, or advance planning.
+
+Return commit, Entire checkpoint, PR URL, validation summary, CI result, and confirmation Task 9 and planning were untouched.

@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "98fe29af9f4d",
+  "strategy": "manual-commit",
+  "branch": "codex/sqlite-deployment-validation",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/publish-container.yml",
+    "README.md",
+    "docs/architecture.md",
+    "scripts/validate-deployment.sh"
+  ],
+  "sessions": [
+    {
+      "metadata": "/98/fe29af9f4d/0/metadata.json",
+      "transcript": "/98/fe29af9f4d/0/full.jsonl",
+      "compact_transcript": "/98/fe29af9f4d/0/transcript.jsonl",
+      "content_hash": "/98/fe29af9f4d/0/content_hash.txt",
+      "prompt": "/98/fe29af9f4d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 95447,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1189120,
+    "output_tokens": 7933,
+    "api_call_count": 23
+  }
+}
