@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+image="${1:-stackmap:validation}"
+root="$(mktemp -d)"
+container="stackmap-deployment-validation"
+port="18088"
+
+log() { printf '\n==> %s\n' "$1"; }
+
+cleanup() {
+  exit_code=$?
+  trap - EXIT
+  if [ "$exit_code" -ne 0 ]; then
+    docker ps -a --filter "name=^/${container}$" --no-trunc || true
+    docker logs "$container" 2>/dev/null || true
+    find "$root" -maxdepth 2 -printf '%M %u:%g %p\n' 2>/dev/null || true
+  fi
+  docker rm --force "$container" >/dev/null 2>&1 || true
+  chmod -R u+rwX "$root" 2>/dev/null || true
+  rm -rf "$root"
+  exit "$exit_code"
+}
+trap cleanup EXIT
+
+run_container() {
+  local config="$1"
+  docker rm --force "$container" >/dev/null 2>&1 || true
+  docker run --detach --name "$container" --init --read-only --tmpfs /tmp \
+    --cap-drop ALL --security-opt no-new-privileges:true \
+    --mount "type=bind,source=$config,target=/config" \
+    --publish "${port}:8080" "$image" >/dev/null
+}
+
+wait_for_health() {
+  for _ in {1..40}; do
+    state="$(docker inspect --format='{{.State.Status}}' "$container" 2>/dev/null || true)"
+    health="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container" 2>/dev/null || true)"
+    [ "$health" = healthy ] && return 0
+    case "$state:$health" in exited:*|dead:*|*:unhealthy) return 1 ;; esac
+    sleep 2
+  done
+  return 1
+}
+
+meta_value() {
+  local key="$1"
+  docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT value FROM application_metadata WHERE key=?').pluck().get('$key')));d.close()"
+}
+
+log "Validate Portainer/Compose deployment contract"
+STACKMAP_PORT=18089 STACKMAP_CONFIG_DIR="$root/compose-config" TZ=UTC docker compose config --format json >"$root/compose.json"
+COMPOSE_FILE="$root/compose.json" node <<'NODE'
+const assert = require('node:assert/strict')
+const config = require(process.env.COMPOSE_FILE)
+const service = config.services.stackmap
+assert.deepEqual(service.cap_drop, ['ALL'])
+assert.equal(service.read_only, true)
+assert.equal(service.init, true)
+assert.deepEqual(service.security_opt, ['no-new-privileges:true'])
+assert.equal(service.restart, 'unless-stopped')
+assert.equal(service.user, undefined)
+assert.equal(service.environment.STACKMAP_DB_PATH, '/config/stackmap.db')
+assert.equal(service.environment.TZ, 'UTC')
+assert.ok(service.volumes.some((volume) => volume.target === '/config' && volume.type === 'bind'))
+assert.ok(service.tmpfs.some((entry) => entry === '/tmp'))
+assert.ok(service.ports.some((entry) => entry.published === '18089' && entry.target === 8080))
+assert.ok(service.healthcheck)
+NODE
+
+log "Validate forward migration from a Task 1 database"
+upgrade="$root/upgrade"
+mkdir "$upgrade"
+chmod 0777 "$upgrade"
+docker run --rm --user 10001:10001 --mount "type=bind,source=$upgrade,target=/config" "$image" \
+  node --input-type=module -e "import D from 'better-sqlite3';import {databaseMigrations,runMigrations} from './dist-server/database.js';const d=new D('/config/stackmap.db');runMigrations(d,databaseMigrations.slice(0,1));d.prepare(\"UPDATE application_metadata SET value='task-1-installation' WHERE key='installation_id'\").run();d.close()"
+run_container "$upgrade"
+wait_for_health
+test "$(meta_value installation_id)" = task-1-installation
+test "$(docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT MAX(version) FROM schema_migrations').pluck().get()));d.close()")" = 3
+test "$(meta_value inventory_revision)" = 0
+
+log "Validate concurrent-client conflict handling"
+timestamp='2026-08-09T00:00:00.000Z'
+printf '{"id":"concurrent-host","name":"Original","type":"nas","ipAddress":"192.0.2.20","operatingSystem":"Linux","notes":"","createdAt":"%s","updatedAt":"%s"}' "$timestamp" "$timestamp" >"$root/host.json"
+curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/host.json" "http://127.0.0.1:${port}/api/v1/hosts" >/dev/null
+HOST_FILE="$root/host.json" node -e "const fs=require('node:fs');const h=require(process.env.HOST_FILE);fs.writeFileSync(process.env.HOST_FILE,JSON.stringify({expectedRevision:1,host:{...h,name:'Client update',updatedAt:'2026-08-09T00:00:01.000Z'}}))"
+curl --silent --show-error -o "$root/update-a.json" -w '%{http_code}' -X PUT -H 'content-type: application/json' --data-binary @"$root/host.json" "http://127.0.0.1:${port}/api/v1/hosts/concurrent-host" >"$root/status-a" &
+pid_a=$!
+curl --silent --show-error -o "$root/update-b.json" -w '%{http_code}' -X PUT -H 'content-type: application/json' --data-binary @"$root/host.json" "http://127.0.0.1:${port}/api/v1/hosts/concurrent-host" >"$root/status-b" &
+pid_b=$!
+wait "$pid_a" "$pid_b"
+statuses="$(sort "$root/status-a" "$root/status-b" | tr '\n' ' ')"
+test "$statuses" = '200 409 '
+grep --quiet 'REVISION_CONFLICT' "$root/update-a.json" "$root/update-b.json"
+
+log "Validate cold /config backup and restore"
+installation="$(meta_value installation_id)"
+revision="$(meta_value inventory_revision)"
+docker stop --time 15 "$container" >/dev/null
+docker logs "$container" >"$root/shutdown.log" 2>&1
+grep --quiet 'graceful shutdown started' "$root/shutdown.log"
+grep --quiet 'graceful shutdown completed' "$root/shutdown.log"
+mkdir "$root/cold-restore"
+cp -a "$upgrade/." "$root/cold-restore/"
+chmod 0777 "$root/cold-restore"
+run_container "$root/cold-restore"
+wait_for_health
+test "$(meta_value installation_id)" = "$installation"
+test "$(meta_value inventory_revision)" = "$revision"
+curl --fail --silent --show-error "http://127.0.0.1:${port}/api/v1/hosts/concurrent-host" | grep --quiet 'Client update'
+
+log "Validate unsupported-schema upgrade fails closed"
+docker stop --time 15 "$container" >/dev/null
+docker run --rm --user 10001:10001 --mount "type=bind,source=$root/cold-restore,target=/config" "$image" \
+  node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db');d.prepare('INSERT INTO schema_migrations(version,name,checksum,applied_at) VALUES(999,?,?,?)').run('future schema','future','2026-08-09T00:00:00.000Z');d.close()"
+before="$(docker run --rm --mount "type=bind,source=$root/cold-restore,target=/config,readonly" "$image" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(JSON.stringify({hosts:d.prepare('SELECT * FROM hosts ORDER BY id').all(),revision:d.prepare(\"SELECT value FROM application_metadata WHERE key='inventory_revision'\").pluck().get(),migrations:d.prepare('SELECT version,name,checksum,applied_at FROM schema_migrations ORDER BY version').all()}));d.close()")"
+run_container "$root/cold-restore"
+if wait_for_health; then echo 'unsupported database unexpectedly became healthy' >&2; exit 1; fi
+test "$(docker inspect --format='{{.State.ExitCode}}' "$container")" != 0
+docker logs "$container" >"$root/unsupported.log" 2>&1
+grep --quiet 'unsupported migration version(s): 999' "$root/unsupported.log"
+after="$(docker run --rm --mount "type=bind,source=$root/cold-restore,target=/config,readonly" "$image" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(JSON.stringify({hosts:d.prepare('SELECT * FROM hosts ORDER BY id').all(),revision:d.prepare(\"SELECT value FROM application_metadata WHERE key='inventory_revision'\").pluck().get(),migrations:d.prepare('SELECT version,name,checksum,applied_at FROM schema_migrations ORDER BY version').all()}));d.close()")"
+test "$after" = "$before"
+
+log "Validate unwritable /config fails with actionable diagnostics"
+unwritable="$root/unwritable"
+mkdir "$unwritable"
+chmod 0555 "$unwritable"
+run_container "$unwritable"
+if wait_for_health; then echo 'unwritable config unexpectedly became healthy' >&2; exit 1; fi
+test "$(docker inspect --format='{{.State.ExitCode}}' "$container")" != 0
+docker logs "$container" >"$root/unwritable.log" 2>&1
+grep -Eiq 'permission denied|EACCES|readonly|read-only' "$root/unwritable.log"
+test ! -e "$unwritable/stackmap.db"
+
+log "Deployment validation passed"

@@ -78,11 +78,17 @@ Browsers and devices using the same StackMap server share its SQLite inventory. 
 
 ### Updating in Portainer
 
-1. Open the StackMap stack.
-2. Re-pull the latest image.
-3. Update the stack.
-4. Keep the same `/config` mount.
-5. Refresh the browser after the container becomes healthy.
+1. Download a server JSON backup.
+2. Stop StackMap cleanly and make a cold backup of the complete `/config` directory.
+3. Open the StackMap stack and re-pull the intended image.
+4. Update the stack without changing the `/config` mount.
+5. Wait for the container to become healthy, then refresh the browser and verify the inventory.
+
+Database schemas migrate forward automatically and transactionally. An image that does not recognize
+the mounted database schema exits instead of serving or rewriting inventory; inspect the container log
+for the unsupported migration version. Image rollback is safe only when the older image supports the
+current database schema. Otherwise, stop StackMap and restore the matching cold `/config` backup before
+starting the older image.
 
 ## Usage
 
@@ -106,6 +112,18 @@ Use **Download server backup** to save a versioned JSON backup of the authoritat
 To restore, select a server-backup JSON file, preview its summary, read the destructive warning, and explicitly acknowledge replacement. Restore replaces the complete server inventory atomically. If inventory changes after preview, StackMap rejects confirmation and requires a new preview. Keep `/config` persistently mounted so restored data survives container replacement.
 
 The retired browser migration workflow is not part of backup or restore. Server backup and restore continue to operate only on the authoritative SQLite inventory and do not inspect or modify browser storage.
+
+For disaster recovery or image rollback, use a cold filesystem backup: stop the container cleanly, copy
+the complete `/config` directory, and then restart it. Copying only `stackmap.db` while StackMap is running
+is not a supported backup because SQLite may also have active WAL and shared-memory files. Restore a cold
+backup only while the container is stopped. The JSON backup is portable inventory data; unlike a cold
+`/config` backup, it does not preserve installation metadata, migration history, or legacy migration
+receipt metadata.
+
+If the container does not become healthy after deployment, inspect its logs first. Permission errors mean
+the host directory mounted at `/config` is not writable by container UID/GID `10001:10001`; correct the
+host permissions rather than moving the database into the container. Unsupported migration errors mean
+the image and database versions do not match; use a compatible image or the matching cold backup.
 
 ## Build from Source
 
