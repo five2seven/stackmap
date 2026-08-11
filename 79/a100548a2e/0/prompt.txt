@@ -141,3 +141,19 @@ Do not change application behavior, workflows, version, tag, release, GHCR, or P
 Do not add a license yet.
 
 Commit, push, open a draft PR, and return findings plus changed files.
+
+---
+
+Add the MIT License to StackMap.
+
+Follow AGENTS.md.
+
+- Add the standard MIT license as LICENSE at the repository root.
+- Use copyright year 2026.
+- Use "Rare Object Labs" as the copyright holder.
+- Update README.md License section to state that StackMap is licensed under the MIT License and link to LICENSE.
+- Do not change application code, version, workflows, release/tag state, GHCR, or Pages.
+
+Validate the exact scope, commit, push, and open a draft PR.
+
+Return changed files, commit, Entire checkpoint, PR URL, and validation.
