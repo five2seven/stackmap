@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "0000e270e6ea",
+  "strategy": "manual-commit",
+  "branch": "codex/v1.0.0-release-metadata",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "README.md",
+    "docs/release-notes.md",
+    "package-lock.json",
+    "package.json",
+    "server/app.test.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/00/00e270e6ea/0/metadata.json",
+      "transcript": "/00/00e270e6ea/0/full.jsonl",
+      "compact_transcript": "/00/00e270e6ea/0/transcript.jsonl",
+      "content_hash": "/00/00e270e6ea/0/content_hash.txt",
+      "prompt": "/00/00e270e6ea/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 381975,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 10944768,
+    "output_tokens": 27213,
+    "api_call_count": 91
+  }
+}
