@@ -1,9 +1,10 @@
 # Release Notes
 
-## SQLite self-hosted release candidate
+## StackMap v1.0.0
 
-**Status:** Release candidate documentation only. No version tag, GitHub release, or release publication
-is created by Task 10.
+**Status:** Release metadata prepared for review. The `v1.0.0` tag and GitHub Release have not been
+created yet. The production container and public demo were published separately before this metadata
+change and are not republished by it.
 
 ### Highlights
 
@@ -39,7 +40,6 @@ release or an existing JSON export. Current StackMap does not inspect or delete 
   monitoring, and automatic updates are not included.
 - Published container validation currently covers Linux/amd64 only; ARM64 remains unvalidated.
 - Demo edits are intentionally temporary and reset on refresh; the demo is not a hosted production edition.
-- The planned custom demo hostname must pass deployment and TLS health checks before it is announced as live.
 
 ### Validation expected before release approval
 

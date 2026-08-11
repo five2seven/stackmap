@@ -8,11 +8,10 @@ Homelab details often end up scattered across Compose files, notes, bookmarks, s
 
 Only a service name is required, so incomplete plans can be recorded and refined later. StackMap does not require an account or external service.
 
-The production application is the self-hosted container described below. A separate public-demo build is
-prepared for `https://stackmap.rareobjectlabs.app`, but that URL should not be treated as live until its
-deployment and TLS health are verified. The build contains bundled sample data only: edits remain in
-memory for the current page session and reset on refresh, with no StackMap server connection or user-data
-upload.
+The production application is the self-hosted container described below. A separate public demo is live
+at [stackmap.rareobjectlabs.app](https://stackmap.rareobjectlabs.app). It contains bundled sample data
+only: edits remain in memory for the current page session and reset on refresh, with no StackMap server
+connection or user-data upload.
 
 ## Features
 
@@ -34,7 +33,9 @@ Screenshots are not available yet.
 
 ## Deploy with Portainer
 
-The container image is prepared for publication at `ghcr.io/five2seven/stackmap`. Confirm that the image is publicly available before deploying; it should not be considered published until the container workflow has been explicitly dispatched and completed successfully. Ordinary `main` merges and tag pushes validate without publishing an image.
+The production container is published at `ghcr.io/five2seven/stackmap:latest`. Ordinary `main` merges and
+tag pushes validate without publishing an image; image publication remains an explicitly dispatched
+workflow.
 
 GitHub Container Registry packages may initially be private. After the first successful publish, open the `stackmap` package on the GitHub organization or user profile, select **Package settings**, choose **Change visibility** under **Danger Zone**, and set it to **Public** before sharing the deployment instructions.
 
@@ -159,9 +160,7 @@ the image and database versions do not match; use a compatible image or the matc
 
 Portainer deployment from the published image is the primary installation method. Developers can build the production container locally:
 
-The source repository is currently private. The clone command requires a GitHub account with repository
-access and authenticated Git credentials; do not publish these source-build instructions as generally
-available until repository visibility has been verified.
+The source repository is public and can be cloned without GitHub authentication:
 
 ```powershell
 git clone https://github.com/five2seven/stackmap.git
