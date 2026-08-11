@@ -10,7 +10,7 @@ param(
 
     [Parameter()]
     [ValidateNotNullOrEmpty()]
-    [string]$OutputDirectory = 'dist'
+    [string]$OutputDirectory = 'dist-demo'
 )
 
 Set-StrictMode -Version Latest
@@ -46,8 +46,8 @@ Push-Location -LiteralPath $repositoryRoot
 try {
     Invoke-CheckedCommand -Description 'Running lint checks...' -Command { npm run lint }
     Invoke-CheckedCommand -Description 'Running tests...' -Command { npm test }
-    Invoke-CheckedCommand -Description 'Building the production site...' -Command { npm run build }
-    Invoke-CheckedCommand -Description 'Running end-to-end tests...' -Command { npm run test:e2e }
+    Invoke-CheckedCommand -Description 'Building the isolated public demo...' -Command { npm run build:demo }
+    Invoke-CheckedCommand -Description 'Running public-demo end-to-end tests...' -Command { npm run test:e2e:demo }
 
     $resolvedOutputDirectory = Join-Path $repositoryRoot $OutputDirectory
     if (-not (Test-Path -LiteralPath $resolvedOutputDirectory -PathType Container)) {

@@ -39,6 +39,8 @@ jobs:
           npm test
           npm run build
           npm run test:e2e
+          npm run build:demo
+          npm run test:e2e:demo
           npm audit --omit=dev
 
       - name: Set up Docker Buildx

@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import {
-  serverBackupClient as defaultBackupClient,
-  ServerBackupError,
-  type RestorePreview,
-  type ServerBackupClient,
-} from './data/serverBackup'
-import { repository as defaultRepository } from './data/httpRepository'
+import type { RestorePreview, ServerBackupClient } from './data/serverBackup'
 import type { StackMapRepository } from './data/repository'
 import {
   duplicateContainerNameServiceIds,
@@ -37,12 +31,13 @@ const DEFAULT_FILTERS: ServiceFilters = {
   exposure: 'all',
 }
 
-interface AppProps {
-  repository?: StackMapRepository
+export interface AppProps {
+  repository: StackMapRepository
   backupClient?: ServerBackupClient
+  mode?: 'production' | 'demo'
 }
 
-function App({ repository = defaultRepository, backupClient = defaultBackupClient }: AppProps) {
+function App({ repository, backupClient, mode = 'production' }: AppProps) {
   const [services, setServices] = useState<Service[]>([])
   const [hosts, setHosts] = useState<Host[]>([])
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
@@ -64,6 +59,8 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
   const portMapViewButton = useRef<HTMLButtonElement>(null)
   const pathMapViewButton = useRef<HTMLButtonElement>(null)
   const returnFocusToMap = useRef<'port-map' | 'path-map' | null>(null)
+  const isDemo = mode === 'demo'
+  const inventoryLabel = isDemo ? 'demo inventory' : 'server inventory'
 
   async function refresh() {
     const data = await repository.getAll()
@@ -80,7 +77,7 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
       setHosts(data.hosts.sort((left, right) => left.name.localeCompare(right.name)))
       setError('')
     } catch {
-      setError('StackMap could not load the server inventory. No browser fallback was used.')
+      setError(`StackMap could not load the ${inventoryLabel}. No browser fallback was used.`)
       setLoadFailed(true)
     } finally {
       setLoading(false)
@@ -95,7 +92,7 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
       setHosts(data.hosts.sort((left, right) => left.name.localeCompare(right.name)))
     }).catch(() => {
       if (!active) return
-      setError('StackMap could not load the server inventory. No browser fallback was used.')
+      setError(`StackMap could not load the ${inventoryLabel}. No browser fallback was used.`)
       setLoadFailed(true)
     }).finally(() => {
       if (active) setLoading(false)
@@ -104,7 +101,7 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
     return () => {
       active = false
     }
-  }, [repository])
+  }, [inventoryLabel, repository])
 
   useEffect(() => {
     if (!editingService && returnFocusToMap.current) {
@@ -222,6 +219,7 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
   }
 
   async function exportServerInventory() {
+    if (!backupClient) return
     try {
       const blob = await backupClient.download()
       const url = URL.createObjectURL(blob)
@@ -238,7 +236,7 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
   }
 
   async function previewRestore() {
-    if (!restoreFile || restoreBusy) return
+    if (!backupClient || !restoreFile || restoreBusy) return
     setRestoreBusy(true)
     setError('')
     setMessage('Validating backup on the server…')
@@ -258,7 +256,7 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
   }
 
   async function confirmRestore() {
-    if (!restorePreview || !restoreAcknowledged || restoreBusy) return
+    if (!backupClient || !restorePreview || !restoreAcknowledged || restoreBusy) return
     setRestoreBusy(true)
     setError('')
     setMessage('Replacing the current server inventory…')
@@ -270,8 +268,8 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
       setRestoreAcknowledged(false)
       setMessage(`Restore complete: ${result.summary.hostCount} hosts and ${result.summary.serviceCount} services. Inventory revision ${result.inventoryRevision}.`)
     } catch (caught) {
-      const requiresPreview = caught instanceof ServerBackupError &&
-        ['RESTORE_PREVIEW_STALE', 'RESTORE_PREVIEW_INVALID'].includes(caught.code)
+      const requiresPreview = caught instanceof Error && 'code' in caught &&
+        ['RESTORE_PREVIEW_STALE', 'RESTORE_PREVIEW_INVALID'].includes(String(caught.code))
       if (requiresPreview) setRestorePreview(null)
       setError(caught instanceof Error ? caught.message : 'The restore could not be completed.')
       setMessage('')
@@ -289,7 +287,7 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
   }
 
   if (loading) {
-    return <div className="loading-state" role="status">Loading StackMap server inventory…</div>
+    return <div className="loading-state" role="status">Loading StackMap {inventoryLabel}…</div>
   }
 
   if (loadFailed) {
@@ -306,7 +304,7 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
     <div className="app-shell">
       <header className="site-header">
         <div>
-          <p className="eyebrow">Self-hosted homelab inventory</p>
+          <p className="eyebrow">{isDemo ? 'Public demo · session-only inventory' : 'Self-hosted homelab inventory'}</p>
           <h1>StackMap</h1>
         </div>
         <div className="header-actions">
@@ -318,6 +316,13 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
           </button>
         </div>
       </header>
+
+      {isDemo && (
+        <section className="demo-banner" role="status" aria-label="Public demo notice">
+          <strong>Public demo</strong>
+          <span>Explore freely. Edits exist only in this page session and reset when you refresh. No data is saved.</span>
+        </section>
+      )}
 
       <main>
         <nav className="view-switcher" aria-label="Primary views">
@@ -416,17 +421,17 @@ function App({ repository = defaultRepository, backupClient = defaultBackupClien
               <p className="eyebrow">Environment map</p>
               <h2 id="services-title">Services</h2>
             </div>
-            <div className="data-actions">
+            {backupClient && <div className="data-actions">
               <button className="button ghost" type="button" onClick={exportServerInventory} aria-label="Download current StackMap server backup">
                 Download server backup
               </button>
               <button className="button ghost" type="button" onClick={() => setShowRestore((shown) => !shown)} aria-expanded={showRestore} aria-controls="restore-panel">
                 {showRestore ? 'Close restore' : 'Restore backup'}
               </button>
-            </div>
+            </div>}
           </div>
 
-          {showRestore && <section id="restore-panel" className="restore-panel" aria-labelledby="restore-title" aria-busy={restoreBusy}>
+          {backupClient && showRestore && <section id="restore-panel" className="restore-panel" aria-labelledby="restore-title" aria-busy={restoreBusy}>
             <h3 id="restore-title">Restore server backup</h3>
             <p>Upload a StackMap server backup to validate it. Previewing does not change inventory.</p>
             <label className="field">

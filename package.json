@@ -8,11 +8,14 @@
     "dev:server": "tsx watch server/index.ts",
     "dev:vite": "vite",
     "build": "tsc -b && vite build && tsc -p tsconfig.server.json",
+    "build:demo": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json && vite build --mode demo && node scripts/validate-demo-build.mjs",
     "start": "node dist-server/index.js",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:demo": "playwright test --config playwright.demo.config.ts",
+    "preview:demo": "vite preview --mode demo --host 127.0.0.1 --port 4174",
     "test:all": "npm run lint && npm test && npm run build && npm run test:e2e"
   },
   "dependencies": {
