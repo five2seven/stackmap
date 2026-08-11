@@ -189,3 +189,22 @@ If ready, mark PR #20 ready and merge normally.
 Do not dispatch any workflow, publish, deploy, modify PR #19, advance planning, or start new work.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Refresh PR #19 against current main and fix only the now-stale publication documentation.
+
+Follow AGENTS.md.
+
+On codex/sqlite-release-preparation:
+- incorporate current main, including merged PR #20
+- update docs/release-checklist.md so it accurately states:
+  - ordinary main merges run validation only
+  - GHCR publication requires explicit workflow_dispatch
+  - Cloudflare Pages deployment requires explicit workflow_dispatch
+  - tags do not publish automatically
+- update any other Task 10 documentation only if it now contradicts that workflow behavior
+
+Do not change workflows, application code, planning, release artifacts, or publish/deploy anything.
+
+Validate, commit, push, keep PR #19 draft, and return new head, Entire checkpoint, validation, and re-review readiness.
