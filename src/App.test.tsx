@@ -69,6 +69,21 @@ describe('StackMap service workflows', () => {
     vi.restoreAllMocks()
   })
 
+  it('clearly labels demo mode and removes server backup and restore controls', async () => {
+    render(<App repository={new MemoryRepository({
+      hosts: [],
+      services: [serviceNamed('Bundled demo service')],
+    })} mode="demo" />)
+
+    expect(await screen.findByRole('status', { name: 'Public demo notice' })).toHaveTextContent(
+      'Edits exist only in this page session and reset when you refresh',
+    )
+    expect(screen.getByText('Public demo · session-only inventory')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Download current StackMap server backup' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Restore backup' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Bundled demo service' })).toBeVisible()
+  })
+
   it('creates a service with only a name', async () => {
     const user = userEvent.setup()
     const repository = new MemoryRepository()

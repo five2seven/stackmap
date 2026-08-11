@@ -3,10 +3,29 @@
 }
 
 .site-header,
+.demo-banner,
 main,
 footer {
   width: min(100% - 2rem, 78rem);
   margin-inline: auto;
+}
+
+.demo-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d2a33a;
+  border-radius: 0.65rem;
+  background: #fff5cf;
+  color: #59400b;
+}
+
+.demo-banner strong {
+  flex: 0 0 auto;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .site-header {

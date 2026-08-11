@@ -8,6 +8,7 @@
 .vscode
 node_modules
 dist
+dist-demo
 dist-server
 .data
 config

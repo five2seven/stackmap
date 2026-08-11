@@ -30,7 +30,9 @@ an older image requires a schema it recognizes or a matching cold backup of the 
 
 ## Hosting
 
-The final production product is the self-hosted Node.js application with durable `/config` storage. Cloudflare Pages cannot host that full product. A separate public demo may use Cloudflare Pages only with an in-memory repository, bundled sample data, session-only edits, a clear demo banner, and no IndexedDB or server persistence.
+The final production product is the self-hosted Node.js application with durable `/config` storage. Cloudflare Pages cannot host that full product. The separate Cloudflare Pages build statically selects an in-memory repository with bundled sample data, session-only edits, and a clear demo banner. Its build artifact excludes the production HTTP repository, SQLite paths and dependencies, IndexedDB, and browser-storage persistence. Refreshing the page creates a new repository from the bundled data.
+
+The normal production build statically selects the same-origin HTTP repository and server backup client. The demo build does not change or provide a fallback for that self-hosted runtime.
 
 The intended public demo URL remains `stackmap.rareobjectlabs.app`, and the source repository is `five2seven/stackmap`.
 
