@@ -67,3 +67,19 @@ Create a small branch and PR for this change only.
 Do not modify application code or release state.
 
 Return branch, commit, PR URL, and changed file.
+
+---
+
+Prepare StackMap v1.0.0 release metadata.
+
+Follow AGENTS.md and the release checklist.
+
+- update package/app version from 0.0.0 to 1.0.0 where appropriate
+- update release notes only as needed for v1.0.0
+- verify public clone, README, Docker, demo, and release links
+- validate everything
+
+Do not create the tag or GitHub Release yet.
+Do not republish GHCR or redeploy Pages.
+
+Commit, push, open a draft PR, and return commit, Entire checkpoint, PR URL, and validation.
