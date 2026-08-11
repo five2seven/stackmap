@@ -39,7 +39,13 @@
 
 ## Publication boundary
 
-- [ ] Release review separately authorizes any tag, GitHub release, image publication, or announcement
+Until those workflows are separately gated, every merge to `main` triggers both publication of the
+`ghcr.io/five2seven/stackmap:latest` image and deployment of the Cloudflare Pages demo. Approval to merge
+therefore also authorizes those two automatic actions; do not merge while either action is unintended.
+Version tags, GitHub releases, and announcements remain separate actions requiring explicit approval.
+
+- [ ] Merge approval explicitly accounts for automatic GHCR `latest` publication and Cloudflare Pages deployment
+- [ ] Release review separately authorizes any version tag, GitHub release, or announcement
 - [ ] Intended version and release notes are approved before tagging
 - [ ] GHCR image visibility and documented tag are verified before directing users to deploy
 - [ ] Cloudflare Pages demo deployment is healthy and still shows the session-only banner

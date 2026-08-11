@@ -159,6 +159,10 @@ the image and database versions do not match; use a compatible image or the matc
 
 Portainer deployment from the published image is the primary installation method. Developers can build the production container locally:
 
+The source repository is currently private. The clone command requires a GitHub account with repository
+access and authenticated Git credentials; do not publish these source-build instructions as generally
+available until repository visibility has been verified.
+
 ```powershell
 git clone https://github.com/five2seven/stackmap.git
 cd stackmap
