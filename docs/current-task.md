@@ -2,9 +2,9 @@
 
 ## Task 9: Public demo mode
 
-- **Status:** Blocked
+- **Status:** Ready
 - **Branch:** `codex/public-demo-mode`
-- **Dependencies:** Task 8 — Complete; explicit approval of the public demo behavior — unresolved
+- **Dependencies:** Task 8 — Complete; proposed public demo behavior — explicitly approved on 2026-08-11
 - **Goal:** Provide a clearly separated Cloudflare Pages demo without production persistence.
 
 ### Authority rules
@@ -12,9 +12,9 @@
 - The self-hosted production application remains SQLite-authoritative and is unchanged by Task 9.
 - Any public demo must use only an in-memory repository with bundled sample data and session-only edits.
 - The demo must not read or write IndexedDB, call the production API, upload user data by default, or introduce persistent demo storage.
-- Task 9 must not begin until its proposed behavior receives explicit approval.
+- The public demo behavior described below is explicitly approved; implementation remains confined to Task 9 on its planned feature branch.
 
-### Proposed scope awaiting approval
+### Scope
 
 - Preload a realistic sample homelab.
 - Keep edits in memory for the current page session and reset them on refresh.
@@ -24,7 +24,6 @@
 
 ### Explicit exclusions
 
-- Task 9 implementation before product approval
 - IndexedDB or other browser persistence
 - Production API or SQLite access from the demo
 - Persistent demo data, accounts, authentication, telemetry, or user-data upload by default
@@ -59,7 +58,7 @@
 - **Validation:** lint; 162 unit/integration/component tests; production build; 11 browser E2E tests; production audit with zero vulnerabilities; `git diff --check`; exact-head GitHub Actions run 31339564793; Semgrep; Linux/amd64 image build; container schema, retired-API, receipt, Task 5 backup/restore, restart, recreation, forward migration, concurrent-client conflict, cold `/config` backup/restore, unsupported-schema, unwritable-volume, health, graceful-shutdown, and Portainer/Compose contract checks.
 - **Datastore authority:** SQLite remains the sole production-authoritative inventory datastore. Normal application reads and writes use only the same-origin HTTP API and SQLite. IndexedDB and legacy migration paths remain retired and browser data remains untouched.
 - **Known limitations:** Cold backup requires a cleanly stopped container and the complete `/config` directory; live SQLite-file copying and live backup automation remain unsupported. Database migrations are forward-only, and image rollback requires a compatible schema or matching cold backup. Server restore supports only backup schema version 1 and remains manual and destructive. Authentication, CORS, accounts, telemetry, external persistence, and ARM64 validation remain absent.
-- **Advancement decision:** Task 8 is Complete because its implementation was validated at the exact head, reviewed, merged normally, and synchronized to `main`. Task 9 remains Blocked because its Task 8 dependency is complete but the required explicit approval of the public demo behavior is not recorded. Task 10 remains Blocked by its listed dependency or an explicit decision to release without the optional demo.
+- **Advancement decision:** Task 8 is Complete because its implementation was validated at the exact head, reviewed, merged normally, and synchronized to `main`. Task 9 is Ready because Task 8 is Complete and the proposed public demo behavior was explicitly approved on 2026-08-11. Task 10 remains Blocked by its listed dependency or an explicit decision to release without the optional demo.
 
 ## Reusable operator prompts
 
