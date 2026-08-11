@@ -35,3 +35,35 @@ Afterward verify the custom hostname returns HTTP 200 with healthy TLS and the d
 Do not change application code, create a tag/release, or republish artifacts unless required for the TLS fix.
 
 Return root cause, actions taken, final hostname/TLS status, and any remaining blocker.
+
+---
+
+Add a Bug Report issue template to StackMap.
+
+Follow AGENTS.md.
+
+Create:
+.github/ISSUE_TEMPLATE/bug_report.md
+
+Use the bug-report template we discussed:
+- self-hosted/no guaranteed support note
+- StackMap version
+- deployment method
+- host OS
+- architecture
+- browser/version
+- bug description
+- reproduction steps
+- expected vs actual behavior
+- sanitized logs warning
+- screenshots
+- additional context
+- default title prefix [Bug]
+
+Do not assign anyone automatically.
+Do not require a label if the bug label does not already exist.
+
+Create a small branch and PR for this change only.
+Do not modify application code or release state.
+
+Return branch, commit, PR URL, and changed file.
