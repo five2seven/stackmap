@@ -1,0 +1,92 @@
+Initial read-only review of draft PR #15 at head 1235b832b6ed2f22623b90eb885134bde9b57b99.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Verify Task 8 fully satisfies deployment, backup, upgrade, persistence, failure-handling, and Portainer validation requirements without changing product scope.
+
+Confirm exact-head CI run 31339564793 passed.
+
+Pay particular attention to:
+- cold /config backup/restore correctness
+- failed/unsupported upgrade behavior
+- unwritable-volume failure diagnostics
+- restart/recreation persistence
+- graceful shutdown
+- concurrent-client behavior
+- preservation of Task 5 backup/restore
+- Task 6 receipt/database compatibility
+- Task 7 retired IndexedDB/migration paths
+- Compose/Portainer contract accuracy
+- README/architecture operational guidance
+
+Report Blocking, Important, Minor, and No issue findings.
+
+Do not modify files, mark ready, merge, advance planning, or begin Task 9.
+
+---
+
+Send Codex this:
+
+```text
+PR #15 review passed.
+
+Follow AGENTS.md.
+
+Mark PR #15 ready and merge it normally at head 1235b832b6ed2f22623b90eb885134bde9b57b99.
+
+Then sync local main with origin/main.
+
+Do not advance planning or begin Task 9.
+
+Return merge commit and final main state.
+```
+
+---
+
+Next is the **planning advancement after Task 8**. Send Codex:
+
+```text
+Task 8 is merged as fe921dd77c7405d69ce02634f21745210b9b8466.
+
+Follow AGENTS.md and perform planning advancement only:
+- Record Task 8 as Complete with final implementation/merge traceability.
+- Evaluate Task 9 against its dependencies and mark it Ready only if satisfied.
+- Keep later tasks Blocked as appropriate.
+- Update only the planning files required by the repository process.
+- Validate the planning diff.
+- Commit, push a new planning branch, and open a draft PR.
+
+Do not implement Task 9 or modify application code.
+
+Return the branch, commit, Entire checkpoint, PR, task statuses, and validation result.
+```
+
+---
+
+PR #15 review passed.
+
+Follow AGENTS.md.
+
+Mark PR #15 ready and merge it normally at head 1235b832b6ed2f22623b90eb885134bde9b57b99.
+
+Then sync local main with origin/main.
+
+Do not advance planning or begin Task 9.
+
+Return merge commit and final main state.
+
+---
+
+Advance planning after Task 8.
+
+Follow AGENTS.md.
+
+Task 8 merge commit:
+fe921dd77c7405d69ce02634f21745210b9b8466
+
+Create the planning branch/PR, mark Task 8 Complete, evaluate Task 9 readiness, and update only the required planning files.
+
+Do not implement Task 9.
+Do not merge the planning PR.
+
+Return branch, commit, Entire checkpoint, PR URL, task statuses, and validation.
