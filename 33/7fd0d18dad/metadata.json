@@ -1,0 +1,29 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "337fd0d18dad",
+  "strategy": "manual-commit",
+  "branch": "codex/sqlite-release-preparation",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".github/workflows/deploy-cloudflare-pages.yml",
+    ".github/workflows/publish-container.yml",
+    "README.md",
+    "docs/release-checklist.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/33/7fd0d18dad/0/metadata.json",
+      "transcript": "/33/7fd0d18dad/0/full.jsonl",
+      "compact_transcript": "/33/7fd0d18dad/0/transcript.jsonl",
+      "content_hash": "/33/7fd0d18dad/0/content_hash.txt",
+      "prompt": "/33/7fd0d18dad/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 399860,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 19381760,
+    "output_tokens": 47142,
+    "api_call_count": 163
+  }
+}
