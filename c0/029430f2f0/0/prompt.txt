@@ -246,3 +246,17 @@ Do not dispatch workflows, publish, deploy, tag, release, advance planning, or s
 If findings remain, do not modify or merge; report them.
 
 Return recommendation, findings, validation, merge commit if created, and final main state.
+
+---
+
+Close out the SQLite migration plan after Task 10.
+
+Follow AGENTS.md.
+
+Record Task 10 as Complete with PR #19, merge commit 426aacb5e7b98da9739f37904fb606571421787f, implementation commits/checkpoints, validation, final datastore authority, and limitations.
+
+There is no Task 11. Mark the migration plan complete and update only the required planning files.
+
+Do not publish, deploy, tag, release, or change application/workflow code.
+
+Commit, push a planning branch, open a draft PR, and return branch, commit, Entire checkpoint, PR URL, and validation.
