@@ -63,3 +63,19 @@ If ready:
 Do not begin Task 10.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement Task 10 on codex/sqlite-release-preparation.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Align release-facing documentation, commands, links, limitations, deployment/backup/upgrade guidance, demo boundaries, checklist, and release notes with the validated implementation.
+
+Run the required production, demo, and applicable container validation.
+
+Do not add product features, change persistence, tag, publish a release, or alter release artifacts.
+
+Commit, push, open a draft PR, and wait for exact-head CI.
+
+Return commit, Entire checkpoint, PR URL, validation summary, and CI result.
