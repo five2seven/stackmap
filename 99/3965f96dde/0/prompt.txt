@@ -90,3 +90,16 @@ Do not implement Task 9.
 Do not merge the planning PR.
 
 Return branch, commit, Entire checkpoint, PR URL, task statuses, and validation.
+
+---
+
+The proposed Task 9 public-demo behavior is explicitly approved.
+
+Update existing planning PR #16 only:
+- record the approval
+- mark Task 9 Ready
+- keep Task 10 Blocked
+- do not implement Task 9
+- do not merge PR #16
+
+Follow AGENTS.md. Validate, commit, push, and return the new head/checkpoint.
