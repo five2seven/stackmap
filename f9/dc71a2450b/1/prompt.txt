@@ -1,0 +1,42 @@
+Initial read-only review of draft PR #15 at head 1235b832b6ed2f22623b90eb885134bde9b57b99.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Verify Task 8 fully satisfies deployment, backup, upgrade, persistence, failure-handling, and Portainer validation requirements without changing product scope.
+
+Confirm exact-head CI run 31339564793 passed.
+
+Pay particular attention to:
+- cold /config backup/restore correctness
+- failed/unsupported upgrade behavior
+- unwritable-volume failure diagnostics
+- restart/recreation persistence
+- graceful shutdown
+- concurrent-client behavior
+- preservation of Task 5 backup/restore
+- Task 6 receipt/database compatibility
+- Task 7 retired IndexedDB/migration paths
+- Compose/Portainer contract accuracy
+- README/architecture operational guidance
+
+Report Blocking, Important, Minor, and No issue findings.
+
+Do not modify files, mark ready, merge, advance planning, or begin Task 9.
+
+---
+
+Send Codex this:
+
+```text
+PR #15 review passed.
+
+Follow AGENTS.md.
+
+Mark PR #15 ready and merge it normally at head 1235b832b6ed2f22623b90eb885134bde9b57b99.
+
+Then sync local main with origin/main.
+
+Do not advance planning or begin Task 9.
+
+Return merge commit and final main state.
+```
