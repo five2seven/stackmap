@@ -1,0 +1,50 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ce876509e838",
+  "strategy": "manual-commit",
+  "branch": "codex/public-demo-mode",
+  "checkpoints_count": 2,
+  "files_touched": [
+    ".dockerignore",
+    ".github/workflows/deploy-cloudflare-pages.yml",
+    ".github/workflows/publish-container.yml",
+    ".gitignore",
+    "docs/architecture.md",
+    "e2e/demo/stackmap-demo.spec.ts",
+    "eslint.config.js",
+    "package.json",
+    "playwright.config.ts",
+    "playwright.demo.config.ts",
+    "public-demo/_redirects",
+    "scripts/deploy-cloudflare.ps1",
+    "scripts/validate-demo-build.mjs",
+    "src/App.css",
+    "src/App.test.tsx",
+    "src/App.tsx",
+    "src/data/demoRepository.test.ts",
+    "src/data/demoRepository.ts",
+    "src/data/demoSampleData.ts",
+    "src/main.tsx",
+    "src/runtime/demoRuntime.ts",
+    "src/runtime/productionRuntime.ts",
+    "src/vite-env.d.ts",
+    "tsconfig.app.json",
+    "vite.config.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ce/876509e838/0/metadata.json",
+      "transcript": "/ce/876509e838/0/full.jsonl",
+      "compact_transcript": "/ce/876509e838/0/transcript.jsonl",
+      "content_hash": "/ce/876509e838/0/content_hash.txt",
+      "prompt": "/ce/876509e838/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 353825,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 10839552,
+    "output_tokens": 33474,
+    "api_call_count": 74
+  }
+}
