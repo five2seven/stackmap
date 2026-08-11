@@ -1,0 +1,29 @@
+Review PR #17 at exact head 8b5041f7624f9c2ae8f1429803980c12f67972f4 against origin/main.
+
+Follow AGENTS.md and docs/current-task.md. Review Task 9 completely, including demo isolation, in-memory/session-only behavior, sample data, production-runtime separation, Cloudflare Pages build, artifact safeguards, tests, and scope.
+
+Do not modify files or PR state.
+
+Report only:
+- Blocking findings
+- Important findings
+- Minor findings
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge, advance planning, or start Task 10.
+
+---
+
+PR #17 review passed.
+
+Follow AGENTS.md.
+
+Mark PR #17 ready and merge normally at head 8b5041f7624f9c2ae8f1429803980c12f67972f4.
+
+Then sync local main with origin/main.
+
+Do not advance planning or begin Task 10.
+
+Return merge commit and final main state.
