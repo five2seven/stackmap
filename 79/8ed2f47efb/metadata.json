@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "798ed2f47efb",
+  "strategy": "manual-commit",
+  "branch": "codex/workflow-publication-safety",
+  "checkpoints_count": 3,
+  "files_touched": [
+    ".github/workflows/deploy-cloudflare-pages.yml",
+    ".github/workflows/publish-container.yml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/79/8ed2f47efb/0/metadata.json",
+      "transcript": "/79/8ed2f47efb/0/full.jsonl",
+      "compact_transcript": "/79/8ed2f47efb/0/transcript.jsonl",
+      "content_hash": "/79/8ed2f47efb/0/content_hash.txt",
+      "prompt": "/79/8ed2f47efb/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 362149,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 18267648,
+    "output_tokens": 41775,
+    "api_call_count": 143
+  }
+}

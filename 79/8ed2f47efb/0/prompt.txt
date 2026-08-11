@@ -1,0 +1,156 @@
+Review PR #17 at exact head 8b5041f7624f9c2ae8f1429803980c12f67972f4 against origin/main.
+
+Follow AGENTS.md and docs/current-task.md. Review Task 9 completely, including demo isolation, in-memory/session-only behavior, sample data, production-runtime separation, Cloudflare Pages build, artifact safeguards, tests, and scope.
+
+Do not modify files or PR state.
+
+Report only:
+- Blocking findings
+- Important findings
+- Minor findings
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge, advance planning, or start Task 10.
+
+---
+
+PR #17 review passed.
+
+Follow AGENTS.md.
+
+Mark PR #17 ready and merge normally at head 8b5041f7624f9c2ae8f1429803980c12f67972f4.
+
+Then sync local main with origin/main.
+
+Do not advance planning or begin Task 10.
+
+Return merge commit and final main state.
+
+---
+
+Advance planning after Task 9.
+
+Follow AGENTS.md.
+
+Record Task 9 as Complete with PR #17 and merge commit 48a34ac6c0dc27cb73f15726ab8c687d89cd5bd4.
+
+Evaluate Task 10 readiness and update only the required planning files.
+
+Do not implement Task 10.
+Do not merge the planning PR.
+
+Return branch, commit, Entire checkpoint, PR URL, task statuses, and validation.
+
+---
+
+Review planning PR #18.
+
+Follow AGENTS.md.
+
+Verify:
+- Task 9 is accurately Complete
+- Task 10 is the only Ready task
+- only planning files changed
+- Task 10 implementation did not begin
+
+If ready:
+- mark PR #18 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin Task 10.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement Task 10 on codex/sqlite-release-preparation.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Align release-facing documentation, commands, links, limitations, deployment/backup/upgrade guidance, demo boundaries, checklist, and release notes with the validated implementation.
+
+Run the required production, demo, and applicable container validation.
+
+Do not add product features, change persistence, tag, publish a release, or alter release artifacts.
+
+Commit, push, open a draft PR, and wait for exact-head CI.
+
+Return commit, Entire checkpoint, PR URL, validation summary, and CI result.
+
+---
+
+Review PR #19 at exact head c484da4e581484567a27b8cd3d53cf97d62221bd against origin/main.
+
+Follow AGENTS.md and docs/current-task.md. Review Task 10 completely.
+
+Do not modify files or PR state.
+
+Report:
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Pay particular attention to documentation accuracy, commands/links, release readiness, production-vs-demo boundaries, and the unpublished demo/TLS status.
+
+Do not merge, publish/tag/release, deploy Pages, advance planning, or perform post-Task-10 work.
+
+---
+
+Fix only the two PR #19 review findings on codex/sqlite-release-preparation.
+
+Follow AGENTS.md.
+
+1. Update docs/release-checklist.md to state clearly that merging to main currently triggers:
+   - GHCR latest image publication
+   - Cloudflare Pages deployment
+   unless/until those workflows are separately gated.
+
+2. Update README clone guidance to state that repository access/authentication is required while the repo is private, or otherwise make the publication checklist explicitly require verifying public repository visibility before publishing those instructions.
+
+Do not change workflows, implementation, release artifacts, planning, or publish/deploy anything.
+
+Validate, commit, push, keep PR #19 draft, and return commit, Entire checkpoint, validation, and re-review readiness.
+
+---
+
+Final re-review PR #19 at head 7f1f38fd5afa2ce1d97d70e2dc0315c8c61374f6.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Verify the two prior findings are resolved and exact-head CI passed.
+
+If ready:
+- mark PR #19 ready
+- merge normally
+- sync local main with origin/main
+
+Do not publish/tag/release, deploy Pages, advance planning, or begin post-Task-10 work.
+
+If findings remain, do not modify or merge; report them.
+
+Return recommendation, findings, validation, merge commit if created, and final main state.
+
+---
+
+Final re-review PR #19 at head 7f1f38fd5afa2ce1d97d70e2dc0315c8c61374f6.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Verify the two prior findings are resolved and exact-head CI passed.
+
+If ready:
+- mark PR #19 ready
+- merge normally
+- sync local main with origin/main
+
+Do not publish/tag/release, deploy Pages, advance planning, or begin post-Task-10 work.
+
+If findings remain, do not modify or merge; report them.
+
+Return recommendation, findings, validation, merge commit if created, and final main state.
