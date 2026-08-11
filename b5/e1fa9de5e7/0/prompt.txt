@@ -27,3 +27,18 @@ Then sync local main with origin/main.
 Do not advance planning or begin Task 10.
 
 Return merge commit and final main state.
+
+---
+
+Advance planning after Task 9.
+
+Follow AGENTS.md.
+
+Record Task 9 as Complete with PR #17 and merge commit 48a34ac6c0dc27cb73f15726ab8c687d89cd5bd4.
+
+Evaluate Task 10 readiness and update only the required planning files.
+
+Do not implement Task 10.
+Do not merge the planning PR.
+
+Return branch, commit, Entire checkpoint, PR URL, task statuses, and validation.
