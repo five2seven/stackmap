@@ -1,0 +1,68 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b93fcc760099",
+  "session_id": "019ff0fc-38d9-7f60-8904-06b532623ab4",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-11T14:45:59.6122707Z",
+  "branch": "codex/sqlite-release-preparation",
+  "checkpoints_count": 2,
+  "save_step_count": 3,
+  "files_touched": [
+    "README.md",
+    "docs/architecture.md",
+    "docs/decisions.md",
+    "docs/deployment-and-operations.md",
+    "docs/product.md",
+    "docs/release-checklist.md",
+    "docs/release-notes.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "a946c0d0116c",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 202199,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7237120,
+    "output_tokens": 26393,
+    "api_call_count": 74
+  },
+  "session_metrics": {
+    "turn_count": 4
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-11T14:45:59.5061724Z",
+    "agent_lines": 0,
+    "agent_removed": 0,
+    "human_added": 252,
+    "human_modified": 25,
+    "human_removed": 0,
+    "total_committed": 252,
+    "total_lines_changed": 277,
+    "agent_percentage": 0,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 139,
+      "agent_lines_removed": 139
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 139,
+      "agent_lines_removed": 139
+    }
+  ]
+}

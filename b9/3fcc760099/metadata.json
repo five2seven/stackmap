@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b93fcc760099",
+  "strategy": "manual-commit",
+  "branch": "codex/sqlite-release-preparation",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "README.md",
+    "docs/architecture.md",
+    "docs/decisions.md",
+    "docs/deployment-and-operations.md",
+    "docs/product.md",
+    "docs/release-checklist.md",
+    "docs/release-notes.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b9/3fcc760099/0/metadata.json",
+      "transcript": "/b9/3fcc760099/0/full.jsonl",
+      "compact_transcript": "/b9/3fcc760099/0/transcript.jsonl",
+      "content_hash": "/b9/3fcc760099/0/content_hash.txt",
+      "prompt": "/b9/3fcc760099/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 202199,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 7237120,
+    "output_tokens": 26393,
+    "api_call_count": 74
+  }
+}
