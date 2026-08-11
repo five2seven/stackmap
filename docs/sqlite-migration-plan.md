@@ -10,7 +10,7 @@ JSON export remains supported. Legacy migration is opt-in and data-safe. Databas
 
 ## Phased backlog
 
-Tasks 1 through 8 are Complete, and Task 9 is Ready after explicit approval of the proposed public demo behavior on 2026-08-11. Task 10 remains Blocked by its listed dependency or an explicit decision to release without the optional demo.
+Tasks 1 through 9 are Complete. Task 10 is Ready because Task 9 is Complete and no unresolved technical or product decision blocks release preparation.
 
 ### 1. API, SQLite, and target-runtime proof
 
@@ -118,7 +118,7 @@ Tasks 1 through 8 are Complete, and Task 9 is Ready after explicit approval of t
 
 ### 9. Public demo mode
 
-- **Status:** Ready
+- **Status:** Complete
 - **Branch:** `codex/public-demo-mode`
 - **Goal:** Provide a clearly separated Cloudflare Pages demo without production persistence.
 - **Datastore authority after completion:** The demo uses only an in-memory repository; the self-hosted product remains SQLite-authoritative.
@@ -127,11 +127,11 @@ Tasks 1 through 8 are Complete, and Task 9 is Ready after explicit approval of t
 - **Acceptance criteria:** The demo starts with sample data, clearly identifies demo mode, discards changes on refresh, and neither reads nor writes IndexedDB or the production API.
 - **Required tests:** Repository-isolation, sample-data, banner, reset, no-persistence, build, and focused E2E coverage.
 - **Dependencies:** Task 8 Complete and approval of the public demo behavior.
-- **Completion notes:** Ready after Task 8 completed and the proposed public demo behavior was explicitly approved on 2026-08-11. Implementation remains limited to the planned Task 9 feature branch. Task 10 remains Blocked by its listed dependency or an explicit decision to release without the optional demo.
+- **Completion notes:** Implemented on `codex/public-demo-mode` in commit `8b5041f7624f9c2ae8f1429803980c12f67972f4` (final head), with Entire checkpoint `ce876509e838`. PR #17 merged normally as `48a34ac6c0dc27cb73f15726ab8c687d89cd5bd4`. Validation passed: lint; 166 unit/integration/component tests; production build; isolated Cloudflare Pages demo build and artifact safeguard scan; 11 production browser E2E tests; focused demo browser E2E coverage; `git diff --check`; exact-head GitHub Actions run 31495211283; Semgrep; Linux/amd64 image build; container smoke validation; and deployment, backup, upgrade, and failure-handling validation. SQLite remains the sole production-authoritative inventory datastore through the same-origin HTTP API. The separate Cloudflare Pages demo statically selects only an in-memory repository with bundled sample data, keeps edits for the current page session, resets on refresh, and does not use the production API, SQLite, IndexedDB, Web Storage, or user-data upload. Known limitations: demo changes are intentionally temporary and unrecoverable after refresh; the demo provides no persistence, backup/restore, accounts, authentication, telemetry, or user-data upload; existing production backup, forward-migration, manual-restore, and ARM64 limitations remain. Task 10 is Ready because Task 9 is Complete and no unresolved technical or product decision blocks release preparation.
 
 ### 10. Documentation and SQLite release preparation
 
-- **Status:** Blocked
+- **Status:** Ready
 - **Branch:** `codex/sqlite-release-preparation`
 - **Goal:** Align public deployment, migration, backup, upgrade, release, and limitation documentation with validated behavior.
 - **Datastore authority after completion:** SQLite remains the documented production authority; demo memory and legacy migration boundaries are explicit.
@@ -140,7 +140,7 @@ Tasks 1 through 8 are Complete, and Task 9 is Ready after explicit approval of t
 - **Acceptance criteria:** Documentation matches implemented and validated behavior without stale frontend-only or split-authority claims.
 - **Required tests:** Link and command review, full application validation, and applicable Docker and demo smoke checks.
 - **Dependencies:** Task 9 Complete, or an explicit decision to release without the optional demo.
-- **Completion notes:** Pending.
+- **Completion notes:** Ready after Task 9 completed, passed exact-head review and validation, and merged normally. No unresolved technical or product decision blocks the documented release-preparation scope.
 
 ## Defaults and open decisions
 
