@@ -206,4 +206,4 @@ More technical context is available in [architecture](docs/architecture.md),
 
 ## License
 
-No license file has been added to this repository. All rights remain with the copyright holder unless a license is added.
+StackMap is licensed under the [MIT License](LICENSE).
