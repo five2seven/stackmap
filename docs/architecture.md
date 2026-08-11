@@ -4,7 +4,10 @@
 
 StackMap runs as a React, TypeScript, and Vite single-page application served by a Node.js 24/Fastify 5 process. The frontend uses a typed same-origin HTTP repository, and SQLite at `/config/stackmap.db` is authoritative for all normal inventory reads and writes. Multiple browsers share the same server inventory.
 
-Server-authoritative export and restore use exact-shape server backup schema version 1. JSON import compatibility for schema versions 1 through 3 remains in the application data format. The retired legacy browser boundary is no longer accessed, and browser data is neither read nor modified.
+Server-authoritative export and restore use exact-shape server backup schema version 1. The retained
+legacy JSON conversion library still understands application data schema versions 1 through 3, but the
+current production restore endpoint accepts only server backup schema version 1. The retired legacy
+browser boundary is no longer accessed, and browser data is neither read nor modified.
 
 ## Approved target architecture
 
@@ -34,11 +37,17 @@ The final production product is the self-hosted Node.js application with durable
 
 The normal production build statically selects the same-origin HTTP repository and server backup client. The demo build does not change or provide a fallback for that self-hosted runtime.
 
-The intended public demo URL remains `stackmap.rareobjectlabs.app`, and the source repository is `five2seven/stackmap`.
+The planned public demo URL is `https://stackmap.rareobjectlabs.app`, and the source repository is
+`https://github.com/five2seven/stackmap`.
 
 ## Testing
 
-Use Vitest and Testing Library for unit and component behavior, Playwright for critical browser workflows, and `npm run build` for production build validation. Tasks involving the Node runtime, better-sqlite3, container image, `/config`, persistence, health, permissions, shutdown, or upgrades also require relevant native and Docker validation at the time those capabilities are introduced.
+Use Vitest and Testing Library for unit and component behavior, Playwright for critical browser workflows,
+and `npm run build` for production build validation. The separate demo boundary is validated with
+`npm run build:demo` and `npm run test:e2e:demo`; the build includes a static artifact scan for forbidden
+production and persistence paths. Tasks involving the Node runtime, better-sqlite3, container image,
+`/config`, persistence, health, permissions, shutdown, or upgrades also require relevant native and
+Docker validation at the time those capabilities are introduced.
 
 ## Constraints
 
