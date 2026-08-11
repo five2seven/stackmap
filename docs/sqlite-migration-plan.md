@@ -10,7 +10,7 @@ JSON export remains supported. Legacy migration is opt-in and data-safe. Databas
 
 ## Phased backlog
 
-Tasks 1 through 9 are Complete. Task 10 is Ready because Task 9 is Complete and no unresolved technical or product decision blocks release preparation.
+Tasks 1 through 10 are Complete. The SQLite migration plan is complete, and there is no Task 11.
 
 ### 1. API, SQLite, and target-runtime proof
 
@@ -131,7 +131,7 @@ Tasks 1 through 9 are Complete. Task 10 is Ready because Task 9 is Complete and 
 
 ### 10. Documentation and SQLite release preparation
 
-- **Status:** Ready
+- **Status:** Complete
 - **Branch:** `codex/sqlite-release-preparation`
 - **Goal:** Align public deployment, migration, backup, upgrade, release, and limitation documentation with validated behavior.
 - **Datastore authority after completion:** SQLite remains the documented production authority; demo memory and legacy migration boundaries are explicit.
@@ -140,7 +140,7 @@ Tasks 1 through 9 are Complete. Task 10 is Ready because Task 9 is Complete and 
 - **Acceptance criteria:** Documentation matches implemented and validated behavior without stale frontend-only or split-authority claims.
 - **Required tests:** Link and command review, full application validation, and applicable Docker and demo smoke checks.
 - **Dependencies:** Task 9 Complete, or an explicit decision to release without the optional demo.
-- **Completion notes:** Ready after Task 9 completed, passed exact-head review and validation, and merged normally. No unresolved technical or product decision blocks the documented release-preparation scope.
+- **Completion notes:** Implemented on `codex/sqlite-release-preparation` in commits `c484da4e581484567a27b8cd3d53cf97d62221bd`, `7f1f38fd5afa2ce1d97d70e2dc0315c8c61374f6`, and `e5079b586d408a35053d9f7c92319baed2b123cf` (final head). Entire checkpoints: `b93fcc760099`, `2208f6d852ab`, and `337fd0d18dad`. PR #19 merged normally as `426aacb5e7b98da9739f37904fb606571421787f`. Validation passed: lint; 166 unit/integration/component tests; production build; isolated demo build and artifact safeguards; 11 production browser E2E tests; focused demo browser E2E coverage; production audit with zero vulnerabilities; PowerShell syntax, link, and command review; `git diff --check`; exact-head GitHub Actions run 31512402540; Semgrep; Linux/amd64 image build; container smoke validation; and deployment, backup, upgrade, and failure-handling validation. SQLite is the sole production-authoritative inventory datastore through the same-origin HTTP API. The separate Cloudflare Pages demo uses only bundled sample data and in-memory session state, resets on refresh, and does not use the production API, SQLite, IndexedDB, Web Storage, or user-data upload. Known limitations: cold backup requires a cleanly stopped container and the complete `/config` directory; live SQLite-file copying and live backup automation remain unsupported; database migrations are forward-only; rollback requires a compatible image or matching cold backup; server restore supports only backup schema version 1 and remains manual, destructive, and replace-only; authentication, accounts, telemetry, external persistence, Docker socket access, and ARM64 validation remain absent; the source repository remains private; and the public demo hostname remains unpublished until deployment and TLS health are verified. Ordinary `main` merges and tag pushes run validation without publishing or deploying; GHCR publication and Cloudflare Pages deployment each require an explicit `workflow_dispatch`. No tag, GitHub release, image publication, Pages deployment, or announcement was created by Task 10. Task 10 is Complete because its final head passed review and exact-head validation, PR #19 merged normally, and `main` was synchronized. There is no Task 11, so the SQLite migration plan is Complete.
 
 ## Defaults and open decisions
 
