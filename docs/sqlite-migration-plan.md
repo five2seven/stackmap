@@ -10,7 +10,7 @@ JSON export remains supported. Legacy migration is opt-in and data-safe. Databas
 
 ## Phased backlog
 
-Tasks 1 through 7 are Complete, and Task 8 is Ready. Tasks 9 and 10 remain Blocked until all listed dependencies are Complete and no unresolved decision or failed validation prevents safe advancement.
+Tasks 1 through 8 are Complete. Task 9 remains Blocked because its technical dependency is complete but the required explicit approval of the public demo behavior is not recorded. Task 10 remains Blocked by its listed dependency or an explicit decision to release without the optional demo.
 
 ### 1. API, SQLite, and target-runtime proof
 
@@ -105,7 +105,7 @@ Tasks 1 through 7 are Complete, and Task 8 is Ready. Tasks 9 and 10 remain Block
 
 ### 8. Deployment, backup, and upgrade validation
 
-- **Status:** Ready
+- **Status:** Complete
 - **Branch:** `codex/sqlite-deployment-validation`
 - **Goal:** Validate durable production behavior and failure handling end to end.
 - **Datastore authority after completion:** SQLite remains authoritative and its operational guarantees are validated.
@@ -114,7 +114,7 @@ Tasks 1 through 7 are Complete, and Task 8 is Ready. Tasks 9 and 10 remain Block
 - **Acceptance criteria:** Production-like scenarios pass without data loss; permission and upgrade failures fail closed and are diagnosable; backup and rollback limits are explicit.
 - **Required tests:** Full lint, unit, build, and E2E suite plus Docker recreation, migration, restore, concurrency, permissions, health, shutdown, and smoke validation.
 - **Dependencies:** Task 7 Complete.
-- **Completion notes:** Pending.
+- **Completion notes:** Implemented on `codex/sqlite-deployment-validation` in commits `bc829d32ada706c79e31598646f92a54231bd2d3`, `3ce9b8a8afa0a0f4462d45d2c6ce6b0f1e6e6990`, `425a06178f2be3f42ea102147851805f72893267`, and `1235b832b6ed2f22623b90eb885134bde9b57b99` (final head). Entire checkpoints: `98fe29af9f4d`, `ebefeddc2042`, `87e90a089282`, and `a8e4b9865c78`. PR #15 merged as `fe921dd77c7405d69ce02634f21745210b9b8466`. Validation passed: lint; 162 unit/integration/component tests; production build; 11 browser E2E tests; production audit with zero vulnerabilities; `git diff --check`; exact-head GitHub Actions run 31339564793; Semgrep; Linux/amd64 image build; and container schema, retired-API, receipt, Task 5 backup/restore, restart, recreation, forward migration, concurrent-client conflict, cold `/config` backup/restore, unsupported-schema, unwritable-volume, health, graceful-shutdown, and Portainer/Compose contract checks. SQLite remains the sole production-authoritative inventory datastore; normal application persistence uses only the same-origin HTTP API and SQLite; IndexedDB and legacy migration paths remain retired and browser data remains untouched. Known limitations: cold backup requires a cleanly stopped container and the complete `/config` directory; live SQLite-file copying and live backup automation remain unsupported; database migrations are forward-only; image rollback requires a compatible schema or matching cold backup; server restore supports only backup schema version 1 and remains manual and destructive; authentication, CORS, accounts, telemetry, external persistence, and ARM64 validation remain absent. Task 9 remains Blocked because Task 8 is Complete but the required explicit approval of the public demo behavior is not recorded. Task 10 remains Blocked by its listed dependency or an explicit decision to release without the optional demo.
 
 ### 9. Public demo mode
 
@@ -127,7 +127,7 @@ Tasks 1 through 7 are Complete, and Task 8 is Ready. Tasks 9 and 10 remain Block
 - **Acceptance criteria:** The demo starts with sample data, clearly identifies demo mode, discards changes on refresh, and neither reads nor writes IndexedDB or the production API.
 - **Required tests:** Repository-isolation, sample-data, banner, reset, no-persistence, build, and focused E2E coverage.
 - **Dependencies:** Task 8 Complete and approval of the public demo behavior.
-- **Completion notes:** Pending.
+- **Completion notes:** Blocked after Task 8 completion because the technical dependency is satisfied but explicit approval of the proposed public demo behavior has not been recorded. Do not begin implementation until that product decision is resolved.
 
 ### 10. Documentation and SQLite release preparation
 
