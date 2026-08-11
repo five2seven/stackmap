@@ -122,3 +122,22 @@ From clean synchronized main:
 - verify the public release page, tag, repository, GHCR latest, and live demo
 
 Return tag SHA, GitHub Release URL, validation, and final repository state.
+
+---
+
+Perform a post-v1.0.0 public README cleanup.
+
+Follow AGENTS.md.
+
+Update only public-facing documentation as needed:
+- replace the America/Chicago example with a neutral timezone
+- remove stale language about GHCR potentially being private
+- remove the empty Screenshots section
+- revise Development/Contributing so bug reports are welcome but support, fixes, and response times are not guaranteed
+- audit README for any remaining personal, machine-specific, company-specific, private-network, or stale pre-release information
+
+Do not change application behavior, workflows, version, tag, release, GHCR, or Pages.
+
+Do not add a license yet.
+
+Commit, push, open a draft PR, and return findings plus changed files.
