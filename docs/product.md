@@ -110,6 +110,14 @@ IndexedDB and Dexie are retired from the application. StackMap does not enumerat
 
 Users can download a versioned JSON backup of the server inventory and explicitly preview and confirm a complete server restore. Restore operates only on authoritative SQLite inventory and does not inspect or modify browser storage.
 
+## Public Demo
+
+The public Cloudflare Pages site is a separate, clearly labeled demonstration with bundled sample data.
+It uses an in-memory repository only: edits survive within the current page session and reset on refresh.
+It does not call the production API, access SQLite or IndexedDB, use Web Storage, upload visitor data, or
+offer server backup and restore. It is not a hosted edition of StackMap and does not change the
+self-hosted product's SQLite authority.
+
 ## MVP Non-Goals
 
 The MVP will not include:

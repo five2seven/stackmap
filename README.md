@@ -8,6 +8,12 @@ Homelab details often end up scattered across Compose files, notes, bookmarks, s
 
 Only a service name is required, so incomplete plans can be recorded and refined later. StackMap does not require an account or external service.
 
+The production application is the self-hosted container described below. A separate public-demo build is
+prepared for `https://stackmap.rareobjectlabs.app`, but that URL should not be treated as live until its
+deployment and TLS health are verified. The build contains bundled sample data only: edits remain in
+memory for the current page session and reset on refresh, with no StackMap server connection or user-data
+upload.
+
 ## Features
 
 - Host and service inventories
@@ -28,7 +34,7 @@ Screenshots are not available yet.
 
 ## Deploy with Portainer
 
-The container image is prepared for publication at `ghcr.io/five2seven/stackmap`. Confirm that the image is publicly available before deploying; it should not be considered published until the container workflow has completed successfully on `main`.
+The container image is prepared for publication at `ghcr.io/five2seven/stackmap`. Confirm that the image is publicly available before deploying; it should not be considered published until the container workflow has been explicitly dispatched and completed successfully. Ordinary `main` merges and tag pushes validate without publishing an image.
 
 GitHub Container Registry packages may initially be private. After the first successful publish, open the `stackmap` package on the GitHub organization or user profile, select **Package settings**, choose **Change visibility** under **Danger Zone**, and set it to **Public** before sharing the deployment instructions.
 
@@ -76,6 +82,9 @@ The left side of `"8088:8080"` is the host port. For example, use `"8090:8080"` 
 
 Browsers and devices using the same StackMap server share its SQLite inventory. StackMap does not access or delete browser-local IndexedDB data. Operators who did not complete the earlier migration workflow must recover that data with a compatible older release or an existing JSON export.
 
+For the complete deployment, permissions, health, backup, restore, upgrade, rollback, and recovery
+procedure, see [Deployment and operations](docs/deployment-and-operations.md).
+
 ### Updating in Portainer
 
 1. Download a server JSON backup.
@@ -98,6 +107,27 @@ starting the older image.
 4. Review the Port Map and Path Map for conflicts, shared paths, and incomplete entries.
 5. Resolve useful warnings as information becomes available.
 6. Export JSON backups regularly.
+
+## Public Demo
+
+The Cloudflare Pages site is an isolated product demonstration, not a hosted StackMap account or a
+deployment option for production inventory. It starts with a bundled sample homelab, clearly labels
+itself as a demo, and discards all changes when the page refreshes or closes. It does not use the
+production API, SQLite, IndexedDB, `localStorage`, or `sessionStorage`, and it provides no backup upload
+or restore controls.
+
+Developers can validate the exact static artifact locally:
+
+```powershell
+npm ci
+npm run build:demo
+npm run test:e2e:demo
+```
+
+`npm run build:demo` writes `dist-demo`, copies the Cloudflare Pages SPA redirect, and fails if the
+artifact contains known production API, SQLite, IndexedDB, or browser-storage paths. The normal
+`npm run build` command still produces the self-hosted HTTP/SQLite application in `dist` and
+`dist-server`.
 
 ## Data Storage
 
@@ -129,6 +159,10 @@ the image and database versions do not match; use a compatible image or the matc
 
 Portainer deployment from the published image is the primary installation method. Developers can build the production container locally:
 
+The source repository is currently private. The clone command requires a GitHub account with repository
+access and authenticated Git credentials; do not publish these source-build instructions as generally
+available until repository visibility has been verified.
+
 ```powershell
 git clone https://github.com/five2seven/stackmap.git
 cd stackmap
@@ -145,7 +179,9 @@ npm run dev
 npm test
 ```
 
-Additional validation commands are `npm run lint`, `npm run build`, and `npm run test:e2e`. Install the Playwright Chromium browser with `npx playwright install chromium` before the first end-to-end test run.
+Additional validation commands are `npm run lint`, `npm run build`, `npm run test:e2e`,
+`npm run build:demo`, and `npm run test:e2e:demo`. Install the Playwright Chromium browser with
+`npx playwright install chromium` before the first end-to-end test run.
 
 ## Current Limitations
 
@@ -158,12 +194,16 @@ Additional validation commands are `npm run lint`, `npm run build`, and `npm run
 - Docker Compose import is not supported.
 - Markdown export is not available yet.
 - Docker Compose skeleton export is not available yet.
+- Published container images are currently validated for Linux/amd64 only; ARM64 support is not yet validated.
 
 ## Development and Contributing
 
 StackMap uses React, TypeScript, Vite, Fastify, better-sqlite3, Vitest, Testing Library, and Playwright. Preserve strict TypeScript checks and run lint, tests, the production build, and relevant end-to-end tests before submitting a change.
 
-More technical context is available in [architecture](docs/architecture.md), [product documentation](docs/product.md), and [architecture decisions](docs/decisions.md).
+More technical context is available in [architecture](docs/architecture.md),
+[product documentation](docs/product.md), [architecture decisions](docs/decisions.md),
+[deployment and operations](docs/deployment-and-operations.md), and
+[release notes](docs/release-notes.md).
 
 ## License
 

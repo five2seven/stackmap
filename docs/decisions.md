@@ -10,17 +10,19 @@ Record durable technical choices here so future contributors understand their co
 
 **Decision:** Use React for the user interface, TypeScript for static checks, and Vite for development and production builds.
 
-**Consequences:** The starter has a fast local workflow and a small configuration surface. Product-specific architecture remains intentionally undecided.
+**Consequences:** The frontend retains a fast local workflow. Product-specific persistence and deployment
+are defined by ADR-006 and ADR-008.
 
 ## ADR-002: Frontend-only starter
 
-**Status:** Accepted
+**Status:** Superseded by ADR-006
 
 **Context:** The template must remain reusable across applications with different infrastructure needs.
 
 **Decision:** Do not include a backend, authentication, payments, external APIs, or app-specific features.
 
-**Consequences:** Applications add those capabilities only when their requirements and security model are known.
+**Consequences:** This described the original starter only. StackMap now includes the Fastify/SQLite
+backend approved in ADR-006; authentication, payments, telemetry, and external services remain excluded.
 
 ## ADR-003: Standard POC deployment foundation
 
@@ -28,9 +30,13 @@ Record durable technical choices here so future contributors understand their co
 
 **Context:** Applications created from the starter need a consistent proof-of-concept publishing convention without coupling application code to deployment providers.
 
-**Decision:** Use GitHub for source control, Cloudflare Pages for POC hosting, Cloudflare for DNS, and Porkbun as the registrar for the `rareobjectlabs.app` umbrella domain. Each application uses `stackmap.rareobjectlabs.app`, which defaults to `stackmap.rareobjectlabs.app`.
+**Decision:** Use GitHub for source control and Cloudflare for the isolated public demo and DNS under
+`stackmap.rareobjectlabs.app`. The production product is distributed as the self-hosted container, not
+as the Cloudflare Pages site.
 
-**Consequences:** POC URLs are predictable across applications. DNS and hosting remain external configuration concerns; this decision adds no Cloudflare-specific application code and provisions no resources.
+**Consequences:** The public URL is predictable, but it must never imply durable production hosting.
+DNS and Pages project configuration remain external operational concerns; the repository contains a
+separate static demo build and deployment automation but no persistent Cloudflare application services.
 
 ## ADR-004: MVP Data Model
 
@@ -134,15 +140,12 @@ Protocol values:
 - both
 - unknown
 
-### Local Data Versioning
+### Historical local data versioning
 
-- Store a schema version with the local dataset.
-- Keep migration logic separate from UI components.
-- Future schema changes should migrate existing data where practical.
-- Import files must be validated before replacing local data.
-- JSON schema version 2 accepts and migrates valid version 1 backups.
-- JSON schema version 3 accepts versions 1 and 2, converts legacy fixed paths in memory, and exports only generalized paths.
-- IndexedDB version 4 performs the corresponding local-record migration; database and backup schema versions are independent.
+- The original browser-local dataset used schema versions and IndexedDB migrations.
+- JSON application-data conversion for schema versions 1 through 3 remains retained compatibility code.
+- Current server restore accepts only exact-shape server backup schema version 1 and validates it before replacement.
+- IndexedDB access and browser migration are retired under ADR-007; SQLite schema migrations are separate and forward-only.
 
 ### Deletion Behavior
 
@@ -203,6 +206,25 @@ A non-empty host path is informationally shared only when more than one distinct
 **Decision:** Remove all IndexedDB and Dexie application access, the browser migration user interface, and the legacy migration API. Do not delete or modify browser data. Keep database migration 3 and its receipt table unchanged so databases produced during Task 6 continue to open normally. Preserve server backup and restore and JSON import compatibility.
 
 **Consequences:** StackMap starts directly from the same-origin HTTP API and SQLite regardless of browser-local data. Operators who did not complete migration must recover legacy data with a compatible older release or an existing JSON export. Completed Task 6 data remains authoritative and usable, but no new browser migration can be initiated by the current application.
+
+## ADR-008: Isolated public demo runtime
+
+**Status:** Accepted
+
+**Date:** 2026-08-11
+
+**Context:** Cloudflare Pages cannot run the self-hosted Node.js/SQLite product, but a public demonstration
+is useful when it cannot receive, expose, or persist visitor inventory.
+
+**Decision:** Build a separate static Cloudflare Pages artifact that selects an in-memory repository at
+build time and loads bundled sample data. Demo edits last only for the current page session and reset on
+refresh. Clearly label demo mode and omit server backup/restore controls. The demo must not access the
+production API, SQLite, IndexedDB, Web Storage, or user-data upload. Keep the normal build statically
+bound to the same-origin HTTP repository and SQLite server.
+
+**Consequences:** The Pages site is safe for exploration but cannot be used as a persistent StackMap
+installation. Production remains the self-hosted container. Separate build, artifact, unit, and browser
+checks guard the boundary, and no fallback or synchronization path exists between the two runtimes.
 
 ## New decision template
 
