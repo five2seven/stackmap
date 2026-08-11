@@ -125,3 +125,19 @@ If ready:
 Do not begin Task 9.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement Task 9 on codex/public-demo-mode.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Build the approved Cloudflare Pages demo using bundled sample data and an in-memory repository only. Edits must be session-only and reset on refresh. Keep the demo clearly labeled and completely isolated from production API, SQLite, IndexedDB, and other persistence.
+
+Preserve self-hosted production behavior unchanged.
+
+Validate, commit, push, open a draft PR, and wait for exact-head CI.
+
+Do not implement Task 10, publish a release, or advance planning.
+
+Return commit, Entire checkpoint, PR URL, validation summary, CI result, and confirmation Task 10/planning were untouched.
