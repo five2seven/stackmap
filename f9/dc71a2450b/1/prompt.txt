@@ -40,3 +40,23 @@ Do not advance planning or begin Task 9.
 
 Return merge commit and final main state.
 ```
+
+---
+
+Next is the **planning advancement after Task 8**. Send Codex:
+
+```text
+Task 8 is merged as fe921dd77c7405d69ce02634f21745210b9b8466.
+
+Follow AGENTS.md and perform planning advancement only:
+- Record Task 8 as Complete with final implementation/merge traceability.
+- Evaluate Task 9 against its dependencies and mark it Ready only if satisfied.
+- Keep later tasks Blocked as appropriate.
+- Update only the planning files required by the repository process.
+- Validate the planning diff.
+- Commit, push a new planning branch, and open a draft PR.
+
+Do not implement Task 9 or modify application code.
+
+Return the branch, commit, Entire checkpoint, PR, task statuses, and validation result.
+```
