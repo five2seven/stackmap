@@ -34,7 +34,7 @@ Screenshots are not available yet.
 
 ## Deploy with Portainer
 
-The container image is prepared for publication at `ghcr.io/five2seven/stackmap`. Confirm that the image is publicly available before deploying; it should not be considered published until the container workflow has completed successfully on `main`.
+The container image is prepared for publication at `ghcr.io/five2seven/stackmap`. Confirm that the image is publicly available before deploying; it should not be considered published until the container workflow has been explicitly dispatched and completed successfully. Ordinary `main` merges and tag pushes validate without publishing an image.
 
 GitHub Container Registry packages may initially be private. After the first successful publish, open the `stackmap` package on the GitHub organization or user profile, select **Package settings**, choose **Change visibility** under **Danger Zone**, and set it to **Public** before sharing the deployment instructions.
 

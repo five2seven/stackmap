@@ -39,12 +39,16 @@
 
 ## Publication boundary
 
-Until those workflows are separately gated, every merge to `main` triggers both publication of the
-`ghcr.io/five2seven/stackmap:latest` image and deployment of the Cloudflare Pages demo. Approval to merge
-therefore also authorizes those two automatic actions; do not merge while either action is unintended.
-Version tags, GitHub releases, and announcements remain separate actions requiring explicit approval.
+Pull requests and ordinary pushes or merges to `main` run validation only. Publishing the
+`ghcr.io/five2seven/stackmap:latest` image requires an explicit `workflow_dispatch` of the container
+workflow, and deploying the Cloudflare Pages demo requires an explicit `workflow_dispatch` of the Pages
+workflow. Tag pushes run validation but do not publish an image automatically. Version tags, GitHub
+releases, and announcements remain separate actions requiring explicit approval.
 
-- [ ] Merge approval explicitly accounts for automatic GHCR `latest` publication and Cloudflare Pages deployment
+- [ ] Ordinary `main` validation completes without GHCR publication or Cloudflare Pages deployment
+- [ ] GHCR `latest` publication is separately approved and explicitly dispatched
+- [ ] Cloudflare Pages deployment is separately approved and explicitly dispatched
+- [ ] Tag creation is not treated as image publication
 - [ ] Release review separately authorizes any version tag, GitHub release, or announcement
 - [ ] Intended version and release notes are approved before tagging
 - [ ] GHCR image visibility and documented tag are verified before directing users to deploy
@@ -54,7 +58,7 @@ Version tags, GitHub releases, and announcements remain separate actions requiri
 ## After merge
 
 - [ ] `main` pushed and synchronized with `origin/main`; Entire checkpoint recorded
-- [ ] GHCR, Portainer, and public-demo checks completed when relevant
+- [ ] GHCR, Portainer, and public-demo checks completed when separately dispatched and relevant
 - [ ] Completed task's datastore authority and limitations recorded
 - [ ] No planning-file commit made directly on `main`
 - [ ] If advancement is safe, a separate planning branch and pull request update the plan, current task, and checklist

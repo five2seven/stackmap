@@ -47,6 +47,7 @@ jobs:
         run: npm run test:e2e:demo
 
       - name: Deploy to Cloudflare Pages
+        if: github.event_name == 'workflow_dispatch'
         run: npx wrangler pages deploy dist-demo --project-name=stackmap --branch=main
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
