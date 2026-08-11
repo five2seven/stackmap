@@ -27,10 +27,6 @@ connection or user-data upload.
 - Versioned JSON export of the current server inventory
 - Shared durable inventory in SQLite through the same-origin API
 
-## Screenshots
-
-Screenshots are not available yet.
-
 ## Deploy with Portainer
 
 The production container is published at `ghcr.io/five2seven/stackmap:latest`. Ordinary `main` merges and
