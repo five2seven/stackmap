@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "79a100548a2e",
+  "session_id": "019ff1e4-daae-76b1-8f32-d43e9a52e00f",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-11T20:43:30.2346186Z",
+  "branch": "codex/add-mit-license",
+  "checkpoints_count": 1,
+  "save_step_count": 2,
+  "files_touched": [
+    "LICENSE",
+    "README.md"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "ed0ec645075e",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 558717,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 20068864,
+    "output_tokens": 46909,
+    "api_call_count": 175
+  },
+  "session_metrics": {
+    "turn_count": 7
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-11T20:43:30.0579457Z",
+    "agent_lines": 0,
+    "agent_removed": 5,
+    "human_added": 25,
+    "human_modified": 198,
+    "human_removed": 0,
+    "total_committed": 219,
+    "total_lines_changed": 228,
+    "agent_percentage": 2.1929824561403506,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 139,
+      "agent_lines_removed": 139
+    }
+  ]
+}

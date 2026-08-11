@@ -1,0 +1,143 @@
+Publish StackMap's approved live artifacts from current main.
+
+Follow AGENTS.md and the release checklist.
+
+Explicitly authorized:
+- dispatch the container workflow to publish ghcr.io/five2seven/stackmap:latest
+- dispatch the Cloudflare Pages workflow to deploy the public demo
+
+After both complete, verify:
+- GHCR latest exists and is deployable
+- the Pages deployment succeeds
+- the demo remains isolated/session-only
+- https://stackmap.rareobjectlabs.app has healthy TLS and loads correctly
+
+Do not create a version tag or GitHub release yet.
+Do not change code/planning unless publication itself exposes a blocking defect.
+
+Return workflow runs, publication/deployment results, GHCR visibility, demo/TLS status, and any remaining release blockers.
+
+---
+
+Diagnose and resolve the StackMap custom-domain TLS blocker.
+
+Current state:
+- GHCR latest published successfully
+- Pages deployment is healthy at https://75266e19.stackmap-7c5.pages.dev/
+- https://stackmap.rareobjectlabs.app returns Cloudflare 525
+
+Follow AGENTS.md.
+
+Determine whether the issue is DNS, Pages custom-domain configuration, certificate provisioning, or another Cloudflare setting. Fix it if the available tooling permits; otherwise give me the exact manual Cloudflare steps required.
+
+Afterward verify the custom hostname returns HTTP 200 with healthy TLS and the demo still resets on refresh.
+
+Do not change application code, create a tag/release, or republish artifacts unless required for the TLS fix.
+
+Return root cause, actions taken, final hostname/TLS status, and any remaining blocker.
+
+---
+
+Add a Bug Report issue template to StackMap.
+
+Follow AGENTS.md.
+
+Create:
+.github/ISSUE_TEMPLATE/bug_report.md
+
+Use the bug-report template we discussed:
+- self-hosted/no guaranteed support note
+- StackMap version
+- deployment method
+- host OS
+- architecture
+- browser/version
+- bug description
+- reproduction steps
+- expected vs actual behavior
+- sanitized logs warning
+- screenshots
+- additional context
+- default title prefix [Bug]
+
+Do not assign anyone automatically.
+Do not require a label if the bug label does not already exist.
+
+Create a small branch and PR for this change only.
+Do not modify application code or release state.
+
+Return branch, commit, PR URL, and changed file.
+
+---
+
+Prepare StackMap v1.0.0 release metadata.
+
+Follow AGENTS.md and the release checklist.
+
+- update package/app version from 0.0.0 to 1.0.0 where appropriate
+- update release notes only as needed for v1.0.0
+- verify public clone, README, Docker, demo, and release links
+- validate everything
+
+Do not create the tag or GitHub Release yet.
+Do not republish GHCR or redeploy Pages.
+
+Commit, push, open a draft PR, and return commit, Entire checkpoint, PR URL, and validation.
+
+---
+
+Review PR #25 at head 213c031d71891d1e9e8eb2fffec27b743555e098.
+
+Follow AGENTS.md and the release checklist.
+
+Verify the v1.0.0 metadata changes are correct and limited to:
+- package/lockfile version 1.0.0
+- health-version expectations
+- release-note status
+- README public-release statements
+
+Confirm CI/Semgrep and public clone/GHCR/demo checks passed.
+
+If ready:
+- mark PR #25 ready
+- merge normally
+- sync local main with origin/main
+
+Do not create the v1.0.0 tag or GitHub Release yet.
+Do not republish GHCR or redeploy Pages.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Create the StackMap v1.0.0 release.
+
+Follow AGENTS.md and the release checklist.
+
+From clean synchronized main:
+- create annotated tag v1.0.0 at current main
+- push the tag
+- create the GitHub Release for v1.0.0 using the prepared release notes
+- do not republish GHCR or redeploy Pages
+- verify the public release page, tag, repository, GHCR latest, and live demo
+
+Return tag SHA, GitHub Release URL, validation, and final repository state.
+
+---
+
+Perform a post-v1.0.0 public README cleanup.
+
+Follow AGENTS.md.
+
+Update only public-facing documentation as needed:
+- replace the America/Chicago example with a neutral timezone
+- remove stale language about GHCR potentially being private
+- remove the empty Screenshots section
+- revise Development/Contributing so bug reports are welcome but support, fixes, and response times are not guaranteed
+- audit README for any remaining personal, machine-specific, company-specific, private-network, or stale pre-release information
+
+Do not change application behavior, workflows, version, tag, release, GHCR, or Pages.
+
+Do not add a license yet.
+
+Commit, push, open a draft PR, and return findings plus changed files.

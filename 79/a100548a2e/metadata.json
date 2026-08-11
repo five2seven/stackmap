@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "79a100548a2e",
+  "strategy": "manual-commit",
+  "branch": "codex/add-mit-license",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "LICENSE",
+    "README.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/79/a100548a2e/0/metadata.json",
+      "transcript": "/79/a100548a2e/0/full.jsonl",
+      "compact_transcript": "/79/a100548a2e/0/transcript.jsonl",
+      "content_hash": "/79/a100548a2e/0/content_hash.txt",
+      "prompt": "/79/a100548a2e/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 558717,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 20068864,
+    "output_tokens": 46909,
+    "api_call_count": 175
+  }
+}
