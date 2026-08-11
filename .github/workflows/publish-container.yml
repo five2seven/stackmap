@@ -353,6 +353,10 @@ jobs:
           grep --quiet 'graceful shutdown started' /tmp/stackmap-container.log
           grep --quiet 'graceful shutdown completed' /tmp/stackmap-container.log
 
+      - name: Validate deployment, backup, upgrade, and failure handling
+        shell: bash
+        run: bash scripts/validate-deployment.sh stackmap:validation
+
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push'
         uses: docker/login-action@v3

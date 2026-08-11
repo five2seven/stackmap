@@ -22,6 +22,12 @@ The existing host, service, port, path, dependency, validation, deletion, search
 
 Database migrations must be transactional and fail closed. Data migration and restore operations must preserve IDs and timestamps, validate input, and protect existing data through explicit confirmation and rollback behavior.
 
+Production upgrade validation confirms that databases migrate forward in place while preserving
+installation identity and inventory. Unknown migration versions fail startup without serving or changing
+inventory. Rollback is therefore an image-and-database compatibility operation, not a reverse migration:
+an older image requires a schema it recognizes or a matching cold backup of the complete stopped
+`/config` directory. A live copy of only `stackmap.db` is not an operationally supported backup boundary.
+
 ## Hosting
 
 The final production product is the self-hosted Node.js application with durable `/config` storage. Cloudflare Pages cannot host that full product. A separate public demo may use Cloudflare Pages only with an in-memory repository, bundled sample data, session-only edits, a clear demo banner, and no IndexedDB or server persistence.
