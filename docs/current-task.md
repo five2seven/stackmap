@@ -2,7 +2,7 @@
 
 ## Portainer API import
 
-The completed SQLite migration backlog remains closed. StackMap v1.1 Portainer API import is a separately approved two-phase plan defined in `docs/v1.1-portainer-import-plan.md`.
+The completed SQLite migration backlog remains closed. The separately approved two-phase StackMap v1.1 Portainer API import plan defined in `docs/v1.1-portainer-import-plan.md` is Complete. No Phase 3 exists.
 
 ### Phase 1: Portainer discovery and preview
 
@@ -20,11 +20,24 @@ The completed SQLite migration backlog remains closed. StackMap v1.1 Portainer A
 
 ### Phase 2: Atomic confirmation, hardening, and release completion
 
-- **Status:** Ready
+- **Status:** Complete
 - **Implementation branch:** `codex/portainer-atomic-import`
-- **Goal:** Add explicit atomic import of the reviewed selection, durable non-secret repeat-import metadata, restore integration, full operational hardening, and v1.1 documentation.
-- **Datastore authority after completion:** SQLite remains the sole authoritative inventory and provenance datastore. Portainer remains a manual, read-only discovery source; credentials and previews remain volatile and non-authoritative.
-- **Required boundary:** Implement only Phase 2 from `docs/v1.1-portainer-import-plan.md`. Do not add synchronization, polling, background refresh, automatic import, update/merge/overwrite behavior, saved credentials, arbitrary Portainer origins, Docker socket/direct-host access, Portainer/Docker mutation, sensitive-field import, or public-demo integration.
-- **Dependencies:** Phase 1 is implemented, independently reviewed, merged normally, and recorded. No unresolved blocker remains.
+- **Implementation commit:** `763d8548b21b3ba98365947c4e2b70f1f8182521`
+- **Review-fix commit:** `0ded11911d4eae01661ee600d4d443cff0ab98ee`
+- **Entire checkpoints:** `ca5f8d79abef`, `7e055373eb13`
+- **Pull request:** #32
+- **Merge commit:** `05a4050fc6a9a5629a57c02b638897dcfd6883c3`
+- **Focused validation:** Initial focused Phase 2 coverage passed 29 tests. At the final reviewed head, focused UI, API, repository, and preview coverage passed 23/23, including explicit container selection, import-success/refresh-failure separation, exact candidate deselection, and rollback injection after all six transaction stages.
+- **Full validation:** At the final reviewed head, lint passed; the complete unit suite passed 196/196; production and demo builds passed; real server-backed production E2E passed 12/12; demo-isolation E2E passed 1/1; the production dependency audit reported zero vulnerabilities; and `git diff --check` passed. The exact-head Linux/amd64 container workflow passed its real TLS Portainer import, provenance, nested-selection, repeat-import, restart/recreation, restore-cleanup, non-root, read-only-root, `/config`, backup/restore, upgrade, health, and shutdown regressions.
+- **Exact-head CI:** At `0ded11911d4eae01661ee600d4d443cff0ab98ee`, the build/test/publish container workflow and Semgrep scan both passed.
+- **Datastore authority:** SQLite remains the sole authoritative inventory and provenance datastore. Portainer remains a manual, read-only discovery source; credentials and previews remain volatile, short-lived, and non-authoritative.
+- **Completion boundary:** Phase 2 added no synchronization, polling, background refresh, automatic import, update, merge, overwrite, or existing-service refresh behavior. The portable backup schema and public-demo isolation remain unchanged.
 
-Do not begin any later v1.1 work until Phase 2 is implemented, independently reviewed, merged normally, and recorded through a separate planning-closeout pull request.
+## Plan status
+
+- **Two-phase v1.1 Portainer import plan:** Complete
+- **Phase 1:** Complete
+- **Phase 2:** Complete
+- **Phase 3:** Does not exist
+
+This planning closeout does not tag or release v1.1.0 and does not authorize additional v1.1 implementation work.
