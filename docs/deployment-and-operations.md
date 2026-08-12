@@ -107,5 +107,6 @@ Pages Functions, bindings, remote storage, or user-data upload without a separat
 change.
 
 The command follows Cloudflare Pages
-[Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/) guidance. Treat the
-planned custom hostname as unpublished until both the Pages deployment and TLS endpoint are healthy.
+[Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/) guidance. The live
+public demo hostname is `https://stackmap.rareobjectlabs.app`; after any separately approved deployment,
+verify that its TLS endpoint is healthy and the session-only demo banner remains visible.
