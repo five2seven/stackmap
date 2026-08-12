@@ -20,4 +20,12 @@ describe('loadConfig', () => {
   it('rejects invalid ports', () => {
     expect(() => loadConfig({ PORT: 'nope' })).toThrow(/PORT/)
   })
+
+  it('disables Portainer import when unset and accepts only safe HTTPS configuration', () => {
+    expect(loadConfig({}).portainerUrl).toBeUndefined()
+    expect(loadConfig({ STACKMAP_PORTAINER_URL: 'https://portainer.example/' }).portainerUrl).toBe('https://portainer.example')
+    expect(() => loadConfig({ STACKMAP_PORTAINER_URL: 'http://portainer.example' })).toThrow(/HTTPS/)
+    expect(() => loadConfig({ STACKMAP_PORTAINER_URL: 'https://user:secret@portainer.example' })).toThrow(/credentials/)
+    expect(() => loadConfig({ STACKMAP_PORTAINER_URL: 'not a URL' })).toThrow(/valid HTTPS URL/)
+  })
 })

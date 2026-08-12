@@ -80,6 +80,7 @@ describe('StackMap service workflows', () => {
     )
     expect(screen.getByText('Public demo · session-only inventory')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Download current StackMap server backup' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Import from Portainer' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Restore backup' })).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Bundled demo service' })).toBeVisible()
   })

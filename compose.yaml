@@ -10,6 +10,7 @@ services:
     environment:
       - TZ=${TZ:-America/Chicago}
       - STACKMAP_DB_PATH=/config/stackmap.db
+      - STACKMAP_PORTAINER_URL=${STACKMAP_PORTAINER_URL:-}
     ports:
       - "${STACKMAP_PORT:-8088}:8080"
     healthcheck:

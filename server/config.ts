@@ -5,6 +5,7 @@ export interface ServerConfig {
   host: string
   port: number
   staticRoot: string
+  portainerUrl?: string
 }
 
 export function loadConfig(
@@ -18,6 +19,8 @@ export function loadConfig(
     throw new Error('PORT must be an integer between 1 and 65535')
   }
 
+  const portainerUrl = parsePortainerUrl(environment.STACKMAP_PORTAINER_URL)
+
   return {
     databasePath:
       environment.STACKMAP_DB_PATH ??
@@ -25,5 +28,20 @@ export function loadConfig(
     host: environment.HOST ?? '0.0.0.0',
     port,
     staticRoot: path.resolve(environment.STACKMAP_STATIC_ROOT ?? path.join(cwd, 'dist')),
+    ...(portainerUrl ? { portainerUrl } : {}),
   }
+}
+
+function parsePortainerUrl(value: string | undefined): string | undefined {
+  if (value === undefined || !value.trim()) return undefined
+  let parsed: URL
+  try {
+    parsed = new URL(value)
+  } catch {
+    throw new Error('STACKMAP_PORTAINER_URL must be a valid HTTPS URL')
+  }
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error('STACKMAP_PORTAINER_URL must be an HTTPS URL without credentials, query, or fragment')
+  }
+  return parsed.toString().replace(/\/$/, '')
 }

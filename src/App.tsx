@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import './App.css'
 import type { RestorePreview, ServerBackupClient } from './data/serverBackup'
 import type { StackMapRepository } from './data/repository'
@@ -35,9 +35,10 @@ export interface AppProps {
   repository: StackMapRepository
   backupClient?: ServerBackupClient
   mode?: 'production' | 'demo'
+  DiscoveryPanel?: ComponentType<{ hosts: Host[]; services: Service[] }>
 }
 
-function App({ repository, backupClient, mode = 'production' }: AppProps) {
+function App({ repository, backupClient, mode = 'production', DiscoveryPanel }: AppProps) {
   const [services, setServices] = useState<Service[]>([])
   const [hosts, setHosts] = useState<Host[]>([])
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
@@ -389,6 +390,8 @@ function App({ repository, backupClient, mode = 'production' }: AppProps) {
             onClose={() => setShowHosts(false)}
           />
         )}
+
+        {DiscoveryPanel && <DiscoveryPanel hosts={hosts} services={services} />}
 
         {activeView === 'services' ? (
           <>

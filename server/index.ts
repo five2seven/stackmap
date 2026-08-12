@@ -5,7 +5,12 @@ import { createShutdownHandler } from './shutdown.js'
 
 const config = loadConfig()
 const database = openDatabase(config.databasePath)
-const app = await buildApp({ database, staticRoot: config.staticRoot, logger: true })
+const app = await buildApp({
+  database,
+  staticRoot: config.staticRoot,
+  logger: true,
+  portainerUrl: config.portainerUrl,
+})
 
 const shutdown = createShutdownHandler({ app })
 const handleSignal = (signal: NodeJS.Signals) => {
