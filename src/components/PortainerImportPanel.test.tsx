@@ -32,10 +32,14 @@ describe('PortainerImportPanel', () => {
     expect(screen.queryByLabelText('Portainer API token')).not.toBeInTheDocument()
     await user.click(await screen.findByRole('checkbox', { name: 'Docker' }))
     await user.click(screen.getByRole('button', { name: 'Build preview' }))
+    const container = await screen.findByRole('checkbox', { name: /App exited/i })
+    expect(container).not.toBeChecked()
+    expect(screen.getByRole('button', { name: 'Import selected' })).toBeDisabled()
     expect(await screen.findByText('Only the selected new records will be created. Existing services are never updated.')).toBeVisible()
     expect(screen.getByText('Skipped volume.')).toBeVisible()
     expect(screen.getByRole('button', { name: 'Import selected' })).toBeDisabled()
     await user.selectOptions(screen.getByLabelText('Network'), 'a')
+    expect(screen.getByRole('button', { name: 'Import selected' })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: 'Cancel preview' }))
     expect(cancel).toHaveBeenCalledWith('preview')
   })
@@ -57,6 +61,7 @@ describe('PortainerImportPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Discover environments' }))
     await user.click(await screen.findByRole('checkbox', { name: 'Docker' }))
     await user.click(screen.getByRole('button', { name: 'Build preview' }))
+    await user.click(await screen.findByRole('checkbox', { name: /App running/i }))
     await user.click(screen.getByRole('checkbox', { name: /8080.*80/ }))
     await user.click(screen.getByRole('checkbox', { name: /\/srv.*\/data/ }))
     await user.click(screen.getByRole('checkbox', { name: /I reviewed this selection/ }))
@@ -65,6 +70,33 @@ describe('PortainerImportPanel', () => {
     expect(confirm.mock.calls[0][2][0]).toMatchObject({ id: 's', ports: [], paths: [] })
     expect(onImported).toHaveBeenCalled()
     expect(await screen.findByText('Imported 1 services and 1 hosts. Inventory revision 4.')).toBeVisible()
+  })
+
+  it('keeps a successful import complete when the following inventory refresh fails', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(portainerImportClient, 'status').mockResolvedValue({ enabled: true })
+    vi.spyOn(portainerImportClient, 'connect').mockResolvedValue({ sessionToken: 'opaque', environments: [{ id: 1, name: 'Docker', containerEngine: 'docker', publicUrl: '' }] })
+    vi.spyOn(portainerImportClient, 'preview').mockResolvedValue({
+      previewToken: 'preview', expectedInventoryRevision: 3, existingHosts: [],
+      hosts: [{ environmentId: 1, existingHostMatches: [], id: 'h', name: 'Docker', type: 'container-host', ipAddress: '', operatingSystem: 'Linux', notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
+      services: [{ environmentId: 1, containerId: 'c', sourceState: 'running', networkOptions: ['bridge'], alreadyBound: false, warnings: [], conflicts: [], id: 's', name: 'App', containerName: 'App', dockerImage: 'app:1', description: '', applicationUrl: '', status: 'active', hostId: 'h', internalUrl: '', ports: [], paths: [], network: 'bridge', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
+    })
+    const confirm = vi.spyOn(portainerImportClient, 'confirm').mockResolvedValue({ inventoryRevision: 4, hostIds: ['h'], serviceIds: ['s'] })
+    render(<PortainerImportPanel hosts={[]} services={[]} onImported={vi.fn().mockRejectedValue(new Error('refresh failed'))} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Import from Portainer' }))
+    await user.type(screen.getByLabelText('Portainer API token'), 'secret')
+    await user.click(screen.getByRole('button', { name: 'Discover environments' }))
+    await user.click(await screen.findByRole('checkbox', { name: 'Docker' }))
+    await user.click(screen.getByRole('button', { name: 'Build preview' }))
+    await user.click(await screen.findByRole('checkbox', { name: /App running/i }))
+    await user.click(screen.getByRole('checkbox', { name: /I reviewed this selection/ }))
+    await user.click(screen.getByRole('button', { name: 'Import selected' }))
+
+    expect(await screen.findByText('Imported 1 services and 1 hosts. Inventory revision 4.')).toBeVisible()
+    expect(screen.getByRole('alert')).toHaveTextContent('The import succeeded, but StackMap could not refresh the inventory.')
+    expect(screen.queryByRole('button', { name: 'Import selected' })).not.toBeInTheDocument()
+    expect(confirm).toHaveBeenCalledTimes(1)
   })
 
   it('recomputes host-scoped conflicts and stores nested deselection in the preview candidate', async () => {
@@ -85,7 +117,7 @@ describe('PortainerImportPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Discover environments' }))
     await user.click(await screen.findByRole('checkbox', { name: 'Docker' }))
     await user.click(screen.getByRole('button', { name: 'Build preview' }))
-    await screen.findByRole('checkbox', { name: /App running/i })
+    await user.click(await screen.findByRole('checkbox', { name: /App running/i }))
     expect(screen.queryByText(/Container name matches .* on the selected host/)).not.toBeInTheDocument()
     await user.selectOptions(screen.getByLabelText('Target host'), 'existing-host')
     expect(screen.getByText('Container name matches App on the selected host.')).toBeVisible()

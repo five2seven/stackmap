@@ -73,11 +73,13 @@ export interface PortainerImportResult {
   hostIds: string[]
   serviceIds: string[]
 }
+export type PortainerImportStage = 'source' | 'host' | 'service' | 'children' | 'binding' | 'revision'
 
 export class SqliteInventoryRepository {
   constructor(
     private readonly connection: Database.Database,
     private readonly now: () => string = () => new Date().toISOString(),
+    private readonly afterPortainerImportStage?: (stage: PortainerImportStage) => void,
   ) {}
 
   inventoryRevision(): number {
@@ -124,6 +126,7 @@ export class SqliteInventoryRepository {
         INSERT INTO portainer_sources (origin, created_at, last_imported_at) VALUES (?, ?, ?)
         ON CONFLICT(origin) DO UPDATE SET last_imported_at = excluded.last_imported_at
       `).run(selection.origin, importedAt, importedAt)
+      this.afterPortainerImportStage?.('source')
       const sourceId = this.connection.prepare('SELECT id FROM portainer_sources WHERE origin = ?').pluck().get(selection.origin) as number
       const bound = this.connection.prepare(`
         SELECT 1 FROM portainer_container_bindings
@@ -146,6 +149,7 @@ export class SqliteInventoryRepository {
       for (const { environmentId, host } of selection.hosts) {
         insertHost.run(host.id, host.name, host.type, host.ipAddress, host.operatingSystem, host.notes, host.createdAt, host.updatedAt)
         bindHost.run(sourceId, environmentId, host.id, importedAt)
+        this.afterPortainerImportStage?.('host')
       }
       const newlyBoundEnvironments = new Set(selection.hosts.map(({ environmentId }) => environmentId))
       for (const environmentId of new Set(selection.services.map((item) => item.environmentId))) {
@@ -161,14 +165,18 @@ export class SqliteInventoryRepository {
       for (const { environmentId, containerId, service } of selection.services) {
         if (!service.hostId || !hostExists.get(service.hostId)) throw new InventoryValidationError('Selected target host does not exist')
         this.insertService(service)
+        this.afterPortainerImportStage?.('service')
         this.replaceServiceChildren(service)
+        this.afterPortainerImportStage?.('children')
         bindContainer.run(sourceId, environmentId, containerId, service.id, importedAt)
+        this.afterPortainerImportStage?.('binding')
       }
       const nextRevision = revision + 1
       const updated = this.connection.prepare(`
         UPDATE application_metadata SET value = ? WHERE key = 'inventory_revision' AND value = ?
       `).run(String(nextRevision), storedValue)
       if (updated.changes !== 1) throw new PortainerImportConflictError('PORTAINER_PREVIEW_STALE')
+      this.afterPortainerImportStage?.('revision')
       return { inventoryRevision: nextRevision, hostIds: selection.hosts.map(({ host }) => host.id), serviceIds: selection.services.map(({ service }) => service.id) }
     })()
   }

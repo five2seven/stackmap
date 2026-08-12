@@ -48,7 +48,7 @@ export function PortainerImportPanel({ hosts, services, onImported }: Props) {
     try {
       const result = await portainerImportClient.preview(sessionToken, selectedEnvironments)
       setPreview(result)
-      setSelectedServices(result.services.filter(({ alreadyBound }) => !alreadyBound).map(({ id }) => id))
+      setSelectedServices([])
       setAcknowledged(false)
     } catch (caught) {
       if (caught instanceof PortainerImportError && caught.code === 'PORTAINER_SESSION_INVALID') {
@@ -76,9 +76,13 @@ export function PortainerImportPanel({ hosts, services, onImported }: Props) {
     try {
       const selected = displayedPreview.services.filter(({ id }) => selectedServices.includes(id))
       const imported = await portainerImportClient.confirm(displayedPreview.previewToken, displayedPreview.expectedInventoryRevision, selected)
-      await onImported()
       setResult(`Imported ${imported.serviceIds.length} services and ${imported.hostIds.length} hosts. Inventory revision ${imported.inventoryRevision}.`)
       setPreview(null); setSessionToken(''); setEnvironments([]); setSelectedEnvironments([]); setSelectedServices([]); setAcknowledged(false)
+      try {
+        await onImported()
+      } catch {
+        setError('The import succeeded, but StackMap could not refresh the inventory. Reload the page to see the imported records.')
+      }
     } catch (caught) {
       const terminal = caught instanceof PortainerImportError && ['PORTAINER_PREVIEW_INVALID', 'PORTAINER_PREVIEW_STALE', 'PORTAINER_ALREADY_BOUND'].includes(caught.code)
       if (terminal) { setPreview(null); setSessionToken(''); setEnvironments([]); setSelectedEnvironments([]); setSelectedServices([]); setAcknowledged(false) }
@@ -90,7 +94,7 @@ export function PortainerImportPanel({ hosts, services, onImported }: Props) {
   return <section className="portainer-import" aria-labelledby="portainer-import-title">
     <button className="button ghost" type="button" onClick={() => { if (open) void cancel(); else setOpen(true) }} aria-expanded={open} aria-controls="portainer-import-panel">{open ? 'Close Portainer preview' : 'Import from Portainer'}</button>
     {open && <div id="portainer-import-panel" className="portainer-import-panel">
-      <div><p className="eyebrow">Read-only discovery</p><h3 id="portainer-import-title">Preview Portainer containers</h3><p>StackMap will only read the configured Portainer server. Nothing can be imported in Phase 1.</p></div>
+      <div><p className="eyebrow">Read-only discovery</p><h3 id="portainer-import-title">Preview Portainer containers</h3><p>StackMap reads the configured Portainer server and imports only the containers you explicitly select and confirm.</p></div>
       {!sessionToken && <div className="portainer-token-row">
         <label className="field"><span>Portainer API token</span><input type="password" value={token} autoComplete="off" disabled={busy} onChange={(event) => setToken(event.target.value)} /></label>
         <button className="button primary" type="button" disabled={!token.trim() || busy} onClick={connect}>{busy ? 'Connecting…' : 'Discover environments'}</button>

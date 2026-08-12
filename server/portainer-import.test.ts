@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { openDatabase, type StackMapDatabase } from './database.js'
 import type { NewInventoryHost, NewInventoryService } from './inventory.js'
-import { PortainerImportConflictError, SqliteInventoryRepository } from './repository.js'
+import { PortainerImportConflictError, SqliteInventoryRepository, type PortainerImportStage } from './repository.js'
 
 const databases: StackMapDatabase[] = []
 afterEach(() => { for (const database of databases.splice(0)) database.checkpointAndClose() })
@@ -47,6 +47,31 @@ describe('atomic Portainer import repository', () => {
     expect(() => repository.importPortainer({ ...selection, expectedRevision: 1, hosts: [], services: [{ ...selection.services[0], service: service('replacement') }] })).toThrowError(PortainerImportConflictError)
     expect(database.connection.serialize()).toEqual(before)
   })
+
+  it.each<PortainerImportStage>(['source', 'host', 'service', 'children', 'binding', 'revision'])(
+    'rolls back every inventory and provenance write after the %s stage fails',
+    (failedStage) => {
+      const database = openDatabase(':memory:')
+      databases.push(database)
+      const before = database.connection.serialize()
+      const repository = new SqliteInventoryRepository(database.connection, () => time, (stage) => {
+        if (stage === failedStage) throw new Error(`injected ${stage} failure`)
+      })
+
+      expect(() => repository.importPortainer({
+        origin: 'https://portainer.example', expectedRevision: 0,
+        hosts: [{ environmentId: 7, host: host() }],
+        services: [{ environmentId: 7, containerId: 'container-id', service: service() }],
+      })).toThrow(`injected ${failedStage} failure`)
+
+      expect(database.connection.serialize()).toEqual(before)
+      expect(repository.inventorySnapshot()).toEqual({ revision: 0, hosts: [], services: [] })
+      expect(repository.portainerBindings('https://portainer.example')).toEqual({ environments: [], containers: [] })
+      for (const table of ['service_ports', 'service_paths', 'portainer_sources', 'portainer_host_bindings', 'portainer_container_bindings']) {
+        expect(database.connection.prepare(`SELECT COUNT(*) FROM ${table}`).pluck().get()).toBe(0)
+      }
+    },
+  )
 
   it('clears provenance transactionally on full restore without changing backup shape', () => {
     const { repository } = fixture()
