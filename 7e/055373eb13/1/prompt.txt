@@ -454,3 +454,70 @@ Report:
 - Final recommendation: Ready to merge or Changes required
 
 Do not merge or begin any new v1.1 work.
+
+---
+
+Fix only the recorded PR #32 review findings on the existing Phase 2 branch.
+
+Follow AGENTS.md.
+
+Required fixes:
+
+1. Explicit container selection
+
+- Do not preselect discovered containers automatically.
+- Users must deliberately select each container they want imported.
+- Stopped containers must remain unselected by default.
+- Import confirmation must be impossible when nothing is explicitly selected.
+- Add focused UI/state tests.
+
+2. Import-success vs refresh-failure state
+
+- After confirmation succeeds, immediately mark the preview consumed/complete in UI state.
+- Inventory refresh must happen afterward as a separate operation.
+- If refresh fails, report a refresh error without representing the import itself as failed.
+- Do not leave a consumed preview retryable.
+- Add focused tests for successful import + failed refresh and retry behavior.
+
+3. Real Phase 2 E2E/container coverage
+   Replace mocked-confirmation-only proof with real server-backed coverage that validates:
+
+- atomic import creates actual SQLite records
+- selected ports/mounts are respected
+- existing-host attachment
+- stale confirmation in a second browser
+- repeat import / provenance behavior
+- restart and container recreation persistence
+- restore clears provenance as designed
+- no Phase 2 mutation occurs in demo
+
+Keep UI-only tests where useful, but do not rely on mocked confirmation as Phase 2 workflow proof.
+
+4. Transaction-stage rollback tests
+   Add deterministic injected-failure coverage after each meaningful transaction stage:
+
+- source/provenance-source creation
+- host insertion
+- service insertion
+- child port/path insertion
+- binding/provenance insertion
+- global revision write
+
+Each failure must prove complete rollback of inventory, children, provenance, and revision.
+
+5. Stale copy
+   Remove the Phase 1-only “Nothing can be imported in Phase 1” text and replace it with current Phase 2 wording.
+
+Do not add sync, polling, refresh/update semantics, background work, existing-service updates, token persistence, backup-schema changes, or unrelated features.
+
+Validate fully, commit, push, keep PR #32 draft, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- changed files
+- focused tests
+- full validation
+- exact-head CI
+- confirmation no sync/update behavior was added
