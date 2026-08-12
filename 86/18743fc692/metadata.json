@@ -1,0 +1,28 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "8618743fc692",
+  "strategy": "manual-commit",
+  "branch": "codex/fix-v1-1-release-docs",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/architecture.md",
+    "docs/deployment-and-operations.md",
+    "docs/release-notes.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/86/18743fc692/0/metadata.json",
+      "transcript": "/86/18743fc692/0/full.jsonl",
+      "compact_transcript": "/86/18743fc692/0/transcript.jsonl",
+      "content_hash": "/86/18743fc692/0/content_hash.txt",
+      "prompt": "/86/18743fc692/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1477284,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 46380288,
+    "output_tokens": 138191,
+    "api_call_count": 355
+  }
+}
