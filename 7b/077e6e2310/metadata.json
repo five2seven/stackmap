@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "7b077e6e2310",
+  "strategy": "manual-commit",
+  "branch": "codex/close-v1-1-portainer-plan",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "docs/current-task.md",
+    "docs/v1.1-portainer-import-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/7b/077e6e2310/0/metadata.json",
+      "transcript": "/7b/077e6e2310/0/full.jsonl",
+      "compact_transcript": "/7b/077e6e2310/0/transcript.jsonl",
+      "content_hash": "/7b/077e6e2310/0/content_hash.txt",
+      "prompt": "/7b/077e6e2310/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1385610,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 41972736,
+    "output_tokens": 128230,
+    "api_call_count": 328
+  }
+}
