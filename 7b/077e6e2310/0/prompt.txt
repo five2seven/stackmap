@@ -546,3 +546,33 @@ If ready:
 Do not begin new v1.1 work.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Close out the v1.1 Portainer import plan after Phase 2.
+
+Follow AGENTS.md.
+
+Record Phase 2 as Complete with:
+- implementation branch
+- implementation/fix commits
+- Entire checkpoints
+- PR #32
+- merge commit 05a4050fc6a9a5629a57c02b638897dcfd6883c3
+- focused/full validation
+- exact-head CI and Semgrep
+- datastore authority
+- confirmation that no sync/update/background behavior was added
+
+Mark the two-phase v1.1 Portainer plan Complete. No Phase 3 exists.
+
+Update only:
+- docs/current-task.md
+- docs/v1.1-portainer-import-plan.md
+
+Do not change application code, version, workflows, release artifacts, GHCR, or Pages.
+Do not tag or release v1.1.0.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return branch, commit, Entire checkpoint, PR URL, final phase statuses, and validation.
