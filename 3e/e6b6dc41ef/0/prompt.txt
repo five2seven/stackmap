@@ -786,3 +786,54 @@ Return only:
 - test matrix
 - affected files
 - whether this is safe and appropriately scoped for v1.1.1
+
+---
+
+Create the StackMap v1.1.1 planning task for private-LAN Portainer HTTP support.
+
+Follow AGENTS.md.
+
+Use the already-approved design; do not reopen architecture decisions.
+
+Single task only:
+
+Allow `STACKMAP_PORTAINER_URL` to use HTTP when, and only when, the actual connection destination resolves exclusively to RFC1918 IPv4:
+
+- 10.0.0.0/8
+- 172.16.0.0/12
+- 192.168.0.0/16
+
+Requirements:
+
+- HTTPS behavior remains unchanged.
+- HTTP public/non-RFC1918 destinations fail closed.
+- Reject loopback, link-local, metadata, multicast, unspecified, CGNAT, IPv6, mixed private/public DNS, and all other non-RFC1918 destinations.
+- Validate at startup and enforce again in the actual per-request connection lookup to prevent DNS rebinding.
+- Preserve hostname/Host header while connecting only to a validated address.
+- Reject redirects.
+- Never attach/send `X-API-Key` when destination validation fails.
+- Preserve GET-only endpoint allowlist, token lifetime/non-persistence, response limits, projection, and secret exclusions.
+- No TLS bypass.
+- No Cloudflare Access support.
+- No sync/update/background behavior.
+- No database or UI workflow changes.
+- Version target: 1.1.1.
+
+Required validation includes focused network-policy tests plus real container/E2E proof using an RFC1918 Docker-network Portainer fixture.
+
+Create/update only the planning/current-task documents required by AGENTS.md.
+
+Do not implement the change yet.
+Do not change package version yet.
+Do not tag, release, publish GHCR, or deploy Pages.
+
+Commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- task status
+- validation
