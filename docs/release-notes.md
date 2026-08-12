@@ -1,5 +1,14 @@
 # Release Notes
 
+## StackMap v1.1.0
+
+- Adds production-only manual Portainer discovery, preview, and explicitly confirmed create-only import.
+- Imports selected hosts, services, ports, and bind mounts atomically into authoritative SQLite and records non-secret repeat-import bindings.
+- Uses a server-configured HTTPS origin and short-lived in-memory API tokens with a fixed read-only endpoint allowlist.
+- Rejects stale, expired, reused, tampered, or already-bound confirmations without partial writes; existing services are never updated or synchronized.
+- Keeps portable backup schema version 1 unchanged. Successful full restore clears Portainer provenance transactionally.
+- The public demo remains isolated and contains no Portainer integration.
+
 ## StackMap v1.0.0
 
 **Status:** Release metadata prepared for review. The `v1.0.0` tag and GitHub Release have not been

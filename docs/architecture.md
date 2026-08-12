@@ -19,6 +19,8 @@ IndexedDB is retired legacy storage only. The application does not enumerate, op
 
 JSON export remains a portable backup format. The application does not require an external database, cloud service, account system, telemetry, or Docker socket access.
 
+Manual Portainer import is server-mediated and read-only toward Portainer. Discovery and credentials are volatile; explicit confirmation inserts selected new inventory records and non-secret origin/environment/container bindings in one SQLite transaction. SQLite remains authoritative. Bindings support repeat-import detection and are excluded from portable backup schema version 1; successful full restore clears them transactionally.
+
 ## Data and application behavior
 
 The existing host, service, port, path, dependency, validation, deletion, search, filter, Port Map, and Path Map behavior remains unless an approved migration task explicitly changes it. Derived maps remain projections of the authoritative inventory rather than separately persisted datasets.

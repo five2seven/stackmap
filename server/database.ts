@@ -105,6 +105,36 @@ const legacyMigrationReceiptSchemaSql = `
   ) STRICT;
 `
 
+const portainerProvenanceSchemaSql = `
+  CREATE TABLE portainer_sources (
+    id INTEGER PRIMARY KEY,
+    origin TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    last_imported_at TEXT NOT NULL
+  ) STRICT;
+
+  CREATE TABLE portainer_host_bindings (
+    source_id INTEGER NOT NULL REFERENCES portainer_sources(id) ON DELETE CASCADE,
+    environment_id INTEGER NOT NULL CHECK (environment_id > 0),
+    host_id TEXT REFERENCES hosts(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    imported_at TEXT NOT NULL,
+    PRIMARY KEY (source_id, environment_id)
+  ) STRICT;
+
+  CREATE TABLE portainer_container_bindings (
+    source_id INTEGER NOT NULL REFERENCES portainer_sources(id) ON DELETE CASCADE,
+    environment_id INTEGER NOT NULL CHECK (environment_id > 0),
+    container_id TEXT NOT NULL,
+    service_id TEXT REFERENCES services(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    imported_at TEXT NOT NULL,
+    PRIMARY KEY (source_id, environment_id, container_id),
+    CHECK (length(trim(container_id)) > 0)
+  ) STRICT;
+
+  CREATE INDEX portainer_host_bindings_host_idx ON portainer_host_bindings(host_id);
+  CREATE INDEX portainer_container_bindings_service_idx ON portainer_container_bindings(service_id);
+`
+
 export function migrationChecksum(version: number, name: string, definition: string): string {
   return createHash('sha256').update(`${version}\0${name}\0${definition}`).digest('hex')
 }
@@ -140,6 +170,14 @@ export const databaseMigrations: readonly Migration[] = [
     checksum: migrationChecksum(3, 'legacy migration receipt', legacyMigrationReceiptSchemaSql),
     apply(connection: Database.Database) {
       connection.exec(legacyMigrationReceiptSchemaSql)
+    },
+  },
+  {
+    version: 4,
+    name: 'Portainer import provenance',
+    checksum: migrationChecksum(4, 'Portainer import provenance', portainerProvenanceSchemaSql),
+    apply(connection: Database.Database) {
+      connection.exec(portainerProvenanceSchemaSql)
     },
   },
 ] as const

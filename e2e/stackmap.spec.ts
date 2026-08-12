@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', (error) => issues.push(`pageerror: ${error.message}`))
 })
 
-test('previews selected Portainer discovery without an import action or inventory mutation', async ({ page }) => {
+test('reviews and explicitly confirms a Portainer import selection', async ({ page }) => {
   const requests: string[] = []
   await page.route('**/api/v1/portainer/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -27,8 +27,10 @@ test('previews selected Portainer discovery without an import action or inventor
           ? {
               previewToken: 'opaque-preview', expectedInventoryRevision: 0, existingHosts: [],
               hosts: [{ environmentId: 1, existingHostMatches: [], id: 'host-candidate', name: 'Docker lab', type: 'container-host', ipAddress: '', operatingSystem: 'Linux · amd64', notes: '', createdAt: '2026-08-12T00:00:00.000Z', updatedAt: '2026-08-12T00:00:00.000Z' }],
-              services: [{ environmentId: 1, containerId: 'container-id', sourceState: 'exited', networkOptions: ['frontend', 'backend'], warnings: [{ code: 'VOLUME_SKIPPED', message: 'Skipped named volume.' }], conflicts: [{ code: 'NETWORK_SELECTION_REQUIRED', message: 'Select one Docker network.', blocking: true }], id: 'service-candidate', name: 'Preview app', containerName: 'Preview app', dockerImage: 'preview:1', description: '', applicationUrl: '', status: 'paused', hostId: 'host-candidate', internalUrl: '', ports: [{ id: 'port', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'path', hostPath: '/srv/app', containerPath: '/data', purpose: '', readOnly: true }], network: '', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-08-12T00:00:00.000Z', updatedAt: '2026-08-12T00:00:00.000Z' }],
+              services: [{ environmentId: 1, containerId: 'container-id', sourceState: 'exited', networkOptions: ['frontend', 'backend'], alreadyBound: false, warnings: [{ code: 'VOLUME_SKIPPED', message: 'Skipped named volume.' }], conflicts: [{ code: 'NETWORK_SELECTION_REQUIRED', message: 'Select one Docker network.', blocking: true }], id: 'service-candidate', name: 'Preview app', containerName: 'Preview app', dockerImage: 'preview:1', description: '', applicationUrl: '', status: 'paused', hostId: 'host-candidate', internalUrl: '', ports: [{ id: 'port', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'path', hostPath: '/srv/app', containerPath: '/data', purpose: '', readOnly: true }], network: '', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-08-12T00:00:00.000Z', updatedAt: '2026-08-12T00:00:00.000Z' }],
             }
+          : path.endsWith('/imports')
+            ? { inventoryRevision: 1, hostIds: ['host-candidate'], serviceIds: ['service-candidate'] }
           : null
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data }) })
   })
@@ -38,14 +40,18 @@ test('previews selected Portainer discovery without an import action or inventor
   await page.getByRole('button', { name: 'Discover environments' }).click()
   await page.getByRole('checkbox', { name: 'Docker lab' }).check()
   await page.getByRole('button', { name: 'Build preview' }).click()
-  await expect(page.getByText('Phase 1 cannot write inventory. Import confirmation will be added only in Phase 2.')).toBeVisible()
+  await expect(page.getByText('Only the selected new records will be created. Existing services are never updated.')).toBeVisible()
   await expect(page.getByText('Skipped named volume.')).toBeVisible()
-  await expect(page.getByRole('button', { name: /confirm|import selected/i })).toHaveCount(0)
+  await page.locator('.portainer-service').getByRole('combobox').nth(2).selectOption('frontend')
+  await page.getByRole('checkbox', { name: /I reviewed this selection/ }).check()
+  await page.getByRole('button', { name: 'Import selected' }).click()
+  await expect(page.getByText('Imported 1 services and 1 hosts. Inventory revision 1.')).toBeVisible()
   expect(((await (await page.request.get('/api/v1/services')).json()).data as unknown[])).toEqual([])
   expect(requests).toEqual([
     'GET /api/v1/portainer/status',
     'POST /api/v1/portainer/sessions',
     'POST /api/v1/portainer/previews',
+    'POST /api/v1/portainer/imports',
   ])
 })
 

@@ -9,7 +9,7 @@ afterEach(() => { cleanup(); vi.restoreAllMocks() })
 describe('PortainerImportPanel', () => {
   it('stays absent when disabled', async () => {
     vi.spyOn(portainerImportClient, 'status').mockResolvedValue({ enabled: false })
-    render(<PortainerImportPanel hosts={[]} services={[]} />)
+    render(<PortainerImportPanel hosts={[]} services={[]} onImported={vi.fn()} />)
     await waitFor(() => expect(portainerImportClient.status).toHaveBeenCalled())
     expect(screen.queryByRole('button', { name: 'Import from Portainer' })).not.toBeInTheDocument()
   })
@@ -21,10 +21,10 @@ describe('PortainerImportPanel', () => {
     vi.spyOn(portainerImportClient, 'preview').mockResolvedValue({
       previewToken: 'preview', expectedInventoryRevision: 3, existingHosts: [],
       hosts: [{ environmentId: 1, existingHostMatches: [], id: 'h', name: 'Docker', type: 'container-host', ipAddress: '', operatingSystem: 'Linux', notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
-      services: [{ environmentId: 1, containerId: 'c', sourceState: 'exited', networkOptions: ['a', 'b'], warnings: [{ code: 'VOLUME_SKIPPED', message: 'Skipped volume.' }], conflicts: [{ code: 'NETWORK_SELECTION_REQUIRED', message: 'Select one network.', blocking: true }], id: 's', name: 'App', containerName: 'App', dockerImage: 'app:1', description: '', applicationUrl: '', status: 'paused', hostId: 'h', internalUrl: '', ports: [{ id: 'p', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'm', hostPath: '/srv', containerPath: '/data', purpose: '', readOnly: true }], network: '', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
+      services: [{ environmentId: 1, containerId: 'c', sourceState: 'exited', networkOptions: ['a', 'b'], alreadyBound: false, warnings: [{ code: 'VOLUME_SKIPPED', message: 'Skipped volume.' }], conflicts: [{ code: 'NETWORK_SELECTION_REQUIRED', message: 'Select one network.', blocking: true }], id: 's', name: 'App', containerName: 'App', dockerImage: 'app:1', description: '', applicationUrl: '', status: 'paused', hostId: 'h', internalUrl: '', ports: [{ id: 'p', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'm', hostPath: '/srv', containerPath: '/data', purpose: '', readOnly: true }], network: '', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
     })
     const cancel = vi.spyOn(portainerImportClient, 'cancelPreview').mockResolvedValue(null)
-    render(<PortainerImportPanel hosts={[]} services={[]} />)
+    render(<PortainerImportPanel hosts={[]} services={[]} onImported={vi.fn()} />)
     await user.click(await screen.findByRole('button', { name: 'Import from Portainer' }))
     expect(screen.queryByLabelText(/URL/i)).not.toBeInTheDocument()
     await user.type(screen.getByLabelText('Portainer API token'), 'secret')
@@ -32,12 +32,39 @@ describe('PortainerImportPanel', () => {
     expect(screen.queryByLabelText('Portainer API token')).not.toBeInTheDocument()
     await user.click(await screen.findByRole('checkbox', { name: 'Docker' }))
     await user.click(screen.getByRole('button', { name: 'Build preview' }))
-    expect(await screen.findByText('Phase 1 cannot write inventory. Import confirmation will be added only in Phase 2.')).toBeVisible()
+    expect(await screen.findByText('Only the selected new records will be created. Existing services are never updated.')).toBeVisible()
     expect(screen.getByText('Skipped volume.')).toBeVisible()
-    expect(screen.queryByRole('button', { name: /confirm|import selected/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Import selected' })).toBeDisabled()
     await user.selectOptions(screen.getByLabelText('Network'), 'a')
     await user.click(screen.getByRole('button', { name: 'Cancel preview' }))
     expect(cancel).toHaveBeenCalledWith('preview')
+  })
+
+  it('confirms the stored edited candidate and refreshes inventory after success', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(portainerImportClient, 'status').mockResolvedValue({ enabled: true })
+    vi.spyOn(portainerImportClient, 'connect').mockResolvedValue({ sessionToken: 'opaque', environments: [{ id: 1, name: 'Docker', containerEngine: 'docker', publicUrl: '' }] })
+    vi.spyOn(portainerImportClient, 'preview').mockResolvedValue({
+      previewToken: 'preview', expectedInventoryRevision: 3, existingHosts: [],
+      hosts: [{ environmentId: 1, existingHostMatches: [], id: 'h', name: 'Docker', type: 'container-host', ipAddress: '', operatingSystem: 'Linux', notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
+      services: [{ environmentId: 1, containerId: 'c', sourceState: 'running', networkOptions: ['bridge'], alreadyBound: false, warnings: [], conflicts: [], id: 's', name: 'App', containerName: 'App', dockerImage: 'app:1', description: '', applicationUrl: '', status: 'active', hostId: 'h', internalUrl: '', ports: [{ id: 'p', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'm', hostPath: '/srv', containerPath: '/data', purpose: '', readOnly: true }], network: 'bridge', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
+    })
+    const confirm = vi.spyOn(portainerImportClient, 'confirm').mockResolvedValue({ inventoryRevision: 4, hostIds: ['h'], serviceIds: ['s'] })
+    const onImported = vi.fn().mockResolvedValue(undefined)
+    render(<PortainerImportPanel hosts={[]} services={[]} onImported={onImported} />)
+    await user.click(await screen.findByRole('button', { name: 'Import from Portainer' }))
+    await user.type(screen.getByLabelText('Portainer API token'), 'secret')
+    await user.click(screen.getByRole('button', { name: 'Discover environments' }))
+    await user.click(await screen.findByRole('checkbox', { name: 'Docker' }))
+    await user.click(screen.getByRole('button', { name: 'Build preview' }))
+    await user.click(screen.getByRole('checkbox', { name: /8080.*80/ }))
+    await user.click(screen.getByRole('checkbox', { name: /\/srv.*\/data/ }))
+    await user.click(screen.getByRole('checkbox', { name: /I reviewed this selection/ }))
+    await user.click(screen.getByRole('button', { name: 'Import selected' }))
+    await waitFor(() => expect(confirm).toHaveBeenCalled())
+    expect(confirm.mock.calls[0][2][0]).toMatchObject({ id: 's', ports: [], paths: [] })
+    expect(onImported).toHaveBeenCalled()
+    expect(await screen.findByText('Imported 1 services and 1 hosts. Inventory revision 4.')).toBeVisible()
   })
 
   it('recomputes host-scoped conflicts and stores nested deselection in the preview candidate', async () => {
@@ -48,11 +75,11 @@ describe('PortainerImportPanel', () => {
       previewToken: 'preview', expectedInventoryRevision: 3,
       existingHosts: [{ id: 'existing-host', name: 'Existing', ipAddress: '' }],
       hosts: [{ environmentId: 1, existingHostMatches: [], id: 'new-host', name: 'Docker', type: 'container-host', ipAddress: '', operatingSystem: 'Linux', notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
-      services: [{ environmentId: 1, containerId: 'c', sourceState: 'running', networkOptions: ['bridge'], warnings: [], conflicts: [], id: 's', name: 'App', containerName: 'App', dockerImage: 'app:1', description: '', applicationUrl: '', status: 'active', hostId: 'new-host', internalUrl: '', ports: [{ id: 'p', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'm', hostPath: '/srv', containerPath: '/data', purpose: '', readOnly: true }], network: 'bridge', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
+      services: [{ environmentId: 1, containerId: 'c', sourceState: 'running', networkOptions: ['bridge'], alreadyBound: false, warnings: [], conflicts: [], id: 's', name: 'App', containerName: 'App', dockerImage: 'app:1', description: '', applicationUrl: '', status: 'active', hostId: 'new-host', internalUrl: '', ports: [{ id: 'p', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'm', hostPath: '/srv', containerPath: '/data', purpose: '', readOnly: true }], network: 'bridge', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
     })
     const existingService = { id: 'existing-service', name: 'App', containerName: 'App', dockerImage: '', description: '', applicationUrl: '', status: 'active' as const, hostId: 'existing-host', internalUrl: '', ports: [{ id: 'existing-port', hostPort: 8080, containerPort: 8080, protocol: 'tcp' as const, description: '' }], paths: [], network: '', exposure: 'unknown' as const, dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }
 
-    render(<PortainerImportPanel hosts={[]} services={[existingService]} />)
+    render(<PortainerImportPanel hosts={[]} services={[existingService]} onImported={vi.fn()} />)
     await user.click(await screen.findByRole('button', { name: 'Import from Portainer' }))
     await user.type(screen.getByLabelText('Portainer API token'), 'secret')
     await user.click(screen.getByRole('button', { name: 'Discover environments' }))

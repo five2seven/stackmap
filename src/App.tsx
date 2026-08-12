@@ -35,7 +35,7 @@ export interface AppProps {
   repository: StackMapRepository
   backupClient?: ServerBackupClient
   mode?: 'production' | 'demo'
-  DiscoveryPanel?: ComponentType<{ hosts: Host[]; services: Service[] }>
+  DiscoveryPanel?: ComponentType<{ hosts: Host[]; services: Service[]; onImported: () => Promise<void> }>
 }
 
 function App({ repository, backupClient, mode = 'production', DiscoveryPanel }: AppProps) {
@@ -391,7 +391,7 @@ function App({ repository, backupClient, mode = 'production', DiscoveryPanel }: 
           />
         )}
 
-        {DiscoveryPanel && <DiscoveryPanel hosts={hosts} services={services} />}
+        {DiscoveryPanel && <DiscoveryPanel hosts={hosts} services={services} onImported={refresh} />}
 
         {activeView === 'services' ? (
           <>

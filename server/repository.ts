@@ -50,10 +50,28 @@ export class RestoreConflictError extends Error {
     super(code)
   }
 }
+export class PortainerImportConflictError extends Error {
+  constructor(public readonly code: 'PORTAINER_PREVIEW_STALE' | 'PORTAINER_ALREADY_BOUND') { super(code) }
+}
 export interface InventorySnapshot {
   revision: number
   hosts: InventoryHost[]
   services: InventoryService[]
+}
+export interface PortainerBindingSnapshot {
+  environments: Array<{ environmentId: number; hostId?: string }>
+  containers: Array<{ environmentId: number; containerId: string; serviceId?: string }>
+}
+export interface PortainerImportSelection {
+  origin: string
+  expectedRevision: number
+  hosts: Array<{ environmentId: number; host: NewInventoryHost }>
+  services: Array<{ environmentId: number; containerId: string; service: NewInventoryService }>
+}
+export interface PortainerImportResult {
+  inventoryRevision: number
+  hostIds: string[]
+  serviceIds: string[]
 }
 
 export class SqliteInventoryRepository {
@@ -78,6 +96,83 @@ export class SqliteInventoryRepository {
     })()
   }
 
+  portainerBindings(origin: string): PortainerBindingSnapshot {
+    const source = this.connection.prepare('SELECT id FROM portainer_sources WHERE origin = ?').get(origin) as { id: number } | undefined
+    if (!source) return { environments: [], containers: [] }
+    const environments = this.connection.prepare(`
+      SELECT environment_id, host_id FROM portainer_host_bindings WHERE source_id = ?
+    `).all(source.id) as Array<{ environment_id: number; host_id: string | null }>
+    const containers = this.connection.prepare(`
+      SELECT environment_id, container_id, service_id FROM portainer_container_bindings WHERE source_id = ?
+    `).all(source.id) as Array<{ environment_id: number; container_id: string; service_id: string | null }>
+    return {
+      environments: environments.map((item) => ({ environmentId: item.environment_id, ...(item.host_id ? { hostId: item.host_id } : {}) })),
+      containers: containers.map((item) => ({ environmentId: item.environment_id, containerId: item.container_id, ...(item.service_id ? { serviceId: item.service_id } : {}) })),
+    }
+  }
+
+  importPortainer(selection: PortainerImportSelection): PortainerImportResult {
+    if (!selection.services.length) throw new InventoryValidationError('Select at least one container to import')
+    for (const { host } of selection.hosts) validateHost(host)
+    for (const { service } of selection.services) validateService(service)
+    return this.connection.transaction(() => {
+      const { revision, storedValue } = this.readInventoryRevision()
+      if (revision !== selection.expectedRevision) throw new PortainerImportConflictError('PORTAINER_PREVIEW_STALE')
+      if (revision === Number.MAX_SAFE_INTEGER) throw new Error('Inventory revision cannot be incremented safely')
+      const importedAt = this.now()
+      this.connection.prepare(`
+        INSERT INTO portainer_sources (origin, created_at, last_imported_at) VALUES (?, ?, ?)
+        ON CONFLICT(origin) DO UPDATE SET last_imported_at = excluded.last_imported_at
+      `).run(selection.origin, importedAt, importedAt)
+      const sourceId = this.connection.prepare('SELECT id FROM portainer_sources WHERE origin = ?').pluck().get(selection.origin) as number
+      const bound = this.connection.prepare(`
+        SELECT 1 FROM portainer_container_bindings
+        WHERE source_id = ? AND environment_id = ? AND container_id = ?
+      `)
+      for (const item of selection.services) {
+        if (bound.get(sourceId, item.environmentId, item.containerId)) {
+          throw new PortainerImportConflictError('PORTAINER_ALREADY_BOUND')
+        }
+      }
+      const insertHost = this.connection.prepare(`
+        INSERT INTO hosts (id, name, type, ip_address, operating_system, notes, revision, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `)
+      const bindHost = this.connection.prepare(`
+        INSERT INTO portainer_host_bindings (source_id, environment_id, host_id, imported_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(source_id, environment_id) DO UPDATE SET host_id = excluded.host_id, imported_at = excluded.imported_at
+      `)
+      for (const { environmentId, host } of selection.hosts) {
+        insertHost.run(host.id, host.name, host.type, host.ipAddress, host.operatingSystem, host.notes, host.createdAt, host.updatedAt)
+        bindHost.run(sourceId, environmentId, host.id, importedAt)
+      }
+      const newlyBoundEnvironments = new Set(selection.hosts.map(({ environmentId }) => environmentId))
+      for (const environmentId of new Set(selection.services.map((item) => item.environmentId))) {
+        if (newlyBoundEnvironments.has(environmentId)) continue
+        const targetHosts = [...new Set(selection.services.filter((item) => item.environmentId === environmentId).map((item) => item.service.hostId))]
+        if (targetHosts.length === 1 && targetHosts[0]) bindHost.run(sourceId, environmentId, targetHosts[0], importedAt)
+      }
+      const hostExists = this.connection.prepare('SELECT 1 FROM hosts WHERE id = ?')
+      const bindContainer = this.connection.prepare(`
+        INSERT INTO portainer_container_bindings (source_id, environment_id, container_id, service_id, imported_at)
+        VALUES (?, ?, ?, ?, ?)
+      `)
+      for (const { environmentId, containerId, service } of selection.services) {
+        if (!service.hostId || !hostExists.get(service.hostId)) throw new InventoryValidationError('Selected target host does not exist')
+        this.insertService(service)
+        this.replaceServiceChildren(service)
+        bindContainer.run(sourceId, environmentId, containerId, service.id, importedAt)
+      }
+      const nextRevision = revision + 1
+      const updated = this.connection.prepare(`
+        UPDATE application_metadata SET value = ? WHERE key = 'inventory_revision' AND value = ?
+      `).run(String(nextRevision), storedValue)
+      if (updated.changes !== 1) throw new PortainerImportConflictError('PORTAINER_PREVIEW_STALE')
+      return { inventoryRevision: nextRevision, hostIds: selection.hosts.map(({ host }) => host.id), serviceIds: selection.services.map(({ service }) => service.id) }
+    })()
+  }
+
   replaceInventory(
     hosts: NewInventoryHost[],
     services: NewInventoryService[],
@@ -88,6 +183,7 @@ export class SqliteInventoryRepository {
       if (revision !== expectedRevision) throw new RestoreConflictError('RESTORE_PREVIEW_STALE')
       if (revision === Number.MAX_SAFE_INTEGER) throw new Error('Inventory revision cannot be incremented safely')
 
+      this.connection.prepare('DELETE FROM portainer_sources').run()
       this.connection.prepare('DELETE FROM service_dependencies').run()
       this.connection.prepare('DELETE FROM service_ports').run()
       this.connection.prepare('DELETE FROM service_paths').run()

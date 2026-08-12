@@ -77,7 +77,7 @@ docker run --rm --user 10001:10001 --mount "type=bind,source=$upgrade,target=/co
 run_container "$upgrade"
 wait_for_health
 test "$(meta_value installation_id)" = task-1-installation
-test "$(docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT MAX(version) FROM schema_migrations').pluck().get()));d.close()")" = 3
+test "$(docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT MAX(version) FROM schema_migrations').pluck().get()));d.close()")" = 4
 test "$(meta_value inventory_revision)" = 0
 
 log "Validate concurrent-client conflict handling"

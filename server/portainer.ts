@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { isIP } from 'node:net'
 import type { InventoryHost, InventoryPort, InventoryService } from './inventory.js'
 import { portProtocolsOverlap } from './portainer-conflicts.js'
-import type { InventorySnapshot } from './repository.js'
+import { InventoryValidationError, PortainerImportConflictError, type InventorySnapshot, type PortainerBindingSnapshot, type SqliteInventoryRepository } from './repository.js'
 
 const REQUEST_TIMEOUT_MS = 10_000
 const SESSION_TTL_MS = 5 * 60 * 1000
@@ -48,6 +48,7 @@ export interface PortainerServiceCandidate extends Omit<InventoryService, 'revis
   networkOptions: string[]
   warnings: PreviewWarning[]
   conflicts: PreviewConflict[]
+  alreadyBound: boolean
 }
 export interface PortainerPreview {
   previewToken: string
@@ -63,7 +64,7 @@ type Session = {
   expiresAt: number
   expiryTimer?: ReturnType<typeof setTimeout>
 }
-type StoredPreview = { expiresAt: number; sessionToken: string }
+type StoredPreview = { expiresAt: number; sessionToken: string; preview: PortainerPreview }
 
 export class PortainerError extends Error {
   constructor(public readonly code: string, message: string) { super(message) }
@@ -135,6 +136,8 @@ export class PortainerPreviewService {
     private readonly snapshot: () => InventorySnapshot,
     private readonly now: () => number = Date.now,
     private readonly sessionTtlMs = SESSION_TTL_MS,
+    private readonly sourceOrigin = '',
+    private readonly repository?: SqliteInventoryRepository,
   ) {}
 
   async connect(apiToken: string) {
@@ -160,6 +163,7 @@ export class PortainerPreviewService {
       throw new PortainerError('PORTAINER_SELECTION_INVALID', 'The environment selection is invalid.')
     }
     const inventory = this.snapshot()
+    const bindings = this.repository?.portainerBindings(this.sourceOrigin) ?? { environments: [], containers: [] }
     let discovered: Array<{ host: PortainerHostCandidate; services: PortainerServiceCandidate[] }>
     try {
       discovered = await Promise.all(environmentIds.map(async (environmentId) => {
@@ -169,7 +173,7 @@ export class PortainerPreviewService {
         this.client.version(environmentId, session.apiToken),
         this.client.containers(environmentId, session.apiToken),
       ])
-      return mapEnvironment(environment, info, version, containers, inventory)
+      return mapEnvironment(environment, info, version, containers, inventory, bindings)
       }))
     } catch (error) {
       if (error instanceof PortainerError && error.code === 'PORTAINER_AUTH_FAILED') this.cancelSession(sessionToken)
@@ -184,12 +188,45 @@ export class PortainerPreviewService {
     addSelectionConflicts(services)
     for (const [token, stored] of this.previews) if (stored.sessionToken === sessionToken) this.previews.delete(token)
     const previewToken = opaqueToken()
-    this.previews.set(previewToken, { sessionToken, expiresAt: this.now() + SESSION_TTL_MS })
-    session.expiresAt = this.now() + this.sessionTtlMs
-    this.scheduleExpiry(sessionToken, session)
-    return {
+    const result = {
       previewToken, expectedInventoryRevision: inventory.revision, hosts, services,
       existingHosts: inventory.hosts.map(({ id, name, ipAddress }) => ({ id, name, ipAddress })),
+    }
+    this.previews.set(previewToken, { sessionToken, expiresAt: this.now() + SESSION_TTL_MS, preview: structuredClone(result) })
+    session.expiresAt = this.now() + this.sessionTtlMs
+    this.scheduleExpiry(sessionToken, session)
+    return result
+  }
+
+  confirm(previewToken: string, expectedRevision: number, selected: unknown) {
+    this.cleanup()
+    const stored = this.previews.get(previewToken)
+    if (!stored || stored.preview.expectedInventoryRevision !== expectedRevision || !this.repository || !this.sourceOrigin) {
+      throw new PortainerError('PORTAINER_PREVIEW_INVALID', 'The Portainer preview is invalid or expired. Discover again.')
+    }
+    const services = validateConfirmationSelection(selected, stored.preview)
+    const selectedHostIds = new Set(services.map(({ hostId }) => hostId))
+    const hosts = stored.preview.hosts.filter(({ id }) => selectedHostIds.has(id)).map((candidate) => ({
+      environmentId: candidate.environmentId,
+      host: { id: candidate.id, name: candidate.name, type: candidate.type, ipAddress: candidate.ipAddress, operatingSystem: candidate.operatingSystem, notes: candidate.notes, createdAt: candidate.createdAt, updatedAt: candidate.updatedAt },
+    }))
+    try {
+      const result = this.repository.importPortainer({
+        origin: this.sourceOrigin, expectedRevision, hosts,
+        services: services.map((candidate) => ({
+          environmentId: candidate.environmentId, containerId: candidate.containerId,
+          service: { id: candidate.id, name: candidate.name, containerName: candidate.containerName, dockerImage: candidate.dockerImage, description: candidate.description, applicationUrl: candidate.applicationUrl, status: candidate.status, hostId: candidate.hostId, internalUrl: candidate.internalUrl, ports: candidate.ports, paths: candidate.paths, network: candidate.network, exposure: candidate.exposure, dependencyIds: candidate.dependencyIds, notes: candidate.notes, createdAt: candidate.createdAt, updatedAt: candidate.updatedAt },
+        })),
+      })
+      this.cancelSession(stored.sessionToken)
+      return result
+    } catch (error) {
+      if (error instanceof PortainerImportConflictError) {
+        this.cancelSession(stored.sessionToken)
+        throw new PortainerError(error.code, error.code === 'PORTAINER_PREVIEW_STALE' ? 'The inventory changed after preview. Discover again.' : 'A selected container was already imported. Discover again.')
+      }
+      if (error instanceof InventoryValidationError) throw new PortainerError('PORTAINER_CONFIRMATION_INVALID', error.message)
+      throw error
     }
   }
 
@@ -232,6 +269,48 @@ export class PortainerPreviewService {
   }
 }
 
+function validateConfirmationSelection(value: unknown, preview: PortainerPreview): PortainerServiceCandidate[] {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_CONTAINERS) {
+    throw new PortainerError('PORTAINER_CONFIRMATION_INVALID', 'Select at least one container to import.')
+  }
+  const originals = new Map(preview.services.map((service) => [service.id, service]))
+  const selectedIds = new Set<string>()
+  return value.map((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw confirmationInvalid()
+    const candidate = item as PortainerServiceCandidate
+    const original = typeof candidate.id === 'string' ? originals.get(candidate.id) : undefined
+    if (!original || selectedIds.has(candidate.id) || original.alreadyBound) throw confirmationInvalid()
+    if (Object.keys(candidate).sort().join('\0') !== Object.keys(original).sort().join('\0')) throw confirmationInvalid()
+    selectedIds.add(candidate.id)
+    const immutableKeys: Array<keyof PortainerServiceCandidate> = [
+      'environmentId', 'containerId', 'sourceState', 'networkOptions', 'id', 'name', 'containerName',
+      'dockerImage', 'description', 'applicationUrl', 'internalUrl', 'exposure', 'dependencyIds', 'notes',
+      'createdAt', 'updatedAt', 'warnings', 'alreadyBound',
+    ]
+    if (immutableKeys.some((key) => JSON.stringify(candidate[key]) !== JSON.stringify(original[key]))) throw confirmationInvalid()
+    if (!['active', 'planned', 'paused', 'retired'].includes(candidate.status)) throw confirmationInvalid()
+    const proposedHost = preview.hosts.find(({ environmentId }) => environmentId === original.environmentId)?.id
+    const allowedHosts = new Set([proposedHost, ...preview.existingHosts.map(({ id }) => id)])
+    if (!candidate.hostId || !allowedHosts.has(candidate.hostId)) throw confirmationInvalid()
+    if (candidate.networkOptions.length > 1 && !candidate.network) throw new PortainerError('PORTAINER_CONFIRMATION_INVALID', 'Select one network for every selected container.')
+    if (candidate.network && !candidate.networkOptions.includes(candidate.network)) throw confirmationInvalid()
+    if (!isExactSubset(candidate.ports, original.ports) || !isExactSubset(candidate.paths, original.paths)) throw confirmationInvalid()
+    return structuredClone(candidate)
+  })
+}
+
+function isExactSubset<T extends { id: string }>(selected: unknown, original: T[]): selected is T[] {
+  if (!Array.isArray(selected) || selected.some((item) => !item || typeof item !== 'object' || Array.isArray(item) || typeof (item as { id?: unknown }).id !== 'string')) return false
+  const typed = selected as T[]
+  if (new Set(typed.map(({ id }) => id)).size !== typed.length) return false
+  const originals = new Map(original.map((item) => [item.id, item]))
+  return typed.every((item) => JSON.stringify(item) === JSON.stringify(originals.get(item.id)))
+}
+
+function confirmationInvalid() {
+  return new PortainerError('PORTAINER_CONFIRMATION_INVALID', 'The Portainer confirmation does not match the reviewed preview.')
+}
+
 function projectEnvironments(value: unknown): PortainerEnvironment[] {
   if (!Array.isArray(value) || value.length > MAX_ENVIRONMENTS) invalid()
   return value.map((item) => {
@@ -262,25 +341,26 @@ function projectContainers(value: unknown): DockerContainer[] {
   })
 }
 
-function mapEnvironment(environment: PortainerEnvironment, info: DockerInfo, version: DockerVersion, containers: DockerContainer[], inventory: InventorySnapshot) {
+function mapEnvironment(environment: PortainerEnvironment, info: DockerInfo, version: DockerVersion, containers: DockerContainer[], inventory: InventorySnapshot, bindings: PortainerBindingSnapshot) {
   const timestamp = new Date().toISOString()
   const literalIp = parseLiteralIp(environment.publicUrl)
   const hostId = randomUUID()
   const hostName = environment.name.trim() || info.name.trim() || `Environment ${environment.id}`
-  const existingHostMatches = inventory.hosts.filter((host) =>
-    host.name.trim().toLowerCase() === hostName.toLowerCase() || Boolean(literalIp && host.ipAddress === literalIp),
-  ).map((host) => host.id)
+  const existingHostMatches = [...new Set([
+    ...inventory.hosts.filter((host) => host.name.trim().toLowerCase() === hostName.toLowerCase() || Boolean(literalIp && host.ipAddress === literalIp)).map((host) => host.id),
+    ...bindings.environments.filter((item) => item.environmentId === environment.id && item.hostId).map((item) => item.hostId!),
+  ])]
   const host: PortainerHostCandidate = {
     environmentId: environment.id, id: hostId, name: hostName, type: 'container-host', ipAddress: literalIp,
     operatingSystem: [info.operatingSystem, info.osType, info.architecture].filter(Boolean).join(' · '), notes: '',
     createdAt: timestamp, updatedAt: timestamp, existingHostMatches,
   }
-  const services = containers.map((container) => mapContainer(environment.id, hostId, container, inventory, version, timestamp))
+  const services = containers.map((container) => mapContainer(environment.id, hostId, container, inventory, version, timestamp, bindings))
     .sort((a, b) => a.name.localeCompare(b.name) || a.containerId.localeCompare(b.containerId))
   return { host, services }
 }
 
-function mapContainer(environmentId: number, hostId: string, container: DockerContainer, inventory: InventorySnapshot, version: DockerVersion, timestamp: string): PortainerServiceCandidate {
+function mapContainer(environmentId: number, hostId: string, container: DockerContainer, inventory: InventorySnapshot, version: DockerVersion, timestamp: string, bindings: PortainerBindingSnapshot): PortainerServiceCandidate {
   const warnings: PreviewWarning[] = []
   const name = (container.names[0] ?? container.id.slice(0, 12)).replace(/^\//, '')
   const ports = uniquePorts(container.ports, warnings)
@@ -292,14 +372,16 @@ function mapContainer(environmentId: number, hostId: string, container: DockerCo
   const networkOptions = container.networks
   const conflicts: PreviewConflict[] = []
   if (networkOptions.length > 1) conflicts.push({ code: 'NETWORK_SELECTION_REQUIRED', message: 'Select one Docker network before Phase 2 confirmation.', blocking: true })
+  const alreadyBound = bindings.containers.some((item) => item.environmentId === environmentId && item.containerId === container.id)
   const service: PortainerServiceCandidate = {
     environmentId, containerId: container.id, sourceState: container.state, networkOptions,
     id: randomUUID(), name, containerName: name, dockerImage: container.image, description: '', applicationUrl: '',
     status: ['running', 'restarting'].includes(container.state.toLowerCase()) ? 'active' : 'paused', hostId,
     internalUrl: '', ports, paths, network: networkOptions.length === 1 ? networkOptions[0] : '',
     exposure: isLoopbackOnly(container.ports) ? 'local' : 'unknown', dependencyIds: [], notes: '',
-    createdAt: timestamp, updatedAt: timestamp, warnings, conflicts,
+    createdAt: timestamp, updatedAt: timestamp, warnings, conflicts, alreadyBound,
   }
+  if (alreadyBound) conflicts.push({ code: 'ALREADY_BOUND', message: 'This container was imported previously and is skipped by default.', blocking: true })
   if (!version.version || !version.apiVersion) warnings.push({ code: 'VERSION_INCOMPLETE', message: 'Docker version information was incomplete.' })
   const duplicates = inventory.services.filter((existing) => existing.hostId === hostId && existing.containerName.trim().toLowerCase() === name.toLowerCase())
   if (duplicates.length) conflicts.push({ code: 'CONTAINER_NAME_DUPLICATE', message: `Container name matches ${duplicates.map((item) => item.name).join(', ')}; verify the target host.`, blocking: false })

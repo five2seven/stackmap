@@ -149,6 +149,9 @@ jobs:
             'application_metadata',
             'hosts',
             'legacy_migration_receipt',
+            'portainer_container_bindings',
+            'portainer_host_bindings',
+            'portainer_sources',
             'schema_migrations',
             'service_dependencies',
             'service_paths',
@@ -190,7 +193,7 @@ jobs:
             }
           }
           assertEqual(actualTables, expectedTables, 'current table set')
-          assertEqual(schemaVersion, 3, 'Task 6 schema version')
+          assertEqual(schemaVersion, 4, 'v1.1 schema version')
           assertEqual(metadataKeys, expectedMetadataKeys, 'Task 2 application metadata keys')
           assertEqual(inventoryRevision, '0', 'fresh inventory revision')
           assertEqual(
