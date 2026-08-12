@@ -635,3 +635,53 @@ Return:
 - No-issue summary
 - validation
 - final recommendation: Ready for v1.1.0 release or Changes required
+
+---
+
+Fix only the recorded v1.1.0 release-readiness documentation findings.
+
+Follow AGENTS.md and the release checklist.
+
+Required fixes:
+
+1. `docs/release-notes.md`
+
+- Correct the stale v1.0.0 historical statement so it accurately reflects that the v1.0.0 tag and GitHub Release exist.
+- Expand the v1.1.0 release-note section to include:
+
+- upgrade guidance
+- recommendation to take a server JSON backup and a cold backup of the complete stopped `/config` directory before upgrading
+- note that the database schema migrates forward
+- rollback limitations
+- known v1.1 limitations
+- concise validation summary
+
+2. `docs/architecture.md`
+
+- Remove stale wording that calls the public demo URL “planned.”
+- Describe the current live public demo accurately.
+
+3. `docs/deployment-and-operations.md`
+
+- Remove stale instructions treating the custom demo hostname as unpublished.
+- Describe the current live hostname accurately.
+
+Do not change application code, version, workflows, planning, backup schema, GHCR, Pages, tags, or releases.
+
+Validate:
+
+- documentation links
+- stale-text audit
+- `git diff --check`
+- exact changed-file scope
+
+Commit, push, open or update a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- validation
+- exact-head CI/Semgrep result
