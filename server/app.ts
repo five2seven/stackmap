@@ -7,11 +7,15 @@ import { registerInventoryApi, sendApiError } from './inventory-api.js'
 import { backupApiError, registerBackupApi } from './backup-api.js'
 import { SqliteInventoryRepository } from './repository.js'
 import { applicationVersion } from './version.js'
+import { portainerApiError, registerPortainerApi } from './portainer-api.js'
+import { PortainerClient, PortainerPreviewService, type PortainerFetcher } from './portainer.js'
 
 export interface BuildAppOptions {
   database: StackMapDatabase
   staticRoot: string
   logger?: boolean
+  portainerUrl?: string
+  portainerFetcher?: PortainerFetcher
 }
 
 function isApiRequest(url: string): boolean {
@@ -26,6 +30,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       if (backupError) return reply.code(backupError.status).send({
         error: { code: backupError.code, message: backupError.message, requestId: request.id },
       })
+      const portainerError = portainerApiError(error)
+      if (portainerError) return reply.code(portainerError.status).send({ error: { code: portainerError.code, message: portainerError.message, requestId: request.id } })
       return sendApiError(error, request, reply)
     }
     return reply.send(error)
@@ -72,6 +78,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   }))
   registerInventoryApi(app, inventoryRepository)
   registerBackupApi(app, inventoryRepository, options.database.installationId)
+  registerPortainerApi(app, options.portainerUrl
+    ? new PortainerPreviewService(new PortainerClient(options.portainerUrl, options.portainerFetcher), () => inventoryRepository.inventorySnapshot())
+    : undefined)
 
   const staticAvailable = fs.existsSync(path.join(options.staticRoot, 'index.html'))
   if (staticAvailable) {

@@ -9,6 +9,8 @@ const forbidden = [
   ['sessionStorage', 'session storage access'],
   ['stackmap.db', 'SQLite database path'],
   ['better-sqlite3', 'SQLite dependency'],
+  ['Portainer', 'Portainer integration'],
+  ['/api/v1/portainer', 'Portainer API route'],
 ]
 
 async function files(directory) {

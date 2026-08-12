@@ -26,6 +26,7 @@ test('uses bundled session-only data without API or browser persistence', async 
   await expect(page.getByRole('heading', { name: 'Plex', level: 3 })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Restore backup' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Download current StackMap server backup' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Import from Portainer' })).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Edit Paperless-ngx' }).click()
   const editor = page.getByRole('region', { name: 'Edit Paperless-ngx' })
