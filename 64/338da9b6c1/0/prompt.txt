@@ -312,3 +312,41 @@ Return:
 - full validation
 - exact-head CI result
 - confirmation no sync/update behavior was added
+
+---
+
+Advance the v1.1 Portainer import plan after Phase 1.
+
+Follow AGENTS.md.
+
+Record Phase 1 as Complete with:
+
+- implementation branch
+- implementation/fix commits
+- Entire checkpoints
+- PR #30
+- merge commit `8c8aa921b5e914721da5fd73f1b5faee6de634d7`
+- validation and exact-head CI/Semgrep
+- confirmation that Phase 2 was not started
+
+Then mark Phase 2 Ready because Phase 1 is merged and no blocker remains.
+
+Update only:
+
+- `docs/current-task.md`
+- `docs/v1.1-portainer-import-plan.md`
+
+Do not implement Phase 2.
+Do not change application code.
+Do not merge the planning PR.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- Phase 1/Phase 2 statuses
+- validation
