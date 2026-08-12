@@ -39,3 +39,64 @@ Return:
 - unresolved decisions
 
 Do not modify files, create branches, commit, or open a PR.
+
+---
+
+Create the concrete StackMap v1.1 Portainer import plan using the decisions below. Do not re-research or reopen these decisions.
+
+Follow AGENTS.md.
+
+Approved v1.1 behavior:
+
+- Portainer import is manual, read-only discovery followed by explicit import.
+- SQLite remains authoritative.
+- No Docker socket, Portainer mutation, Docker mutation, synchronization, polling, or background refresh.
+- Portainer URL is configured server-side through `STACKMAP_PORTAINER_URL`; users cannot supply arbitrary outbound URLs.
+- Import is disabled when that setting is absent.
+- User supplies only the Portainer API token through the production UI.
+- Token is session-only, server-memory-only, short-lived, never persisted, logged, returned to the browser, backed up, or placed in URLs.
+- HTTPS with normal system certificate validation only. No insecure TLS bypass.
+- Only these outbound GET routes are permitted:
+
+- `/api/endpoints`
+- `/api/endpoints/{id}/docker/info`
+- `/api/endpoints/{id}/docker/version`
+- `/api/endpoints/{id}/docker/containers/json?all=true`
+- Never call container inspect, stacks, registries, secrets, configs, logs, stats, events, or arbitrary Docker proxy paths.
+- Never read/import labels, environment-variable values, registry credentials, or secrets.
+- Add non-secret Portainer source/binding metadata in SQLite for repeat-import detection.
+- Existing portable backup schema remains unchanged.
+- A full StackMap restore clears Portainer source/binding metadata transactionally.
+- Import creates new records only; it never updates/synchronizes existing services.
+- User may attach discovered containers to an existing StackMap host.
+- Multiple networks require explicit user selection.
+- Discover stopped containers and let the user choose whether to import them.
+- Default status mapping: running/restarting → active; stopped/paused/created/exited/dead → paused, editable in preview.
+- Import bind mounts only; skip named/anonymous volume backing paths with a warning.
+- Leave host IP blank unless a trustworthy literal IP is available.
+- Exposure: loopback-only published bindings → local; all others → unknown.
+- Do not infer dependencies.
+- Preview must show mapped hosts/services, ports, bind mounts, networks, warnings, duplicates, and conflicts before any mutation.
+- Allow users to deselect containers and, where practical, individual ports/bind mounts.
+- Confirmation uses expected inventory revision and one atomic SQLite transaction.
+- Re-import of an already-bound container defaults to skipped.
+- No automatic overwrite, merge, or refresh behavior.
+- Public demo must contain no Portainer UI/client/routes or outbound integration code.
+
+Structure implementation into only two feature PRs:
+
+1. Portainer discovery + preview, with no inventory mutation.
+2. Atomic confirmation/import + hardening, E2E/container regression coverage, and documentation.
+
+Create a new v1.1 planning/current-task branch and planning PR defining these two phases and their acceptance criteria.
+
+Do not implement Phase 1 yet.
+
+Return only:
+
+- planning branch
+- commit
+- Entire checkpoint
+- PR URL
+- Phase 1 and Phase 2 scope
+- validation
