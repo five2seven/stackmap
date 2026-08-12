@@ -125,3 +125,46 @@ If ready:
 Do not begin Phase 1.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement v1.1 Portainer Import Phase 1 only.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Scope:
+
+- server-configured `STACKMAP_PORTAINER_URL`
+- import disabled when unset
+- production UI accepts API token only
+- token is short-lived, server-memory-only, never persisted/logged/returned
+- GET-only allowlisted Portainer client for the approved endpoints
+- environment discovery
+- Docker info/version/container-list discovery
+- strict projection/validation and sensitive-field exclusion
+- mapping into StackMap preview candidates
+- duplicate/conflict analysis
+- production-only import preview UI
+- preview/cancel/expiry behavior
+- no inventory mutation
+
+Do not:
+
+- add provenance tables
+- add confirm/import mutation
+- change restore behavior
+- add sync/refresh/background jobs
+- expose Portainer UI/routes in demo
+- implement Phase 2
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- validation
+- exact-head CI result
+- confirmation Phase 2 was not started
