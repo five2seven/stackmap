@@ -201,3 +201,44 @@ Report:
 - Final recommendation: Ready to merge or Changes required
 
 Do not merge or begin Phase 2.
+
+---
+
+Fix only the recorded PR #30 review findings on `codex/portainer-discovery-preview`.
+
+Follow AGENTS.md.
+
+Required fixes:
+
+1. Token/session expiry
+
+- Make the Portainer connection/session TTL actively enforced, not lazy.
+- Expired sessions must release the API token from memory without requiring another request.
+- Add focused tests for idle expiry, cleanup, late events, cancellation, and no token retention after expiry.
+
+2. Host-scoped conflict analysis
+
+- Container-name and host-port conflicts must be evaluated against the actual proposed target host.
+- If the user switches a candidate to an existing StackMap host, recompute conflicts for that host.
+- Preserve StackMap’s current host-scoped conflict semantics.
+- Add focused tests for new-host, existing-host, cross-host, and changed-target-host cases.
+
+3. Nested deselection
+
+- Port and bind-mount deselection in the preview must change the actual stored candidate used for confirmation later.
+- Do not make this cosmetic-only UI state.
+- Add tests proving deselected ports/mounts are excluded from the preview candidate payload/state.
+
+Do not add provenance tables, confirmation/import mutation, restore changes, synchronization, polling, background refresh, or any other Phase 2 work.
+
+Validate fully, commit, push, keep PR #30 draft, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- files changed
+- focused test results
+- full validation
+- exact-head CI result
+- confirmation Phase 2 remains untouched
