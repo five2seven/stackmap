@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "3ee6b6dc41ef",
+  "strategy": "manual-commit",
+  "branch": "codex/v1-1-1-private-lan-portainer-http-plan",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "docs/current-task.md",
+    "docs/v1.1.1-private-lan-portainer-http-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/3e/e6b6dc41ef/0/metadata.json",
+      "transcript": "/3e/e6b6dc41ef/0/full.jsonl",
+      "compact_transcript": "/3e/e6b6dc41ef/0/transcript.jsonl",
+      "content_hash": "/3e/e6b6dc41ef/0/content_hash.txt",
+      "prompt": "/3e/e6b6dc41ef/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1683482,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 54516224,
+    "output_tokens": 154367,
+    "api_call_count": 407
+  }
+}
