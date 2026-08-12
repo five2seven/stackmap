@@ -373,3 +373,48 @@ If ready:
 Do not begin Phase 2.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement v1.1 Portainer Import Phase 2 only.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Scope:
+
+- add non-secret Portainer source/binding provenance schema and repository support
+- preserve SQLite as sole production authority
+- add confirmation using preview token + expected inventory revision
+- create-only import; never update or synchronize existing services
+- allow selected candidates to attach to an explicitly chosen existing host
+- atomically insert selected hosts, services, ports, paths, and provenance in one SQLite transaction
+- imported hosts/services start at revision 1
+- advance global inventory revision exactly once on success
+- stale previews fail without mutation
+- consumed/expired preview tokens cannot import twice
+- already-bound containers default to skipped
+- full StackMap restore clears Portainer provenance transactionally
+- preserve Phase 1 conflict resolutions and port/bind-mount deselection
+- add confirmation UI, safe retry/error behavior, hardening, focused regression tests, E2E/container coverage, backup/restore regression, and documentation
+
+Do not:
+
+- add background sync, polling, refresh/update semantics, or automatic discovery
+- update existing services
+- persist Portainer API tokens
+- change the portable backup JSON schema
+- expose Portainer functionality in the public demo
+- add unrelated v1.1 features
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI result
+- confirmation no sync/update behavior was added
