@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { appendFileSync, readFileSync } from 'node:fs'
+import { createServer as createHttpServer } from 'node:http'
 import { createServer } from 'node:https'
 
 const responses = new Map([
@@ -13,8 +14,18 @@ const responses = new Map([
   }]],
 ])
 
-createServer({ cert: readFileSync(process.env.FAKE_PORTAINER_CERT), key: readFileSync(process.env.FAKE_PORTAINER_KEY) }, (request, response) => {
+const handler = (request, response) => {
+  appendFileSync('/tmp/request-history.jsonl', `${JSON.stringify({
+    method: request.method,
+    url: request.url,
+    host: request.headers.host,
+    apiKeyAccepted: request.headers['x-api-key'] === 'container-api-token',
+  })}\n`)
   const value = request.method === 'GET' && request.headers['x-api-key'] === 'container-api-token' ? responses.get(request.url) : undefined
   response.writeHead(value === undefined ? 404 : 200, { 'content-type': 'application/json' })
   response.end(JSON.stringify(value ?? { message: 'Not found' }))
-}).listen(9443, '0.0.0.0')
+}
+
+createHttpServer(handler).listen(9000, '0.0.0.0')
+createServer({ cert: readFileSync(process.env.FAKE_PORTAINER_CERT), key: readFileSync(process.env.FAKE_PORTAINER_KEY) }, handler)
+  .listen(9443, '0.0.0.0')

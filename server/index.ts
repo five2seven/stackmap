@@ -2,8 +2,10 @@ import { buildApp } from './app.js'
 import { loadConfig } from './config.js'
 import { openDatabase } from './database.js'
 import { createShutdownHandler } from './shutdown.js'
+import { validatePortainerDestination } from './portainer-network-policy.js'
 
 const config = loadConfig()
+if (config.portainerUrl) await validatePortainerDestination(config.portainerUrl)
 const database = openDatabase(config.databasePath)
 const app = await buildApp({
   database,

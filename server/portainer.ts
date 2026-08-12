@@ -3,6 +3,7 @@ import { isIP } from 'node:net'
 import type { InventoryHost, InventoryPort, InventoryService } from './inventory.js'
 import { portProtocolsOverlap } from './portainer-conflicts.js'
 import { InventoryValidationError, PortainerImportConflictError, type InventorySnapshot, type PortainerBindingSnapshot, type SqliteInventoryRepository } from './repository.js'
+import { createPortainerNetworkFetcher } from './portainer-network-policy.js'
 
 const REQUEST_TIMEOUT_MS = 10_000
 const SESSION_TTL_MS = 5 * 60 * 1000
@@ -71,11 +72,15 @@ export class PortainerError extends Error {
 }
 
 export class PortainerClient {
+  private readonly fetcher: PortainerFetcher
+
   constructor(
     private readonly baseUrl: string,
-    private readonly fetcher: PortainerFetcher = (input, init) => fetch(input, init),
+    fetcher?: PortainerFetcher,
     private readonly timeoutMs = REQUEST_TIMEOUT_MS,
-  ) {}
+  ) {
+    this.fetcher = fetcher ?? createPortainerNetworkFetcher(baseUrl)
+  }
 
   environments(apiToken: string): Promise<PortainerEnvironment[]> {
     return this.get('/api/endpoints', apiToken, projectEnvironments)

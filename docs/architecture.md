@@ -21,6 +21,8 @@ JSON export remains a portable backup format. The application does not require a
 
 Manual Portainer import is server-mediated and read-only toward Portainer. Discovery and credentials are volatile; explicit confirmation inserts selected new inventory records and non-secret origin/environment/container bindings in one SQLite transaction. SQLite remains authoritative. Bindings support repeat-import detection and are excluded from portable backup schema version 1; successful full restore clears them transactionally.
 
+Portainer origins normally use HTTPS with system certificate and hostname validation. Cleartext HTTP is a narrowly bounded private-LAN exception: startup resolution and each connection-time lookup must return exclusively RFC1918 IPv4, and the socket is pinned to an address from that per-request validated set while retaining the configured hostname. Any mixed, IPv6, loopback, link-local, metadata-service, multicast, unspecified, CGNAT, public, or other non-RFC1918 result fails closed before a credential-bearing request is created. Redirects and insecure TLS are not supported.
+
 ## Data and application behavior
 
 The existing host, service, port, path, dependency, validation, deletion, search, filter, Port Map, and Path Map behavior remains unless an approved migration task explicitly changes it. Derived maps remain projections of the authoritative inventory rather than separately persisted datasets.
