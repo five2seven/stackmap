@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SERVICE_STATUSES, type Host, type Service } from '../domain/types'
 import { PortainerImportError, portainerImportClient, type PortainerEnvironment, type PortainerPreview } from '../data/portainerImport'
+import { recomputePreviewConflicts } from '../data/portainerPreview'
 import './PortainerImportPanel.css'
 
 interface Props { hosts: Host[]; services: Service[] }
 
-export function PortainerImportPanel({ hosts }: Props) {
+export function PortainerImportPanel({ hosts, services }: Props) {
   const [enabled, setEnabled] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [open, setOpen] = useState(false)
@@ -20,6 +21,10 @@ export function PortainerImportPanel({ hosts }: Props) {
 
   useEffect(() => { let active = true; portainerImportClient.status().then((value) => { if (active) setEnabled(value.enabled) }).catch(() => {}).finally(() => { if (active) setLoaded(true) }); return () => { active = false } }, [])
   const candidateHosts = useMemo(() => new Map(preview?.hosts.map((host) => [host.environmentId, host]) ?? []), [preview])
+  const displayedPreview = useMemo(
+    () => preview && recomputePreviewConflicts(preview, services, selectedServices),
+    [preview, selectedServices, services],
+  )
 
   if (!loaded || !enabled) return null
 
@@ -75,22 +80,22 @@ export function PortainerImportPanel({ hosts }: Props) {
         {!environments.length && <p>No accessible Docker environments were found.</p>}
       </fieldset>}
       {sessionToken && !preview && <div className="form-actions"><button className="button primary" type="button" disabled={!selectedEnvironments.length || busy} onClick={discover}>{busy ? 'Discovering…' : 'Build preview'}</button><button className="button ghost" type="button" onClick={cancel}>Cancel</button></div>}
-      {preview && <div className="portainer-preview">
-        <p><strong>{preview.hosts.length} proposed hosts</strong> and <strong>{preview.services.length} discovered containers</strong>. Inventory revision {preview.expectedInventoryRevision}. No changes have been made.</p>
-        {preview.hosts.map((host) => <article className="portainer-host" key={host.id}><h4>{host.name}</h4><p>{host.operatingSystem || 'Operating system unavailable'} · IP {host.ipAddress || 'not inferred'}</p>{host.existingHostMatches.length > 0 && <p className="path-warning">Possible existing host match: {host.existingHostMatches.map((id) => hosts.find((item) => item.id === id)?.name ?? id).join(', ')}</p>}</article>)}
-        <div className="portainer-services">{preview.services.map((service) => {
+      {displayedPreview && <div className="portainer-preview">
+        <p><strong>{displayedPreview.hosts.length} proposed hosts</strong> and <strong>{displayedPreview.services.length} discovered containers</strong>. Inventory revision {displayedPreview.expectedInventoryRevision}. No changes have been made.</p>
+        {displayedPreview.hosts.map((host) => <article className="portainer-host" key={host.id}><h4>{host.name}</h4><p>{host.operatingSystem || 'Operating system unavailable'} · IP {host.ipAddress || 'not inferred'}</p>{host.existingHostMatches.length > 0 && <p className="path-warning">Possible existing host match: {host.existingHostMatches.map((id) => hosts.find((item) => item.id === id)?.name ?? id).join(', ')}</p>}</article>)}
+        <div className="portainer-services">{displayedPreview.services.map((service) => {
           const checked = selectedServices.includes(service.id)
           const proposedHost = candidateHosts.get(service.environmentId)
           return <article className="portainer-service" key={service.id}>
             <label className="portainer-service-select"><input type="checkbox" checked={checked} onChange={(event) => setSelectedServices((current) => event.target.checked ? [...current, service.id] : current.filter((id) => id !== service.id))} /><strong>{service.name}</strong> <span>{service.sourceState}</span></label>
             <div className="form-grid">
               <label className="field"><span>Status</span><select value={service.status} onChange={(event) => patchService(service.id, { status: event.target.value as Service['status'] })}>{SERVICE_STATUSES.map((status) => <option key={status}>{status}</option>)}</select></label>
-              <label className="field"><span>Target host</span><select value={service.hostId} onChange={(event) => patchService(service.id, { hostId: event.target.value })}><option value={proposedHost?.id}>New: {proposedHost?.name}</option>{preview.existingHosts.map((host) => <option value={host.id} key={host.id}>Existing: {host.name}</option>)}</select></label>
+              <label className="field"><span>Target host</span><select value={service.hostId} onChange={(event) => patchService(service.id, { hostId: event.target.value })}><option value={proposedHost?.id}>New: {proposedHost?.name}</option>{displayedPreview.existingHosts.map((host) => <option value={host.id} key={host.id}>Existing: {host.name}</option>)}</select></label>
               <label className="field"><span>Network</span><select value={service.network} onChange={(event) => patchService(service.id, { network: event.target.value })}><option value="">{service.networkOptions.length > 1 ? 'Select one network' : 'No network'}</option>{service.networkOptions.map((network) => <option key={network}>{network}</option>)}</select></label>
             </div>
             <p>{service.dockerImage} · exposure {service.exposure}</p>
-            <div><strong>Ports:</strong> {service.ports.length ? service.ports.map((port) => <label key={port.id}><input type="checkbox" defaultChecked /> {port.hostPort ?? 'unpublished'} → {port.containerPort}/{port.protocol}</label>) : 'none'}</div>
-            <div><strong>Bind mounts:</strong> {service.paths.length ? service.paths.map((path) => <label key={path.id}><input type="checkbox" defaultChecked /> {path.hostPath} → {path.containerPath}{path.readOnly ? ' (read-only)' : ''}</label>) : 'none'}</div>
+            <div><strong>Ports:</strong> {service.ports.length ? service.ports.map((port) => <label key={port.id}><input type="checkbox" checked onChange={() => patchService(service.id, { ports: service.ports.filter(({ id }) => id !== port.id) })} /> {port.hostPort ?? 'unpublished'} → {port.containerPort}/{port.protocol}</label>) : 'none'}</div>
+            <div><strong>Bind mounts:</strong> {service.paths.length ? service.paths.map((path) => <label key={path.id}><input type="checkbox" checked onChange={() => patchService(service.id, { paths: service.paths.filter(({ id }) => id !== path.id) })} /> {path.hostPath} → {path.containerPath}{path.readOnly ? ' (read-only)' : ''}</label>) : 'none'}</div>
             {[...service.warnings, ...service.conflicts].map((item, index) => <p className="path-warning" key={`${item.code}-${index}`}>{item.message}</p>)}
           </article>
         })}</div>

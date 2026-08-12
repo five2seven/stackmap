@@ -1,10 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PortainerImportPanel } from './PortainerImportPanel'
 import { portainerImportClient } from '../data/portainerImport'
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
 describe('PortainerImportPanel', () => {
   it('stays absent when disabled', async () => {
@@ -38,5 +38,36 @@ describe('PortainerImportPanel', () => {
     await user.selectOptions(screen.getByLabelText('Network'), 'a')
     await user.click(screen.getByRole('button', { name: 'Cancel preview' }))
     expect(cancel).toHaveBeenCalledWith('preview')
+  })
+
+  it('recomputes host-scoped conflicts and stores nested deselection in the preview candidate', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(portainerImportClient, 'status').mockResolvedValue({ enabled: true })
+    vi.spyOn(portainerImportClient, 'connect').mockResolvedValue({ sessionToken: 'opaque', environments: [{ id: 1, name: 'Docker', containerEngine: 'docker', publicUrl: '' }] })
+    vi.spyOn(portainerImportClient, 'preview').mockResolvedValue({
+      previewToken: 'preview', expectedInventoryRevision: 3,
+      existingHosts: [{ id: 'existing-host', name: 'Existing', ipAddress: '' }],
+      hosts: [{ environmentId: 1, existingHostMatches: [], id: 'new-host', name: 'Docker', type: 'container-host', ipAddress: '', operatingSystem: 'Linux', notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
+      services: [{ environmentId: 1, containerId: 'c', sourceState: 'running', networkOptions: ['bridge'], warnings: [], conflicts: [], id: 's', name: 'App', containerName: 'App', dockerImage: 'app:1', description: '', applicationUrl: '', status: 'active', hostId: 'new-host', internalUrl: '', ports: [{ id: 'p', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'm', hostPath: '/srv', containerPath: '/data', purpose: '', readOnly: true }], network: 'bridge', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }],
+    })
+    const existingService = { id: 'existing-service', name: 'App', containerName: 'App', dockerImage: '', description: '', applicationUrl: '', status: 'active' as const, hostId: 'existing-host', internalUrl: '', ports: [{ id: 'existing-port', hostPort: 8080, containerPort: 8080, protocol: 'tcp' as const, description: '' }], paths: [], network: '', exposure: 'unknown' as const, dependencyIds: [], notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' }
+
+    render(<PortainerImportPanel hosts={[]} services={[existingService]} />)
+    await user.click(await screen.findByRole('button', { name: 'Import from Portainer' }))
+    await user.type(screen.getByLabelText('Portainer API token'), 'secret')
+    await user.click(screen.getByRole('button', { name: 'Discover environments' }))
+    await user.click(await screen.findByRole('checkbox', { name: 'Docker' }))
+    await user.click(screen.getByRole('button', { name: 'Build preview' }))
+    await screen.findByRole('checkbox', { name: /App running/i })
+    expect(screen.queryByText(/Container name matches .* on the selected host/)).not.toBeInTheDocument()
+    await user.selectOptions(screen.getByLabelText('Target host'), 'existing-host')
+    expect(screen.getByText('Container name matches App on the selected host.')).toBeVisible()
+    expect(screen.getByText('8080/tcp overlaps App on the selected host.')).toBeVisible()
+
+    await user.click(screen.getByRole('checkbox', { name: /8080.*80/ }))
+    await user.click(screen.getByRole('checkbox', { name: /\/srv.*\/data/ }))
+    expect(screen.getByText((_, element) => element?.textContent === 'Ports: none')).toBeVisible()
+    expect(screen.getByText((_, element) => element?.textContent === 'Bind mounts: none')).toBeVisible()
+    expect(screen.queryByText('8080/tcp overlaps App on the selected host.')).not.toBeInTheDocument()
   })
 })

@@ -57,7 +57,12 @@ export interface PortainerPreview {
   existingHosts: Array<Pick<InventoryHost, 'id' | 'name' | 'ipAddress'>>
 }
 
-type Session = { apiToken: string; environments: PortainerEnvironment[]; expiresAt: number }
+type Session = {
+  apiToken: string
+  environments: PortainerEnvironment[]
+  expiresAt: number
+  expiryTimer?: ReturnType<typeof setTimeout>
+}
 type StoredPreview = { expiresAt: number; sessionToken: string }
 
 export class PortainerError extends Error {
@@ -129,6 +134,7 @@ export class PortainerPreviewService {
     private readonly client: PortainerClient,
     private readonly snapshot: () => InventorySnapshot,
     private readonly now: () => number = Date.now,
+    private readonly sessionTtlMs = SESSION_TTL_MS,
   ) {}
 
   async connect(apiToken: string) {
@@ -136,7 +142,9 @@ export class PortainerPreviewService {
     if (this.sessions.size >= CAPACITY) throw new PortainerError('PORTAINER_CAPACITY', 'Too many Portainer previews are active.')
     const environments = (await this.client.environments(apiToken)).filter((item) => item.containerEngine.toLowerCase() === 'docker')
     const sessionToken = opaqueToken()
-    this.sessions.set(sessionToken, { apiToken, environments, expiresAt: this.now() + SESSION_TTL_MS })
+    const session: Session = { apiToken, environments, expiresAt: this.now() + this.sessionTtlMs }
+    this.sessions.set(sessionToken, session)
+    this.scheduleExpiry(sessionToken, session)
     return { sessionToken, environments }
   }
 
@@ -167,6 +175,9 @@ export class PortainerPreviewService {
       if (error instanceof PortainerError && error.code === 'PORTAINER_AUTH_FAILED') this.cancelSession(sessionToken)
       throw error
     }
+    if (this.sessions.get(sessionToken) !== session) {
+      throw new PortainerError('PORTAINER_SESSION_INVALID', 'The Portainer session expired. Enter the token again.')
+    }
     const hosts = discovered.map((item) => item.host)
     const services = discovered.flatMap((item) => item.services)
     if (services.length > MAX_CONTAINERS) throw new PortainerError('PORTAINER_RESPONSE_TOO_LARGE', 'Portainer returned too many containers for one preview.')
@@ -174,7 +185,8 @@ export class PortainerPreviewService {
     for (const [token, stored] of this.previews) if (stored.sessionToken === sessionToken) this.previews.delete(token)
     const previewToken = opaqueToken()
     this.previews.set(previewToken, { sessionToken, expiresAt: this.now() + SESSION_TTL_MS })
-    session.expiresAt = this.now() + SESSION_TTL_MS
+    session.expiresAt = this.now() + this.sessionTtlMs
+    this.scheduleExpiry(sessionToken, session)
     return {
       previewToken, expectedInventoryRevision: inventory.revision, hosts, services,
       existingHosts: inventory.hosts.map(({ id, name, ipAddress }) => ({ id, name, ipAddress })),
@@ -182,6 +194,9 @@ export class PortainerPreviewService {
   }
 
   cancelSession(token: string) {
+    const session = this.sessions.get(token)
+    if (session?.expiryTimer !== undefined) clearTimeout(session.expiryTimer)
+    if (session) session.apiToken = ''
     this.sessions.delete(token)
     for (const [previewToken, preview] of this.previews) if (preview.sessionToken === token) this.previews.delete(previewToken)
   }
@@ -190,11 +205,30 @@ export class PortainerPreviewService {
     if (preview) this.cancelSession(preview.sessionToken)
     this.previews.delete(token)
   }
-  clear() { this.sessions.clear(); this.previews.clear() }
+  clear() {
+    for (const token of [...this.sessions.keys()]) this.cancelSession(token)
+    this.previews.clear()
+  }
   private cleanup() {
     const now = this.now()
     for (const [token, session] of this.sessions) if (session.expiresAt <= now) this.cancelSession(token)
     for (const [token, preview] of this.previews) if (preview.expiresAt <= now) this.previews.delete(token)
+  }
+  private scheduleExpiry(token: string, session: Session) {
+    if (session.expiryTimer !== undefined) clearTimeout(session.expiryTimer)
+    const delay = Math.max(0, session.expiresAt - this.now())
+    session.expiryTimer = setTimeout(() => {
+      const current = this.sessions.get(token)
+      if (current !== session) return
+      if (current.expiresAt > this.now()) {
+        this.scheduleExpiry(token, current)
+        return
+      }
+      this.cancelSession(token)
+    }, delay)
+    if (typeof session.expiryTimer === 'object' && 'unref' in session.expiryTimer) {
+      session.expiryTimer.unref()
+    }
   }
 }
 
@@ -267,10 +301,10 @@ function mapContainer(environmentId: number, hostId: string, container: DockerCo
     createdAt: timestamp, updatedAt: timestamp, warnings, conflicts,
   }
   if (!version.version || !version.apiVersion) warnings.push({ code: 'VERSION_INCOMPLETE', message: 'Docker version information was incomplete.' })
-  const duplicates = inventory.services.filter((existing) => existing.hostId && existing.containerName.trim().toLowerCase() === name.toLowerCase())
+  const duplicates = inventory.services.filter((existing) => existing.hostId === hostId && existing.containerName.trim().toLowerCase() === name.toLowerCase())
   if (duplicates.length) conflicts.push({ code: 'CONTAINER_NAME_DUPLICATE', message: `Container name matches ${duplicates.map((item) => item.name).join(', ')}; verify the target host.`, blocking: false })
   for (const port of ports) for (const existing of inventory.services) for (const existingPort of existing.ports) {
-    if (existing.hostId && port.hostPort !== undefined && port.hostPort === existingPort.hostPort && portProtocolsOverlap(port.protocol, existingPort.protocol)) {
+    if (existing.hostId === hostId && port.hostPort !== undefined && port.hostPort === existingPort.hostPort && portProtocolsOverlap(port.protocol, existingPort.protocol)) {
       conflicts.push({ code: 'HOST_PORT_CONFLICT', message: `${port.hostPort}/${port.protocol} overlaps ${existing.name}.`, blocking: false })
     }
   }

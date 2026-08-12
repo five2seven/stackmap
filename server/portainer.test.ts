@@ -1,10 +1,11 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PortainerClient, PortainerError, PortainerPreviewService } from './portainer.js'
 import type { InventorySnapshot } from './repository.js'
 
 const emptyInventory = (): InventorySnapshot => ({ revision: 4, hosts: [], services: [] })
 const response = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } })
+afterEach(() => vi.useRealTimers())
 
 function fixtures() {
   return {
@@ -73,11 +74,72 @@ describe('Portainer discovery', () => {
   })
 
   it('clears sessions and previews on cancellation', async () => {
+    vi.useFakeTimers()
     const data = fixtures()
     const client = new PortainerClient('https://portainer.example', async (url) => response(url.endsWith('/api/endpoints') ? data.endpoints : url.endsWith('/info') ? data.info : url.endsWith('/version') ? data.version : data.containers))
     const service = new PortainerPreviewService(client, emptyInventory)
     const connected = await service.connect('secret')
+    expect(vi.getTimerCount()).toBe(1)
     service.cancelSession(connected.sessionToken)
+    expect(vi.getTimerCount()).toBe(0)
     await expect(service.preview(connected.sessionToken, [7])).rejects.toBeInstanceOf(PortainerError)
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+    await expect(service.preview(connected.sessionToken, [7])).rejects.toMatchObject({ code: 'PORTAINER_SESSION_INVALID' })
+  })
+
+  it('actively expires idle sessions and releases their token capacity without another request', async () => {
+    vi.useFakeTimers()
+    const data = fixtures()
+    const client = new PortainerClient('https://portainer.example', async () => response(data.endpoints))
+    const service = new PortainerPreviewService(client, emptyInventory, Date.now, 1_000)
+    const connected = await service.connect('idle-secret-token')
+    expect(vi.getTimerCount()).toBe(1)
+
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(vi.getTimerCount()).toBe(0)
+    await expect(service.preview(connected.sessionToken, [7])).rejects.toMatchObject({ code: 'PORTAINER_SESSION_INVALID' })
+    const replacements = await Promise.all(Array.from({ length: 8 }, (_, index) => service.connect(`replacement-${index}`)))
+    expect(replacements).toHaveLength(8)
+    service.clear()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('ignores stale expiry events after a session TTL refresh', async () => {
+    vi.useFakeTimers()
+    const data = fixtures()
+    const client = new PortainerClient('https://portainer.example', async (url) => response(url.endsWith('/api/endpoints') ? data.endpoints : url.endsWith('/info') ? data.info : url.endsWith('/version') ? data.version : data.containers))
+    const service = new PortainerPreviewService(client, emptyInventory, Date.now, 1_000)
+    const connected = await service.connect('secret')
+    await vi.advanceTimersByTimeAsync(500)
+    await service.preview(connected.sessionToken, [7])
+
+    await vi.advanceTimersByTimeAsync(500)
+
+    await expect(service.preview(connected.sessionToken, [7])).resolves.toMatchObject({ expectedInventoryRevision: 4 })
+    service.clear()
+  })
+
+  it('does not revive a session when discovery completes after active expiry', async () => {
+    vi.useFakeTimers()
+    const data = fixtures()
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    const client = new PortainerClient('https://portainer.example', async (url) => {
+      if (url.endsWith('/api/endpoints')) return response(data.endpoints)
+      await gate
+      return response(url.endsWith('/info') ? data.info : url.endsWith('/version') ? data.version : data.containers)
+    })
+    const service = new PortainerPreviewService(client, emptyInventory, Date.now, 1_000)
+    const connected = await service.connect('late-secret-token')
+    const outcome = service.preview(connected.sessionToken, [7]).catch((error: unknown) => error)
+    await Promise.resolve()
+
+    await vi.advanceTimersByTimeAsync(1_000)
+    release()
+
+    await expect(outcome).resolves.toMatchObject({ code: 'PORTAINER_SESSION_INVALID' })
+    await expect(service.preview(connected.sessionToken, [7])).rejects.toMatchObject({ code: 'PORTAINER_SESSION_INVALID' })
+    expect(vi.getTimerCount()).toBe(0)
   })
 })
