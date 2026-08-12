@@ -2,6 +2,8 @@
 
 ## StackMap v1.1.0
 
+### Highlights
+
 - Adds production-only manual Portainer discovery, preview, and explicitly confirmed create-only import.
 - Imports selected hosts, services, ports, and bind mounts atomically into authoritative SQLite and records non-secret repeat-import bindings.
 - Uses a server-configured HTTPS origin and short-lived in-memory API tokens with a fixed read-only endpoint allowlist.
@@ -9,11 +11,39 @@
 - Keeps portable backup schema version 1 unchanged. Successful full restore clears Portainer provenance transactionally.
 - The public demo remains isolated and contains no Portainer integration.
 
+### Upgrade guidance
+
+Before upgrading, download a server JSON backup and stop StackMap cleanly to make a cold backup of the
+complete `/config` directory. Preserve the same `/config` mount when recreating the container and wait
+for the health check before verifying inventory and Portainer import in the UI.
+
+The SQLite database schema migrates forward transactionally at startup. StackMap v1.1.0 adds Portainer
+provenance tables while leaving portable JSON backup schema version 1 unchanged. Rollback is safe only
+when the older image recognizes the upgraded database schema. Otherwise, stop StackMap and restore the
+matching cold `/config` backup before starting the older image; do not run an older image against an
+unsupported schema.
+
+### Known limitations
+
+- Portainer import is manual and create-only. There is no synchronization, polling, background refresh,
+  automatic import, overwrite, merge, or update of existing services.
+- Import supports only the approved read-only Portainer environment, Docker info/version, and container
+  list routes. It does not inspect containers, access the Docker socket, or mutate Portainer or Docker.
+- Bind mounts can be imported; named and anonymous volume backing paths are skipped with a warning.
+  Multiple networks require explicit selection, and dependencies are not inferred.
+- API tokens are entered for each discovery session and remain only in short-lived server memory.
+- Published container validation covers Linux/amd64; ARM64 remains unvalidated.
+
+### Validation
+
+Release-candidate validation passed lint, 196 unit/integration/component tests, production and demo
+builds, 12 production browser E2E tests, the isolated demo E2E test, the production dependency audit,
+Linux/amd64 image and deployment/backup/upgrade/failure regressions, `git diff --check`, and Semgrep.
+
 ## StackMap v1.0.0
 
-**Status:** Release metadata prepared for review. The `v1.0.0` tag and GitHub Release have not been
-created yet. The production container and public demo were published separately before this metadata
-change and are not republished by it.
+**Status:** Released. The `v1.0.0` tag and GitHub Release exist. The production container and public demo
+were published through their separately approved workflows.
 
 ### Highlights
 

@@ -39,8 +39,9 @@ The final production product is the self-hosted Node.js application with durable
 
 The normal production build statically selects the same-origin HTTP repository and server backup client. The demo build does not change or provide a fallback for that self-hosted runtime.
 
-The planned public demo URL is `https://stackmap.rareobjectlabs.app`, and the source repository is
-`https://github.com/five2seven/stackmap`.
+The live public demo is `https://stackmap.rareobjectlabs.app`, and the source repository is
+`https://github.com/five2seven/stackmap`. The live site remains the isolated static demo described above,
+not a production StackMap deployment.
 
 ## Testing
 
