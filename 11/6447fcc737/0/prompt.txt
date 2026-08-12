@@ -862,3 +862,49 @@ If ready:
 Do not begin implementation yet.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement the single Ready v1.1.1 task from `docs/current-task.md`.
+
+Follow AGENTS.md and the merged v1.1.1 plan.
+
+Requirements:
+
+- allow `STACKMAP_PORTAINER_URL` over HTTP only when every resolved destination is RFC1918 IPv4:
+
+- 10.0.0.0/8
+- 172.16.0.0/12
+- 192.168.0.0/16
+- reject loopback, link-local, metadata, multicast, unspecified, CGNAT, IPv6, mixed private/public DNS, and all other non-RFC1918 HTTP targets
+- validate at startup and enforce again in the actual per-request connection lookup
+- prevent DNS rebinding by ensuring the request connects only to addresses validated for that request
+- preserve the configured hostname/Host header
+- never send `X-API-Key` when destination validation fails
+- preserve redirect rejection and the existing GET-only Portainer endpoint allowlist
+- preserve HTTPS behavior and normal certificate validation unchanged
+- no TLS bypass
+- no Cloudflare Access support
+- no sync/update/background behavior
+- no database or UI workflow changes
+
+Also:
+
+- update version metadata to `1.1.1`
+- update README/deployment/architecture/release notes as required
+- add focused unit/integration coverage for the network policy
+- add real container/E2E proof using an RFC1918 Docker-network Portainer fixture
+- preserve demo isolation
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation no unrelated behavior was added
