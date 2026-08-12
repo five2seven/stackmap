@@ -4,6 +4,8 @@ set -euo pipefail
 image="${1:-stackmap:validation}"
 root="$(mktemp -d)"
 container="stackmap-deployment-validation"
+portainer_container="stackmap-portainer-validation"
+network="stackmap-portainer-validation"
 port="18088"
 
 log() { printf '\n==> %s\n' "$1"; }
@@ -17,6 +19,8 @@ cleanup() {
     find "$root" -maxdepth 2 -printf '%M %u:%g %p\n' 2>/dev/null || true
   fi
   docker rm --force "$container" >/dev/null 2>&1 || true
+  docker rm --force "$portainer_container" >/dev/null 2>&1 || true
+  docker network rm "$network" >/dev/null 2>&1 || true
   chmod -R u+rwX "$root" 2>/dev/null || true
   rm -rf "$root"
   exit "$exit_code"
@@ -28,7 +32,11 @@ run_container() {
   docker rm --force "$container" >/dev/null 2>&1 || true
   docker run --detach --name "$container" --init --read-only --tmpfs /tmp \
     --cap-drop ALL --security-opt no-new-privileges:true \
+    --network "$network" \
     --mount "type=bind,source=$config,target=/config" \
+    --mount "type=bind,source=$root/portainer-cert.pem,target=/tmp/portainer-cert.pem,readonly" \
+    --env NODE_EXTRA_CA_CERTS=/tmp/portainer-cert.pem \
+    --env STACKMAP_PORTAINER_URL=https://stackmap-portainer-validation:9443 \
     --publish "${port}:8080" "$image" >/dev/null
 }
 
@@ -49,6 +57,19 @@ meta_value() {
 }
 
 log "Validate Portainer/Compose deployment contract"
+docker network create "$network" >/dev/null
+openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+  -keyout "$root/portainer-key.pem" -out "$root/portainer-cert.pem" \
+  -subj '/CN=stackmap-portainer-validation' \
+  -addext 'subjectAltName=DNS:stackmap-portainer-validation' >/dev/null 2>&1
+chmod 0644 "$root/portainer-key.pem" "$root/portainer-cert.pem"
+docker run --detach --name "$portainer_container" --read-only --tmpfs /tmp --network "$network" \
+  --entrypoint node \
+  --mount "type=bind,source=$(pwd)/scripts/fake-portainer-server.mjs,target=/app/fake-portainer-server.mjs,readonly" \
+  --mount "type=bind,source=$root/portainer-cert.pem,target=/run/portainer-cert.pem,readonly" \
+  --mount "type=bind,source=$root/portainer-key.pem,target=/run/portainer-key.pem,readonly" \
+  --env FAKE_PORTAINER_CERT=/run/portainer-cert.pem --env FAKE_PORTAINER_KEY=/run/portainer-key.pem \
+  "$image" /app/fake-portainer-server.mjs >/dev/null
 STACKMAP_PORT=18089 STACKMAP_CONFIG_DIR="$root/compose-config" TZ=UTC docker compose config --format json >"$root/compose.json"
 COMPOSE_FILE="$root/compose.json" node <<'NODE'
 const assert = require('node:assert/strict')
@@ -77,8 +98,70 @@ docker run --rm --user 10001:10001 --mount "type=bind,source=$upgrade,target=/co
 run_container "$upgrade"
 wait_for_health
 test "$(meta_value installation_id)" = task-1-installation
-test "$(docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT MAX(version) FROM schema_migrations').pluck().get()));d.close()")" = 3
+test "$(docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT MAX(version) FROM schema_migrations').pluck().get()));d.close()")" = 4
 test "$(meta_value inventory_revision)" = 0
+
+log "Validate real Portainer import, provenance, and persistence"
+curl --fail --silent --show-error -H 'content-type: application/json' \
+  --data '{"apiToken":"container-api-token"}' "http://127.0.0.1:${port}/api/v1/portainer/sessions" >"$root/portainer-session.json"
+SESSION_FILE="$root/portainer-session.json" node <<'NODE' >"$root/portainer-preview-request.json"
+const session = require(process.env.SESSION_FILE).data
+process.stdout.write(JSON.stringify({ sessionToken: session.sessionToken, environmentIds: [7] }))
+NODE
+curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-preview-request.json" \
+  "http://127.0.0.1:${port}/api/v1/portainer/previews" >"$root/portainer-preview.json"
+PREVIEW_FILE="$root/portainer-preview.json" node <<'NODE' >"$root/portainer-confirm.json"
+const preview = require(process.env.PREVIEW_FILE).data
+process.stdout.write(JSON.stringify({
+  previewToken: preview.previewToken,
+  expectedInventoryRevision: preview.expectedInventoryRevision,
+  selectedServices: [{ ...preview.services[0], ports: preview.services[0].ports.slice(0, 1), paths: preview.services[0].paths.slice(0, 1) }],
+  acknowledged: true,
+}))
+NODE
+curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-confirm.json" \
+  "http://127.0.0.1:${port}/api/v1/portainer/imports" >"$root/portainer-import.json"
+docker exec --interactive "$container" node <<'NODE'
+const assert = require('node:assert/strict')
+const Database = require('better-sqlite3')
+const db = new Database('/config/stackmap.db', { readonly: true })
+for (const [table, count] of Object.entries({ hosts: 1, services: 1, service_ports: 1, service_paths: 1, portainer_sources: 1, portainer_host_bindings: 1, portainer_container_bindings: 1 })) {
+  assert.equal(db.prepare(`SELECT COUNT(*) FROM ${table}`).pluck().get(), count, table)
+}
+assert.equal(db.prepare("SELECT value FROM application_metadata WHERE key='inventory_revision'").pluck().get(), '1')
+db.close()
+NODE
+curl --fail --silent --show-error -H 'content-type: application/json' \
+  --data '{"apiToken":"container-api-token"}' "http://127.0.0.1:${port}/api/v1/portainer/sessions" >"$root/portainer-repeat-session.json"
+SESSION_FILE="$root/portainer-repeat-session.json" node <<'NODE' >"$root/portainer-repeat-preview-request.json"
+const session = require(process.env.SESSION_FILE).data
+process.stdout.write(JSON.stringify({ sessionToken: session.sessionToken, environmentIds: [7] }))
+NODE
+curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-repeat-preview-request.json" \
+  "http://127.0.0.1:${port}/api/v1/portainer/previews" >"$root/portainer-repeat-preview.json"
+REPEAT_FILE="$root/portainer-repeat-preview.json" node <<'NODE'
+const assert = require('node:assert/strict')
+const service = require(process.env.REPEAT_FILE).data.services[0]
+assert.equal(service.alreadyBound, true)
+assert.ok(service.conflicts.some(({ code, blocking }) => code === 'ALREADY_BOUND' && blocking))
+NODE
+docker restart "$container" >/dev/null
+wait_for_health
+test "$(docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT COUNT(*) FROM portainer_container_bindings').pluck().get()));d.close()")" = 1
+docker rm --force "$container" >/dev/null
+run_container "$upgrade"
+wait_for_health
+test "$(docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT COUNT(*) FROM portainer_container_bindings').pluck().get()));d.close()")" = 1
+curl --fail --silent --show-error "http://127.0.0.1:${port}/api/v1/backup" >"$root/portainer-backup.json"
+curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-backup.json" \
+  "http://127.0.0.1:${port}/api/v1/restore/preview" >"$root/portainer-restore-preview.json"
+RESTORE_FILE="$root/portainer-restore-preview.json" node <<'NODE' >"$root/portainer-restore-confirm.json"
+const preview = require(process.env.RESTORE_FILE).data
+process.stdout.write(JSON.stringify({ previewToken: preview.previewToken, expectedInventoryRevision: preview.expectedInventoryRevision }))
+NODE
+curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-restore-confirm.json" \
+  "http://127.0.0.1:${port}/api/v1/restore/confirm" >/dev/null
+test "$(docker exec "$container" node -e "const D=require('better-sqlite3');const d=new D('/config/stackmap.db',{readonly:true});process.stdout.write(String(d.prepare('SELECT COUNT(*) FROM portainer_sources').pluck().get()));d.close()")" = 0
 
 log "Validate concurrent-client conflict handling"
 timestamp='2026-08-09T00:00:00.000Z'

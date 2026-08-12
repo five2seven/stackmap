@@ -14,39 +14,70 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', (error) => issues.push(`pageerror: ${error.message}`))
 })
 
-test('previews selected Portainer discovery without an import action or inventory mutation', async ({ page }) => {
-  const requests: string[] = []
-  await page.route('**/api/v1/portainer/**', async (route) => {
-    const path = new URL(route.request().url()).pathname
-    requests.push(`${route.request().method()} ${path}`)
-    const data = path.endsWith('/status')
-      ? { enabled: true }
-      : path.endsWith('/sessions')
-        ? { sessionToken: 'opaque-session', environments: [{ id: 1, name: 'Docker lab', containerEngine: 'docker', publicUrl: '' }] }
-        : path.endsWith('/previews')
-          ? {
-              previewToken: 'opaque-preview', expectedInventoryRevision: 0, existingHosts: [],
-              hosts: [{ environmentId: 1, existingHostMatches: [], id: 'host-candidate', name: 'Docker lab', type: 'container-host', ipAddress: '', operatingSystem: 'Linux · amd64', notes: '', createdAt: '2026-08-12T00:00:00.000Z', updatedAt: '2026-08-12T00:00:00.000Z' }],
-              services: [{ environmentId: 1, containerId: 'container-id', sourceState: 'exited', networkOptions: ['frontend', 'backend'], warnings: [{ code: 'VOLUME_SKIPPED', message: 'Skipped named volume.' }], conflicts: [{ code: 'NETWORK_SELECTION_REQUIRED', message: 'Select one Docker network.', blocking: true }], id: 'service-candidate', name: 'Preview app', containerName: 'Preview app', dockerImage: 'preview:1', description: '', applicationUrl: '', status: 'paused', hostId: 'host-candidate', internalUrl: '', ports: [{ id: 'port', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }], paths: [{ id: 'path', hostPath: '/srv/app', containerPath: '/data', purpose: '', readOnly: true }], network: '', exposure: 'unknown', dependencyIds: [], notes: '', createdAt: '2026-08-12T00:00:00.000Z', updatedAt: '2026-08-12T00:00:00.000Z' }],
-            }
-          : null
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data }) })
-  })
+test('reviews and explicitly confirms a Portainer import selection', async ({ page }) => {
+  test.setTimeout(60_000)
+  const secondBrowser = await page.context().browser()!.newContext()
+  const secondPage = await secondBrowser.newPage()
   await page.goto('/')
-  await page.getByRole('button', { name: 'Import from Portainer' }).click()
-  await page.getByLabel('Portainer API token').fill('browser-only-token')
-  await page.getByRole('button', { name: 'Discover environments' }).click()
-  await page.getByRole('checkbox', { name: 'Docker lab' }).check()
-  await page.getByRole('button', { name: 'Build preview' }).click()
-  await expect(page.getByText('Phase 1 cannot write inventory. Import confirmation will be added only in Phase 2.')).toBeVisible()
-  await expect(page.getByText('Skipped named volume.')).toBeVisible()
-  await expect(page.getByRole('button', { name: /confirm|import selected/i })).toHaveCount(0)
-  expect(((await (await page.request.get('/api/v1/services')).json()).data as unknown[])).toEqual([])
-  expect(requests).toEqual([
-    'GET /api/v1/portainer/status',
-    'POST /api/v1/portainer/sessions',
-    'POST /api/v1/portainer/previews',
-  ])
+  await secondPage.goto('/')
+
+  const buildPreview = async (target: Page) => {
+    const openButton = target.getByRole('button', { name: 'Import from Portainer' })
+    if (await openButton.count()) await openButton.click()
+    await target.getByLabel('Portainer API token').fill('e2e-api-token')
+    await target.getByRole('button', { name: 'Discover environments' }).click()
+    await target.getByRole('checkbox', { name: 'Docker lab' }).check()
+    await target.getByRole('button', { name: 'Build preview' }).click()
+  }
+  await buildPreview(page)
+  await buildPreview(secondPage)
+
+  const running = page.locator('.portainer-service').filter({ hasText: 'Running app' })
+  const stopped = page.locator('.portainer-service').filter({ hasText: 'Stopped app' })
+  await expect(running.getByRole('checkbox', { name: /Running app running/i })).not.toBeChecked()
+  await expect(stopped.getByRole('checkbox', { name: /Stopped app exited/i })).not.toBeChecked()
+  await expect(page.getByRole('button', { name: 'Import selected' })).toBeDisabled()
+  await running.getByRole('checkbox', { name: /Running app running/i }).check()
+  await running.getByRole('checkbox', { name: /8443.*443/ }).click()
+  await running.getByRole('checkbox', { name: /\/srv\/running\/data.*\/data/ }).click()
+  await page.getByRole('checkbox', { name: /I reviewed this selection/ }).check()
+  await page.getByRole('button', { name: 'Import selected' }).click()
+  await expect(page.getByText(/Imported 1 services and 1 hosts/)).toBeVisible()
+
+  const inventory = ((await (await page.request.get('/api/v1/services')).json()).data as Array<{ name: string; ports: unknown[]; paths: unknown[]; hostId: string }>)
+  expect(inventory).toHaveLength(1)
+  expect(inventory[0]).toMatchObject({ name: 'Running app', ports: [{ hostPort: 8080, containerPort: 80 }], paths: [{ hostPath: '/srv/running/config', containerPath: '/config' }] })
+
+  const staleRunning = secondPage.locator('.portainer-service').filter({ hasText: 'Running app' })
+  await staleRunning.getByRole('checkbox', { name: /Running app running/i }).check()
+  await secondPage.getByRole('checkbox', { name: /I reviewed this selection/ }).check()
+  await secondPage.getByRole('button', { name: 'Import selected' }).click()
+  await expect(secondPage.getByRole('alert')).toContainText('inventory changed')
+  await expect(secondPage.getByRole('button', { name: 'Import selected' })).toHaveCount(0)
+
+  await buildPreview(secondPage)
+  const repeatRunning = secondPage.locator('.portainer-service').filter({ hasText: 'Running app' })
+  await expect(repeatRunning.getByRole('checkbox', { name: /Running app running/i })).toBeDisabled()
+  await expect(repeatRunning).toContainText('imported previously')
+  const stoppedRetry = secondPage.locator('.portainer-service').filter({ hasText: 'Stopped app' })
+  await stoppedRetry.getByRole('checkbox', { name: /Stopped app exited/i }).check()
+  const existingHostId = inventory[0].hostId
+  await stoppedRetry.getByLabel('Target host').selectOption(existingHostId)
+  await secondPage.getByRole('checkbox', { name: /I reviewed this selection/ }).check()
+  await secondPage.getByRole('button', { name: 'Import selected' }).click()
+  await expect(secondPage.getByText(/Imported 1 services and 0 hosts/)).toBeVisible()
+  const afterAttachment = ((await (await page.request.get('/api/v1/services')).json()).data as Array<{ name: string; hostId: string }>)
+  expect(afterAttachment.find(({ name }) => name === 'Stopped app')?.hostId).toBe(existingHostId)
+
+  const backup = await (await page.request.get('/api/v1/backup')).json()
+  const restorePreview = (await (await page.request.post('/api/v1/restore/preview', { data: backup })).json()).data
+  const restored = await page.request.post('/api/v1/restore/confirm', { data: { previewToken: restorePreview.previewToken, expectedInventoryRevision: restorePreview.expectedInventoryRevision } })
+  expect(restored.ok()).toBe(true)
+
+  await buildPreview(page)
+  await expect(page.locator('.portainer-service').filter({ hasText: 'Running app' }).getByRole('checkbox', { name: /Running app running/i })).toBeEnabled()
+  await expect(page.locator('.portainer-service').filter({ hasText: 'Stopped app' }).getByRole('checkbox', { name: /Stopped app exited/i })).toBeEnabled()
+  await secondBrowser.close()
 })
 
 async function clearServerInventory(page: Page) {

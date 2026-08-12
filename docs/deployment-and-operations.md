@@ -17,6 +17,8 @@ Use the image-based Stack in the README. Replace `/path/to/stackmap/config` with
 host directory that the container identity `10001:10001` can write. Preserve the `/config` mount across
 all updates and recreations. The container listens on port `8080`; the example publishes host port `8088`.
 
+To enable manual Portainer import, set `STACKMAP_PORTAINER_URL` to the Portainer HTTPS origin and recreate StackMap. Users provide the API token only when starting discovery; it is never persisted. Leave the setting absent to disable all production Portainer routes and UI. Normal system certificate validation is mandatory.
+
 After deployment, wait for the health check and open `http://<docker-host-ip>:8088`. If the container
 does not become healthy, inspect its logs before changing files or mounts:
 
@@ -56,6 +58,8 @@ confirmation requires explicit acknowledgement and the inventory revision observ
 stale, malformed, duplicate, referentially invalid, or unsupported backup fails closed. Successful restore
 replaces the inventory atomically and advances the target inventory revision once. Merge, partial,
 scheduled, incremental, and cloud restore are not supported.
+
+Portainer provenance is operational SQLite metadata and is intentionally absent from portable JSON backups. A successful full restore clears it transactionally; a failed restore preserves it.
 
 ## Cold `/config` backup and recovery
 

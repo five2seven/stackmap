@@ -9,6 +9,7 @@ export interface PortainerServiceCandidate extends Service {
   networkOptions: string[]
   warnings: Array<{ code: string; message: string }>
   conflicts: Array<{ code: string; message: string; blocking: boolean }>
+  alreadyBound: boolean
 }
 export interface PortainerPreview {
   previewToken: string
@@ -27,6 +28,11 @@ export class PortainerImportClient {
   status() { return this.request<{ enabled: boolean }>('/api/v1/portainer/status') }
   connect(apiToken: string) { return this.request<{ sessionToken: string; environments: PortainerEnvironment[] }>('/api/v1/portainer/sessions', { method: 'POST', body: JSON.stringify({ apiToken }) }) }
   preview(sessionToken: string, environmentIds: number[]) { return this.request<PortainerPreview>('/api/v1/portainer/previews', { method: 'POST', body: JSON.stringify({ sessionToken, environmentIds }) }) }
+  confirm(previewToken: string, expectedInventoryRevision: number, selectedServices: PortainerServiceCandidate[]) {
+    return this.request<{ inventoryRevision: number; hostIds: string[]; serviceIds: string[] }>('/api/v1/portainer/imports', {
+      method: 'POST', body: JSON.stringify({ previewToken, expectedInventoryRevision, selectedServices, acknowledged: true }),
+    })
+  }
   cancelSession(token: string) { return this.request<null>(`/api/v1/portainer/sessions/${encodeURIComponent(token)}`, { method: 'DELETE' }) }
   cancelPreview(token: string) { return this.request<null>(`/api/v1/portainer/previews/${encodeURIComponent(token)}`, { method: 'DELETE' }) }
   private async request<T>(path: string, init?: RequestInit): Promise<T> {

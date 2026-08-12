@@ -6,7 +6,7 @@ import { recomputePreviewConflicts } from './portainerPreview'
 const timestamp = '2026-08-12T00:00:00.000Z'
 const candidate = (overrides: Partial<PortainerServiceCandidate> = {}): PortainerServiceCandidate => ({
   environmentId: 1, containerId: 'container', sourceState: 'running', networkOptions: ['default'],
-  warnings: [], conflicts: [], id: 'candidate', name: 'Web', containerName: 'web', dockerImage: 'web:1',
+  warnings: [], conflicts: [], alreadyBound: false, id: 'candidate', name: 'Web', containerName: 'web', dockerImage: 'web:1',
   description: '', applicationUrl: '', status: 'active', hostId: 'new-host', internalUrl: '',
   ports: [{ id: 'candidate-port', hostPort: 8080, containerPort: 80, protocol: 'tcp', description: '' }],
   paths: [], network: 'default', exposure: 'unknown', dependencyIds: [], notes: '',

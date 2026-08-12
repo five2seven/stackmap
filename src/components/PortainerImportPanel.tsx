@@ -4,9 +4,9 @@ import { PortainerImportError, portainerImportClient, type PortainerEnvironment,
 import { recomputePreviewConflicts } from '../data/portainerPreview'
 import './PortainerImportPanel.css'
 
-interface Props { hosts: Host[]; services: Service[] }
+interface Props { hosts: Host[]; services: Service[]; onImported: () => Promise<void> }
 
-export function PortainerImportPanel({ hosts, services }: Props) {
+export function PortainerImportPanel({ hosts, services, onImported }: Props) {
   const [enabled, setEnabled] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [open, setOpen] = useState(false)
@@ -18,6 +18,8 @@ export function PortainerImportPanel({ hosts, services }: Props) {
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [acknowledged, setAcknowledged] = useState(false)
+  const [result, setResult] = useState('')
 
   useEffect(() => { let active = true; portainerImportClient.status().then((value) => { if (active) setEnabled(value.enabled) }).catch(() => {}).finally(() => { if (active) setLoaded(true) }); return () => { active = false } }, [])
   const candidateHosts = useMemo(() => new Map(preview?.hosts.map((host) => [host.environmentId, host]) ?? []), [preview])
@@ -47,6 +49,7 @@ export function PortainerImportPanel({ hosts, services }: Props) {
       const result = await portainerImportClient.preview(sessionToken, selectedEnvironments)
       setPreview(result)
       setSelectedServices([])
+      setAcknowledged(false)
     } catch (caught) {
       if (caught instanceof PortainerImportError && caught.code === 'PORTAINER_SESSION_INVALID') {
         setSessionToken(''); setEnvironments([]); setSelectedEnvironments([])
@@ -59,7 +62,7 @@ export function PortainerImportPanel({ hosts, services }: Props) {
   async function cancel() {
     const previewToken = preview?.previewToken
     const activeSession = sessionToken
-    setToken(''); setSessionToken(''); setEnvironments([]); setSelectedEnvironments([]); setPreview(null); setSelectedServices([]); setError(''); setOpen(false)
+    setToken(''); setSessionToken(''); setEnvironments([]); setSelectedEnvironments([]); setPreview(null); setSelectedServices([]); setAcknowledged(false); setResult(''); setError(''); setOpen(false)
     try { if (previewToken) await portainerImportClient.cancelPreview(previewToken); else if (activeSession) await portainerImportClient.cancelSession(activeSession) } catch { /* local cancellation is immediate */ }
   }
 
@@ -67,10 +70,31 @@ export function PortainerImportPanel({ hosts, services }: Props) {
     setPreview((current) => current && ({ ...current, services: current.services.map((service) => service.id === id ? { ...service, ...patch } : service) }))
   }
 
+  async function confirmImport() {
+    if (!displayedPreview || !selectedServices.length || !acknowledged || busy) return
+    setBusy(true); setError(''); setResult('Importing selected containers…')
+    try {
+      const selected = displayedPreview.services.filter(({ id }) => selectedServices.includes(id))
+      const imported = await portainerImportClient.confirm(displayedPreview.previewToken, displayedPreview.expectedInventoryRevision, selected)
+      setResult(`Imported ${imported.serviceIds.length} services and ${imported.hostIds.length} hosts. Inventory revision ${imported.inventoryRevision}.`)
+      setPreview(null); setSessionToken(''); setEnvironments([]); setSelectedEnvironments([]); setSelectedServices([]); setAcknowledged(false)
+      try {
+        await onImported()
+      } catch {
+        setError('The import succeeded, but StackMap could not refresh the inventory. Reload the page to see the imported records.')
+      }
+    } catch (caught) {
+      const terminal = caught instanceof PortainerImportError && ['PORTAINER_PREVIEW_INVALID', 'PORTAINER_PREVIEW_STALE', 'PORTAINER_ALREADY_BOUND'].includes(caught.code)
+      if (terminal) { setPreview(null); setSessionToken(''); setEnvironments([]); setSelectedEnvironments([]); setSelectedServices([]); setAcknowledged(false) }
+      setResult('')
+      setError(caught instanceof Error ? caught.message : 'The selected containers could not be imported.')
+    } finally { setBusy(false) }
+  }
+
   return <section className="portainer-import" aria-labelledby="portainer-import-title">
     <button className="button ghost" type="button" onClick={() => { if (open) void cancel(); else setOpen(true) }} aria-expanded={open} aria-controls="portainer-import-panel">{open ? 'Close Portainer preview' : 'Import from Portainer'}</button>
     {open && <div id="portainer-import-panel" className="portainer-import-panel">
-      <div><p className="eyebrow">Read-only discovery</p><h3 id="portainer-import-title">Preview Portainer containers</h3><p>StackMap will only read the configured Portainer server. Nothing can be imported in Phase 1.</p></div>
+      <div><p className="eyebrow">Read-only discovery</p><h3 id="portainer-import-title">Preview Portainer containers</h3><p>StackMap reads the configured Portainer server and imports only the containers you explicitly select and confirm.</p></div>
       {!sessionToken && <div className="portainer-token-row">
         <label className="field"><span>Portainer API token</span><input type="password" value={token} autoComplete="off" disabled={busy} onChange={(event) => setToken(event.target.value)} /></label>
         <button className="button primary" type="button" disabled={!token.trim() || busy} onClick={connect}>{busy ? 'Connecting…' : 'Discover environments'}</button>
@@ -87,7 +111,7 @@ export function PortainerImportPanel({ hosts, services }: Props) {
           const checked = selectedServices.includes(service.id)
           const proposedHost = candidateHosts.get(service.environmentId)
           return <article className="portainer-service" key={service.id}>
-            <label className="portainer-service-select"><input type="checkbox" checked={checked} onChange={(event) => setSelectedServices((current) => event.target.checked ? [...current, service.id] : current.filter((id) => id !== service.id))} /><strong>{service.name}</strong> <span>{service.sourceState}</span></label>
+            <label className="portainer-service-select"><input type="checkbox" checked={checked} disabled={service.alreadyBound || busy} onChange={(event) => setSelectedServices((current) => event.target.checked ? [...current, service.id] : current.filter((id) => id !== service.id))} /><strong>{service.name}</strong> <span>{service.sourceState}</span></label>
             <div className="form-grid">
               <label className="field"><span>Status</span><select value={service.status} onChange={(event) => patchService(service.id, { status: event.target.value as Service['status'] })}>{SERVICE_STATUSES.map((status) => <option key={status}>{status}</option>)}</select></label>
               <label className="field"><span>Target host</span><select value={service.hostId} onChange={(event) => patchService(service.id, { hostId: event.target.value })}><option value={proposedHost?.id}>New: {proposedHost?.name}</option>{displayedPreview.existingHosts.map((host) => <option value={host.id} key={host.id}>Existing: {host.name}</option>)}</select></label>
@@ -99,9 +123,12 @@ export function PortainerImportPanel({ hosts, services }: Props) {
             {[...service.warnings, ...service.conflicts].map((item, index) => <p className="path-warning" key={`${item.code}-${index}`}>{item.message}</p>)}
           </article>
         })}</div>
-        <div className="portainer-phase-boundary" role="status"><strong>Preview only</strong><span>Phase 1 cannot write inventory. Import confirmation will be added only in Phase 2.</span></div>
-        <button className="button ghost" type="button" onClick={cancel}>Cancel preview</button>
+        <div className="portainer-phase-boundary" role="group" aria-labelledby="portainer-confirm-title"><strong id="portainer-confirm-title">Confirm import</strong><span>Only the selected new records will be created. Existing services are never updated.</span>
+          <label><input type="checkbox" checked={acknowledged} disabled={busy} onChange={(event) => setAcknowledged(event.target.checked)} /> I reviewed this selection and understand it will be added to StackMap.</label>
+        </div>
+        <div className="form-actions"><button className="button primary" type="button" disabled={!selectedServices.length || !acknowledged || busy || displayedPreview.services.some((service) => selectedServices.includes(service.id) && service.conflicts.some(({ blocking }) => blocking))} onClick={confirmImport}>{busy ? 'Importing…' : 'Import selected'}</button><button className="button ghost" type="button" disabled={busy} onClick={cancel}>Cancel preview</button></div>
       </div>}
+      {result && <p className="notice success" role="status">{result}</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
     </div>}
   </section>

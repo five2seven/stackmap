@@ -138,6 +138,12 @@ To restore, select a server-backup JSON file, preview its summary, read the dest
 
 The retired browser migration workflow is not part of backup or restore. Server backup and restore continue to operate only on the authoritative SQLite inventory and do not inspect or modify browser storage.
 
+## Import from Portainer
+
+Set `STACKMAP_PORTAINER_URL` to the HTTPS origin of the Portainer server to enable manual import. In the production UI, enter a Portainer API token, select environments and containers, review host, network, port, and bind-mount choices, then explicitly confirm. StackMap performs read-only Portainer discovery and creates the selected records atomically in SQLite. Tokens remain short-lived server memory only.
+
+Portainer import is create-only: it never updates, synchronizes, refreshes, or deletes existing services, and previously imported containers are skipped by default. The public demo has no Portainer integration. Portable JSON backup schema version 1 remains unchanged; a successful full restore clears Portainer repeat-import metadata because restored inventory has no source bindings.
+
 For disaster recovery or image rollback, use a cold filesystem backup: stop the container cleanly, copy
 the complete `/config` directory, and then restart it. Copying only `stackmap.db` while StackMap is running
 is not a supported backup because SQLite may also have active WAL and shared-memory files. Restore a cold

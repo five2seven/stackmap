@@ -79,7 +79,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   registerInventoryApi(app, inventoryRepository)
   registerBackupApi(app, inventoryRepository, options.database.installationId)
   registerPortainerApi(app, options.portainerUrl
-    ? new PortainerPreviewService(new PortainerClient(options.portainerUrl, options.portainerFetcher), () => inventoryRepository.inventorySnapshot())
+    ? new PortainerPreviewService(new PortainerClient(options.portainerUrl, options.portainerFetcher), () => inventoryRepository.inventorySnapshot(), Date.now, undefined, options.portainerUrl, inventoryRepository)
     : undefined)
 
   const staticAvailable = fs.existsSync(path.join(options.staticRoot, 'index.html'))

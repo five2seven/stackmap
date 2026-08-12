@@ -17,7 +17,7 @@ export function recomputePreviewConflicts(
   const selected = new Set(selectedServiceIds)
   const services = preview.services.map((service) => ({
     ...service,
-    conflicts: service.conflicts.filter(({ code }) => !DYNAMIC_CONFLICT_CODES.has(code)),
+    conflicts: service.conflicts.filter(({ code }) => !DYNAMIC_CONFLICT_CODES.has(code) && !(code === 'NETWORK_SELECTION_REQUIRED' && service.network)),
   }))
 
   for (const service of services) addInventoryConflicts(service, inventoryServices)
