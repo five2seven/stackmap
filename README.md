@@ -27,17 +27,11 @@ connection or user-data upload.
 - Versioned JSON export of the current server inventory
 - Shared durable inventory in SQLite through the same-origin API
 
-## Screenshots
-
-Screenshots are not available yet.
-
 ## Deploy with Portainer
 
 The production container is published at `ghcr.io/five2seven/stackmap:latest`. Ordinary `main` merges and
 tag pushes validate without publishing an image; image publication remains an explicitly dispatched
 workflow.
-
-GitHub Container Registry packages may initially be private. After the first successful publish, open the `stackmap` package on the GitHub organization or user profile, select **Package settings**, choose **Change visibility** under **Danger Zone**, and set it to **Public** before sharing the deployment instructions.
 
 1. Open Portainer.
 2. Select **Stacks**.
@@ -56,7 +50,7 @@ services:
     init: true
     container_name: stackmap
     environment:
-      - TZ=America/Chicago
+      - TZ=Etc/UTC
     ports:
       - "8088:8080"
     healthcheck:
@@ -79,7 +73,7 @@ services:
 
 StackMap stores its authoritative inventory in `/config/stackmap.db`. Replace `/path/to/stackmap/config` with a writable persistent directory on the Docker host and include that directory in normal host-level backups.
 
-The left side of `"8088:8080"` is the host port. For example, use `"8090:8080"` to expose StackMap on port 8090. Change `TZ=America/Chicago` to the appropriate IANA timezone for the Docker host.
+The left side of `"8088:8080"` is the host port. For example, use `"8090:8080"` to expose StackMap on port 8090. Change `TZ=Etc/UTC` to the appropriate IANA timezone for the Docker host.
 
 Browsers and devices using the same StackMap server share its SQLite inventory. StackMap does not access or delete browser-local IndexedDB data. Operators who did not complete the earlier migration workflow must recover that data with a compatible older release or an existing JSON export.
 
@@ -198,6 +192,8 @@ Additional validation commands are `npm run lint`, `npm run build`, `npm run tes
 ## Development and Contributing
 
 StackMap uses React, TypeScript, Vite, Fastify, better-sqlite3, Vitest, Testing Library, and Playwright. Preserve strict TypeScript checks and run lint, tests, the production build, and relevant end-to-end tests before submitting a change.
+
+Bug reports are welcome through the repository's [Bug Report issue template](https://github.com/five2seven/stackmap/issues/new?template=bug_report.md). StackMap is self-hosted, and support, fixes, and response times are not guaranteed.
 
 More technical context is available in [architecture](docs/architecture.md),
 [product documentation](docs/product.md), [architecture decisions](docs/decisions.md),
