@@ -1,0 +1,456 @@
+Plan StackMap v1.1 Portainer API import only. Do not implement yet.
+
+Follow AGENTS.md.
+
+Research the current StackMap model and Portainer API integration requirements, then propose a scoped implementation plan for:
+
+- server-side Portainer URL + API-token handling
+- read-only API access using X-API-Key
+- environment discovery
+- container discovery
+- mapping Portainer/Docker fields into existing StackMap hosts, services, ports, paths, networks, exposure, and dependencies where supported
+- import preview before mutation
+- duplicate/conflict handling
+- explicit user selection and confirmation
+- credential storage/security model
+- timeout/TLS/error handling
+- focused tests and E2E coverage
+
+Constraints:
+
+- no Docker socket
+- no Portainer or Docker mutations
+- no background sync
+- no automatic import
+- no environment-variable values, secrets, registry credentials, labels containing secrets, or other sensitive values imported
+- no change to SQLite authority
+- preserve current backup/restore and public demo behavior
+
+Identify open product/security decisions before implementation.
+
+Return:
+
+- proposed architecture
+- exact API endpoints needed
+- field-mapping table
+- security risks/mitigations
+- implementation phases
+- test plan
+- unresolved decisions
+
+Do not modify files, create branches, commit, or open a PR.
+
+---
+
+Create the concrete StackMap v1.1 Portainer import plan using the decisions below. Do not re-research or reopen these decisions.
+
+Follow AGENTS.md.
+
+Approved v1.1 behavior:
+
+- Portainer import is manual, read-only discovery followed by explicit import.
+- SQLite remains authoritative.
+- No Docker socket, Portainer mutation, Docker mutation, synchronization, polling, or background refresh.
+- Portainer URL is configured server-side through `STACKMAP_PORTAINER_URL`; users cannot supply arbitrary outbound URLs.
+- Import is disabled when that setting is absent.
+- User supplies only the Portainer API token through the production UI.
+- Token is session-only, server-memory-only, short-lived, never persisted, logged, returned to the browser, backed up, or placed in URLs.
+- HTTPS with normal system certificate validation only. No insecure TLS bypass.
+- Only these outbound GET routes are permitted:
+
+- `/api/endpoints`
+- `/api/endpoints/{id}/docker/info`
+- `/api/endpoints/{id}/docker/version`
+- `/api/endpoints/{id}/docker/containers/json?all=true`
+- Never call container inspect, stacks, registries, secrets, configs, logs, stats, events, or arbitrary Docker proxy paths.
+- Never read/import labels, environment-variable values, registry credentials, or secrets.
+- Add non-secret Portainer source/binding metadata in SQLite for repeat-import detection.
+- Existing portable backup schema remains unchanged.
+- A full StackMap restore clears Portainer source/binding metadata transactionally.
+- Import creates new records only; it never updates/synchronizes existing services.
+- User may attach discovered containers to an existing StackMap host.
+- Multiple networks require explicit user selection.
+- Discover stopped containers and let the user choose whether to import them.
+- Default status mapping: running/restarting → active; stopped/paused/created/exited/dead → paused, editable in preview.
+- Import bind mounts only; skip named/anonymous volume backing paths with a warning.
+- Leave host IP blank unless a trustworthy literal IP is available.
+- Exposure: loopback-only published bindings → local; all others → unknown.
+- Do not infer dependencies.
+- Preview must show mapped hosts/services, ports, bind mounts, networks, warnings, duplicates, and conflicts before any mutation.
+- Allow users to deselect containers and, where practical, individual ports/bind mounts.
+- Confirmation uses expected inventory revision and one atomic SQLite transaction.
+- Re-import of an already-bound container defaults to skipped.
+- No automatic overwrite, merge, or refresh behavior.
+- Public demo must contain no Portainer UI/client/routes or outbound integration code.
+
+Structure implementation into only two feature PRs:
+
+1. Portainer discovery + preview, with no inventory mutation.
+2. Atomic confirmation/import + hardening, E2E/container regression coverage, and documentation.
+
+Create a new v1.1 planning/current-task branch and planning PR defining these two phases and their acceptance criteria.
+
+Do not implement Phase 1 yet.
+
+Return only:
+
+- planning branch
+- commit
+- Entire checkpoint
+- PR URL
+- Phase 1 and Phase 2 scope
+- validation
+
+---
+
+Review planning PR #29.
+
+Follow AGENTS.md.
+
+Verify:
+
+- v1.1 is a new post-v1.0 plan
+- Phase 1 is discovery + preview only, with no inventory mutation
+- Phase 2 owns provenance, atomic import, restore cleanup, hardening, E2E/container coverage, and docs
+- approved Portainer security/product decisions are recorded without reopening them
+- only planning files changed
+- Phase 1 implementation did not begin
+
+If ready:
+
+- mark PR #29 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin Phase 1.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement v1.1 Portainer Import Phase 1 only.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Scope:
+
+- server-configured `STACKMAP_PORTAINER_URL`
+- import disabled when unset
+- production UI accepts API token only
+- token is short-lived, server-memory-only, never persisted/logged/returned
+- GET-only allowlisted Portainer client for the approved endpoints
+- environment discovery
+- Docker info/version/container-list discovery
+- strict projection/validation and sensitive-field exclusion
+- mapping into StackMap preview candidates
+- duplicate/conflict analysis
+- production-only import preview UI
+- preview/cancel/expiry behavior
+- no inventory mutation
+
+Do not:
+
+- add provenance tables
+- add confirm/import mutation
+- change restore behavior
+- add sync/refresh/background jobs
+- expose Portainer UI/routes in demo
+- implement Phase 2
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- validation
+- exact-head CI result
+- confirmation Phase 2 was not started
+
+---
+
+Review PR #30 at exact head `5cf9c620acd396409d096d994950e3f17dc5ebdc` against `origin/main`.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Review Phase 1 completely, especially:
+
+- `STACKMAP_PORTAINER_URL` server configuration
+- import-disabled behavior when unset
+- API-token handling and non-persistence
+- GET-only Portainer endpoint allowlist
+- environment/container discovery
+- strict response projection and sensitive-field exclusion
+- mapping, duplicate/conflict analysis, and preview behavior
+- expiry/cancel/error handling
+- production-only UI
+- demo isolation
+- proof that no inventory mutation or Phase 2 work exists
+
+Do not modify files or PR state.
+
+Report:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge or begin Phase 2.
+
+---
+
+Fix only the recorded PR #30 review findings on `codex/portainer-discovery-preview`.
+
+Follow AGENTS.md.
+
+Required fixes:
+
+1. Token/session expiry
+
+- Make the Portainer connection/session TTL actively enforced, not lazy.
+- Expired sessions must release the API token from memory without requiring another request.
+- Add focused tests for idle expiry, cleanup, late events, cancellation, and no token retention after expiry.
+
+2. Host-scoped conflict analysis
+
+- Container-name and host-port conflicts must be evaluated against the actual proposed target host.
+- If the user switches a candidate to an existing StackMap host, recompute conflicts for that host.
+- Preserve StackMap’s current host-scoped conflict semantics.
+- Add focused tests for new-host, existing-host, cross-host, and changed-target-host cases.
+
+3. Nested deselection
+
+- Port and bind-mount deselection in the preview must change the actual stored candidate used for confirmation later.
+- Do not make this cosmetic-only UI state.
+- Add tests proving deselected ports/mounts are excluded from the preview candidate payload/state.
+
+Do not add provenance tables, confirmation/import mutation, restore changes, synchronization, polling, background refresh, or any other Phase 2 work.
+
+Validate fully, commit, push, keep PR #30 draft, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- files changed
+- focused test results
+- full validation
+- exact-head CI result
+- confirmation Phase 2 remains untouched
+
+---
+
+Final re-review PR #30 at exact head `7617893cd51bb87d2c2435d2c4e0a798b9957d45`.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Verify only the three prior findings are resolved:
+
+- active token/session expiry and cleanup
+- host-scoped conflict analysis after target-host changes
+- persisted port/bind-mount deselection
+
+Also verify exact-head CI/Semgrep passed and Phase 2 remains untouched.
+
+If ready:
+
+- mark PR #30 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin Phase 2.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement v1.1 Portainer Import Phase 2 only.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Scope:
+
+- add Portainer source/binding provenance schema and repository support
+- preserve SQLite as sole authority
+- confirmation endpoint using preview token + expected inventory revision
+- create-only import; never update/sync existing services
+- allow selected candidates to attach to an explicitly chosen existing host
+- atomically insert selected hosts/services/ports/paths/provenance in one SQLite transaction
+- imported records start at revision 1
+- advance global inventory revision exactly once on successful import
+- fail stale previews without mutation
+- consumed/expired preview tokens cannot import twice
+- repeat imports of already-bound containers default to skipped
+- full StackMap restore clears Portainer provenance transactionally
+- add confirmation UI, progress/error handling, and safe retry behavior
+- preserve Phase 1 deselection and conflict resolutions
+- add hardening, focused regression tests, E2E/container coverage, backup/restore regression, and documentation
+
+Do not:
+
+- add background sync, polling, refresh/update semantics, or automatic discovery
+- update existing services
+- persist Portainer API tokens
+- change backup JSON schema
+- expose Portainer functionality in the public demo
+- add unrelated v1.1 features
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI result
+- confirmation no sync/update behavior was added
+
+---
+
+Advance the v1.1 Portainer import plan after Phase 1.
+
+Follow AGENTS.md.
+
+Record Phase 1 as Complete with:
+
+- implementation branch
+- implementation/fix commits
+- Entire checkpoints
+- PR #30
+- merge commit `8c8aa921b5e914721da5fd73f1b5faee6de634d7`
+- validation and exact-head CI/Semgrep
+- confirmation that Phase 2 was not started
+
+Then mark Phase 2 Ready because Phase 1 is merged and no blocker remains.
+
+Update only:
+
+- `docs/current-task.md`
+- `docs/v1.1-portainer-import-plan.md`
+
+Do not implement Phase 2.
+Do not change application code.
+Do not merge the planning PR.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- Phase 1/Phase 2 statuses
+- validation
+
+---
+
+Review planning PR #31.
+
+Follow AGENTS.md.
+
+Verify:
+
+- Phase 1 is accurately Complete
+- Phase 2 is the only Ready phase
+- only `docs/current-task.md` and `docs/v1.1-portainer-import-plan.md` changed
+- Phase 2 implementation did not begin
+
+If ready:
+
+- mark PR #31 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin Phase 2.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement v1.1 Portainer Import Phase 2 only.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Scope:
+
+- add non-secret Portainer source/binding provenance schema and repository support
+- preserve SQLite as sole production authority
+- add confirmation using preview token + expected inventory revision
+- create-only import; never update or synchronize existing services
+- allow selected candidates to attach to an explicitly chosen existing host
+- atomically insert selected hosts, services, ports, paths, and provenance in one SQLite transaction
+- imported hosts/services start at revision 1
+- advance global inventory revision exactly once on success
+- stale previews fail without mutation
+- consumed/expired preview tokens cannot import twice
+- already-bound containers default to skipped
+- full StackMap restore clears Portainer provenance transactionally
+- preserve Phase 1 conflict resolutions and port/bind-mount deselection
+- add confirmation UI, safe retry/error behavior, hardening, focused regression tests, E2E/container coverage, backup/restore regression, and documentation
+
+Do not:
+
+- add background sync, polling, refresh/update semantics, or automatic discovery
+- update existing services
+- persist Portainer API tokens
+- change the portable backup JSON schema
+- expose Portainer functionality in the public demo
+- add unrelated v1.1 features
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI result
+- confirmation no sync/update behavior was added
+
+---
+
+Review PR #32 at exact head `763d8548b21b3ba98365947c4e2b70f1f8182521` against `origin/main`.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Review Phase 2 completely, especially:
+
+- provenance schema and repeat-import bindings
+- create-only import semantics
+- existing-host attachment without host mutation
+- preview-token + expected-revision confirmation
+- atomic host/service/port/path/provenance insertion
+- record/global revision behavior
+- stale/expired/consumed-token handling
+- rollback at every transaction stage
+- restore-time provenance cleanup
+- preservation of Phase 1 deselection/conflict resolution
+- confirmation UI and retry/error behavior
+- backup/restore regression
+- demo isolation
+- proof that no sync/update/background behavior exists
+
+Do not modify files or PR state.
+
+Report:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge or begin any new v1.1 work.
