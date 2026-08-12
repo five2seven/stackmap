@@ -1,0 +1,41 @@
+Plan StackMap v1.1 Portainer API import only. Do not implement yet.
+
+Follow AGENTS.md.
+
+Research the current StackMap model and Portainer API integration requirements, then propose a scoped implementation plan for:
+
+- server-side Portainer URL + API-token handling
+- read-only API access using X-API-Key
+- environment discovery
+- container discovery
+- mapping Portainer/Docker fields into existing StackMap hosts, services, ports, paths, networks, exposure, and dependencies where supported
+- import preview before mutation
+- duplicate/conflict handling
+- explicit user selection and confirmation
+- credential storage/security model
+- timeout/TLS/error handling
+- focused tests and E2E coverage
+
+Constraints:
+
+- no Docker socket
+- no Portainer or Docker mutations
+- no background sync
+- no automatic import
+- no environment-variable values, secrets, registry credentials, labels containing secrets, or other sensitive values imported
+- no change to SQLite authority
+- preserve current backup/restore and public demo behavior
+
+Identify open product/security decisions before implementation.
+
+Return:
+
+- proposed architecture
+- exact API endpoints needed
+- field-mapping table
+- security risks/mitigations
+- implementation phases
+- test plan
+- unresolved decisions
+
+Do not modify files, create branches, commit, or open a PR.
