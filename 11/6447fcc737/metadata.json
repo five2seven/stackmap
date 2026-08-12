@@ -1,0 +1,41 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "116447fcc737",
+  "strategy": "manual-commit",
+  "branch": "codex/portainer-private-lan-http",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "CHANGELOG.md",
+    "README.md",
+    "docs/architecture.md",
+    "docs/deployment-and-operations.md",
+    "docs/release-notes.md",
+    "package-lock.json",
+    "package.json",
+    "scripts/fake-portainer-server.mjs",
+    "scripts/validate-deployment.sh",
+    "server/app.test.ts",
+    "server/config.test.ts",
+    "server/config.ts",
+    "server/index.ts",
+    "server/portainer-network-policy.test.ts",
+    "server/portainer-network-policy.ts",
+    "server/portainer.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/11/6447fcc737/0/metadata.json",
+      "transcript": "/11/6447fcc737/0/full.jsonl",
+      "compact_transcript": "/11/6447fcc737/0/transcript.jsonl",
+      "content_hash": "/11/6447fcc737/0/content_hash.txt",
+      "prompt": "/11/6447fcc737/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1798343,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 60597504,
+    "output_tokens": 179075,
+    "api_call_count": 460
+  }
+}
