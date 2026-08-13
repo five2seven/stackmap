@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "7446473995e5",
+  "strategy": "manual-commit",
+  "branch": "codex/close-v1-1-1-private-lan-http-plan",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/current-task.md",
+    "docs/v1.1.1-private-lan-portainer-http-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/74/46473995e5/0/metadata.json",
+      "transcript": "/74/46473995e5/0/full.jsonl",
+      "compact_transcript": "/74/46473995e5/0/transcript.jsonl",
+      "content_hash": "/74/46473995e5/0/content_hash.txt",
+      "prompt": "/74/46473995e5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 2001823,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 65934080,
+    "output_tokens": 190950,
+    "api_call_count": 494
+  }
+}
