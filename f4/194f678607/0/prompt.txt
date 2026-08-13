@@ -359,3 +359,93 @@ Return:
 - GitHub Release URL
 - final validation
 - final repository state
+
+---
+
+Investigate and fix the real-world Portainer preview failure found after deploying StackMap v1.1.2.
+
+Follow AGENTS.md and all required planning gates. Do not begin implementation if planning is required.
+
+Observed behavior:
+
+- Portainer connection succeeds.
+- StackMap correctly discovers the Portainer environment after the v1.1.2 fix.
+- Environment `local` can be selected.
+- Clicking `Build preview` fails with:
+  `Portainer returned an invalid response.`
+
+Real environment:
+
+- Docker on OpenMediaVault
+- Portainer local Docker endpoint
+- Portainer endpoint ID 1
+- Docker `/info` succeeds and returns:
+
+- Name: `omv`
+- OperatingSystem: `Debian GNU/Linux 10 (buster)`
+- OSType: `linux`
+- Architecture: `x86_64`
+
+Investigation of:
+
+`GET /api/endpoints/1/docker/containers/json?all=true`
+
+confirmed that valid Docker container port entries can omit the `IP` field.
+
+Observed examples:
+
+```json
+{
+  "PrivatePort": 2442,
+  "PublicPort": null,
+  "Type": "tcp"
+}
+```
+
+Additional real entries with the same shape were observed for private ports 2443, 3306, 8118, 8080, and 9443.
+
+Important:
+
+- Do not assume this diagnosis blindly.
+- Inspect the current Portainer/Docker response decoder and confirm whether omitted `IP`, nullable/omitted `PublicPort`, or another strict decoder requirement is actually causing the preview failure.
+- Compare the decoder against documented Docker API semantics.
+- Identify the exact incompatibility before implementing the fix.
+
+If confirmed:
+
+- Accept valid Docker port objects where `IP` is omitted when Docker legitimately omits it.
+- Correctly handle unpublished/exposed ports where `PublicPort` is absent or null, according to Docker API semantics.
+- Do not manufacture a host binding for an unpublished port.
+- Preserve published-port behavior when `IP` and `PublicPort` are present.
+- Do not weaken validation of fields Docker actually requires.
+- Do not broadly make fields optional merely to make parsing succeed.
+- Add regression fixtures matching the real response shape above.
+- Verify containers with unpublished ports still appear in preview and that unpublished ports do not become false host-port mappings.
+
+Also inspect the remainder of the container-list decoder for similar assumptions about optional Docker API fields so we do not immediately encounter the next valid response-shape failure. Any additional compatibility changes must be justified by documented Docker API semantics and covered by focused tests; do not broaden scope speculatively.
+
+Preserve:
+
+- Portainer network/security policy
+- token handling
+- route allowlisting
+- discovery/confirmation workflow
+- create-only imports
+- provenance
+- SQLite authority
+- demo isolation
+- no synchronization, polling, updates, or background behavior
+
+Treat this as a compatibility patch. Determine the appropriate next patch version from repository state.
+
+Do not release or publish anything.
+
+Return:
+
+- whether a planning gate is required
+- confirmed root cause
+- any other valid Docker response-shape incompatibilities found during decoder audit
+- proposed version
+- proposed scope
+- validation/test plan
+- planning branch/commit/Entire checkpoint/PR if planning is required
