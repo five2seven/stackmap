@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.1.3
+
+### Fixed
+
+- Accept Docker container summaries whose unpublished ports omit `IP` and omit or return null for `PublicPort`, without creating false host-port mappings.
+
 ## 1.1.2
 
 ### Fixed

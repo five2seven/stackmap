@@ -43,6 +43,44 @@ describe('Portainer preview API', () => {
     expect(secondPreview.services[0].conflicts).toContainEqual(expect.objectContaining({ code: 'ALREADY_BOUND', blocking: true }))
   })
 
+  it('previews and imports the real OMV unpublished-port shape without false host bindings', async () => {
+    const unpublishedPorts = [2442, 2443, 3306, 8118, 8080, 9443]
+    const fetcher = vi.fn(async (url: string) => {
+      const json = (value: unknown) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } })
+      if (url.endsWith('/api/endpoints')) return json([{ Id: 1, Name: 'local', Type: 1, ContainerEngine: '', URL: 'unix:///var/run/docker.sock', Status: 1 }])
+      if (url.endsWith('/info')) return json({ Name: 'omv', OperatingSystem: 'Debian GNU/Linux 10 (buster)', OSType: 'linux', Architecture: 'x86_64' })
+      if (url.endsWith('/version')) return json({ Version: '28', ApiVersion: '1.48' })
+      return json([{
+        Id: 'omv-container', Names: ['/omv-app'], Image: 'example/omv:1', State: 'running',
+        Ports: unpublishedPorts.map((PrivatePort, index) => ({ PrivatePort, ...(index === 0 ? { PublicPort: null } : {}), Type: 'tcp' })),
+        Mounts: [], NetworkSettings: { Networks: { bridge: {} } },
+      }])
+    })
+    const database = openDatabase(':memory:')
+    const app = await buildApp({ database, staticRoot: 'missing', portainerUrl: 'https://portainer.example', portainerFetcher: fetcher }); apps.push(app)
+    const connection = (await app.inject({ method: 'POST', url: '/api/v1/portainer/sessions', payload: { apiToken: 'secret' } })).json().data
+    const previewResponse = await app.inject({ method: 'POST', url: '/api/v1/portainer/previews', payload: { sessionToken: connection.sessionToken, environmentIds: [1] } })
+
+    expect(previewResponse.statusCode).toBe(200)
+    const preview = previewResponse.json().data
+    expect(preview.hosts[0]).toMatchObject({ name: 'local', operatingSystem: 'Debian GNU/Linux 10 (buster) · linux · x86_64' })
+    expect(preview.services[0].ports.map(({ hostPort, containerPort, protocol }: { hostPort?: number; containerPort?: number; protocol: string }) => ({ hostPort, containerPort, protocol }))).toEqual(
+      unpublishedPorts.map((containerPort) => ({ hostPort: undefined, containerPort, protocol: 'tcp' })),
+    )
+    expect(preview.services[0].exposure).toBe('unknown')
+    expect(preview.services[0].conflicts.filter(({ code }: { code: string }) => code.includes('HOST_PORT'))).toEqual([])
+
+    const imported = await app.inject({
+      method: 'POST', url: '/api/v1/portainer/imports',
+      payload: { previewToken: preview.previewToken, expectedInventoryRevision: preview.expectedInventoryRevision, selectedServices: preview.services, acknowledged: true },
+    })
+    expect(imported.statusCode).toBe(200)
+    const service = (await app.inject('/api/v1/services')).json().data[0]
+    expect(service.ports.map(({ hostPort, containerPort, protocol }: { hostPort?: number; containerPort?: number; protocol: string }) => ({ hostPort, containerPort, protocol }))).toEqual(
+      unpublishedPorts.map((containerPort) => ({ hostPort: undefined, containerPort, protocol: 'tcp' })),
+    )
+  })
+
   it('returns sanitized discovery data and leaves inventory unchanged', async () => {
     const requests: string[] = []
     const fetcher = vi.fn(async (url: string) => {

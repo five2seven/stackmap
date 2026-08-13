@@ -53,6 +53,38 @@ describe('Portainer discovery', () => {
     service.clear()
   })
 
+  it('accepts documented unpublished port summaries while keeping required fields strict', async () => {
+    const container = (ports: unknown[]) => [{
+      Id: 'omv-container', Names: ['/omv-app'], Image: 'example/omv:1', State: 'running',
+      Ports: ports, Mounts: [], NetworkSettings: { Networks: { bridge: {} } },
+    }]
+    const client = new PortainerClient('https://portainer.example', async () => response(container([
+      { PrivatePort: 2442, Type: 'tcp' },
+      { PrivatePort: 2443, PublicPort: null, Type: 'tcp' },
+      { PrivatePort: 80, PublicPort: 8080, Type: 'tcp', IP: '0.0.0.0' },
+    ])))
+
+    await expect(client.containers(1, 'secret')).resolves.toMatchObject([{
+      ports: [
+        { privatePort: 2442, type: 'tcp', ip: '' },
+        { privatePort: 2443, type: 'tcp', ip: '' },
+        { privatePort: 80, publicPort: 8080, type: 'tcp', ip: '0.0.0.0' },
+      ],
+    }])
+
+    for (const invalidPort of [
+      { Type: 'tcp' },
+      { PrivatePort: null, Type: 'tcp' },
+      { PrivatePort: 2442 },
+      { PrivatePort: 2442, Type: null },
+      { PrivatePort: 2442, Type: 'tcp', IP: null },
+      { PrivatePort: 2442, Type: 'tcp', PublicPort: '8080' },
+    ]) {
+      const invalidClient = new PortainerClient('https://portainer.example', async () => response(container([invalidPort])))
+      await expect(invalidClient.containers(1, 'secret')).rejects.toMatchObject({ code: 'PORTAINER_INVALID_RESPONSE' })
+    }
+  })
+
   it('uses only allowlisted GET routes with X-API-Key and projects sensitive fields out', async () => {
     const data = fixtures()
     const requests: Array<{ url: string; init: RequestInit }> = []

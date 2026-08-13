@@ -123,7 +123,16 @@ NODE
 curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-preview-request.json" \
   "http://127.0.0.1:${port}/api/v1/portainer/previews" >"$root/portainer-preview.json"
 PREVIEW_FILE="$root/portainer-preview.json" node <<'NODE' >"$root/portainer-confirm.json"
+const assert = require('node:assert/strict')
 const preview = require(process.env.PREVIEW_FILE).data
+const unpublished = preview.services[0].ports.slice(0, 6)
+assert.deepEqual(unpublished.map(({ containerPort }) => containerPort), [2442, 2443, 3306, 8118, 8080, 9443])
+assert.ok(unpublished.every(({ hostPort }) => hostPort === undefined))
+assert.ok(!preview.services[0].conflicts.some(({ code }) => code.includes('HOST_PORT')))
+assert.deepEqual(preview.services[0].ports.slice(6).map(({ hostPort, containerPort }) => ({ hostPort, containerPort })), [
+  { hostPort: 9080, containerPort: 80 },
+  { hostPort: 9443, containerPort: 443 },
+])
 process.stdout.write(JSON.stringify({
   previewToken: preview.previewToken,
   expectedInventoryRevision: preview.expectedInventoryRevision,
@@ -157,6 +166,8 @@ const db = new Database('/config/stackmap.db', { readonly: true })
 for (const [table, count] of Object.entries({ hosts: 1, services: 1, service_ports: 1, service_paths: 1, portainer_sources: 1, portainer_host_bindings: 1, portainer_container_bindings: 1 })) {
   assert.equal(db.prepare(`SELECT COUNT(*) FROM ${table}`).pluck().get(), count, table)
 }
+assert.equal(db.prepare('SELECT host_port FROM service_ports').pluck().get(), null)
+assert.equal(db.prepare('SELECT container_port FROM service_ports').pluck().get(), 2442)
 assert.equal(db.prepare("SELECT value FROM application_metadata WHERE key='inventory_revision'").pluck().get(), '1')
 db.close()
 NODE

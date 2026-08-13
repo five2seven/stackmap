@@ -8,7 +8,16 @@ const responses = new Map([
   ['/api/endpoints/1/docker/version', { Version: '28.0.0', ApiVersion: '1.48' }],
   ['/api/endpoints/1/docker/containers/json?all=true', [{
     Id: 'container-validation-id', Names: ['/Container validation'], Image: 'example/container-validation:1', State: 'running',
-    Ports: [{ PrivatePort: 80, PublicPort: 9080, Type: 'tcp', IP: '' }, { PrivatePort: 443, PublicPort: 9443, Type: 'tcp', IP: '' }],
+    Ports: [
+      { PrivatePort: 2442, PublicPort: null, Type: 'tcp' },
+      { PrivatePort: 2443, Type: 'tcp' },
+      { PrivatePort: 3306, Type: 'tcp' },
+      { PrivatePort: 8118, Type: 'tcp' },
+      { PrivatePort: 8080, Type: 'tcp' },
+      { PrivatePort: 9443, Type: 'tcp' },
+      { PrivatePort: 80, PublicPort: 9080, Type: 'tcp', IP: '' },
+      { PrivatePort: 443, PublicPort: 9443, Type: 'tcp', IP: '' },
+    ],
     Mounts: [{ Type: 'bind', Source: '/srv/container/config', Destination: '/config', RW: true }, { Type: 'bind', Source: '/srv/container/data', Destination: '/data', RW: false }],
     NetworkSettings: { Networks: { validation: {} } },
   }]],
