@@ -1056,3 +1056,51 @@ Return:
 - No-issue summary
 - validation
 - final recommendation: Ready for v1.1.1 release or Changes required
+
+---
+
+Fix only the recorded v1.1.1 release-readiness findings.
+
+Follow AGENTS.md.
+
+Required fixes:
+
+1. Container/deployment assertion
+
+- Remove the order-sensitive assumption that Docker `/info` must arrive before `/version`.
+- Preserve verification that both required requests occurred with the correct method, exact routes, hostname, and token header.
+- Do not weaken any security or route assertions.
+- Add/update deterministic tests so concurrent request ordering cannot cause false failures.
+
+2. ADR-009
+
+- Update `docs/decisions.md` so the accepted Portainer-origin decision matches v1.1.1:
+
+- HTTPS remains the default/preferred behavior.
+- HTTP is allowed only for destinations resolving exclusively to RFC1918 IPv4 under the approved startup + per-request validation/pinning policy.
+- No TLS bypass, public HTTP, redirects, or arbitrary outbound destinations.
+
+3. Exact-main validation gap
+
+- After merging the fix PR, obtain passing exact-main container CI and exact-main Semgrep before release.
+- Do not treat PR-head validation as sufficient for final release readiness.
+
+Do not change:
+
+- application behavior beyond the test/assertion correction
+- network-policy semantics
+- package version
+- release notes except if strictly required by the ADR correction
+- GHCR, Pages, tags, or releases
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused validation
+- full validation
+- exact-head CI/Semgrep
