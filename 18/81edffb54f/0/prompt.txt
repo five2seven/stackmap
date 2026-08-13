@@ -29,3 +29,64 @@ Return:
 - GitHub Release URL
 - final validation
 - final repository state
+
+---
+
+Fix the Portainer environment detection bug found during real-world deployment.
+
+Context:
+
+- StackMap is running on Docker/OpenMediaVault.
+- Portainer is connected to the local Docker socket.
+- `/api/endpoints` returns:
+
+```json
+{
+  "Id": 1,
+  "Name": "local",
+  "Type": 1,
+  "ContainerEngine": "",
+  "URL": "unix:///var/run/docker.sock",
+  "Status": 1
+}
+```
+
+Current bug:
+
+- StackMap filters environments with:
+  `containerEngine.toLowerCase() === 'docker'`
+- Because `ContainerEngine` is blank, a valid local Docker environment is incorrectly excluded.
+- The UI therefore shows: `No accessible Docker environments were found.`
+
+Implement a narrow compatibility fix.
+
+Requirements:
+
+- Recognize Portainer local Docker environments such as `Type: 1` as Docker-compatible even when `ContainerEngine` is blank.
+- Preserve support for environments that explicitly report `ContainerEngine: docker`.
+- Continue rejecting clearly unsupported/non-Docker environment types.
+- Do not infer Docker compatibility from arbitrary fields unless Portainer endpoint semantics support it.
+- Preserve all existing Portainer security controls, API-token handling, HTTP/HTTPS network policy, import behavior, provenance, and create-only semantics.
+- No UI workflow redesign.
+- No sync, polling, update, or background behavior.
+- Add a regression fixture matching the exact endpoint response above.
+- Add tests for:
+
+- Type 1 + blank ContainerEngine => accepted
+- explicit Docker ContainerEngine => accepted
+- unsupported/non-Docker endpoint types => rejected
+- existing discovery/import behavior remains unchanged
+
+Treat this as a patch compatibility fix. Determine the appropriate patch version based on the repository's current release state; do not skip required planning gates in AGENTS.md.
+
+Do not release or publish anything yet.
+
+Return:
+
+- whether a planning gate is required
+- proposed version
+- changed files
+- tests/validation
+- commit
+- Entire checkpoint
+- draft PR URL
