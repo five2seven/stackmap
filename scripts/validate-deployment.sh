@@ -118,7 +118,7 @@ curl --fail --silent --show-error -H 'content-type: application/json' \
   --data '{"apiToken":"container-api-token"}' "http://127.0.0.1:${port}/api/v1/portainer/sessions" >"$root/portainer-session.json"
 SESSION_FILE="$root/portainer-session.json" node <<'NODE' >"$root/portainer-preview-request.json"
 const session = require(process.env.SESSION_FILE).data
-process.stdout.write(JSON.stringify({ sessionToken: session.sessionToken, environmentIds: [7] }))
+process.stdout.write(JSON.stringify({ sessionToken: session.sessionToken, environmentIds: [1] }))
 NODE
 curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-preview-request.json" \
   "http://127.0.0.1:${port}/api/v1/portainer/previews" >"$root/portainer-preview.json"
@@ -143,9 +143,9 @@ const normalized = requests
   .sort((left, right) => left.url.localeCompare(right.url))
 const expected = [
   '/api/endpoints',
-  '/api/endpoints/7/docker/info',
-  '/api/endpoints/7/docker/version',
-  '/api/endpoints/7/docker/containers/json?all=true',
+  '/api/endpoints/1/docker/info',
+  '/api/endpoints/1/docker/version',
+  '/api/endpoints/1/docker/containers/json?all=true',
 ].map((url) => ({ method: 'GET', url, host: 'stackmap-portainer-validation:9000', apiKeyAccepted: true }))
   .sort((left, right) => left.url.localeCompare(right.url))
 assert.deepEqual(normalized, expected)
@@ -164,7 +164,7 @@ curl --fail --silent --show-error -H 'content-type: application/json' \
   --data '{"apiToken":"container-api-token"}' "http://127.0.0.1:${port}/api/v1/portainer/sessions" >"$root/portainer-repeat-session.json"
 SESSION_FILE="$root/portainer-repeat-session.json" node <<'NODE' >"$root/portainer-repeat-preview-request.json"
 const session = require(process.env.SESSION_FILE).data
-process.stdout.write(JSON.stringify({ sessionToken: session.sessionToken, environmentIds: [7] }))
+process.stdout.write(JSON.stringify({ sessionToken: session.sessionToken, environmentIds: [1] }))
 NODE
 curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-repeat-preview-request.json" \
   "http://127.0.0.1:${port}/api/v1/portainer/previews" >"$root/portainer-repeat-preview.json"

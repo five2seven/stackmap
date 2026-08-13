@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.1.2
+
+### Fixed
+
+- Recognize Portainer local Docker environments that report endpoint type 1 with a blank `ContainerEngine`, while preserving explicit Docker-engine support and rejecting unsupported or non-Docker endpoint types.
+
 ## 1.1.1
 
 ### Added

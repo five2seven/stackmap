@@ -1,5 +1,28 @@
 # Release Notes
 
+## StackMap v1.1.2
+
+### Highlights
+
+- Recognizes valid local Docker Portainer environments that report `Type: 1` with a blank `ContainerEngine`.
+- Preserves support for environments that explicitly report the Docker container engine and continues rejecting unsupported or non-Docker endpoint types.
+- Keeps the existing manual, create-only import workflow, SQLite provenance, short-lived API-token handling, fixed read-only route allowlist, RFC1918 HTTP policy, HTTPS validation, and public-demo isolation unchanged.
+
+### Upgrade guidance
+
+Before upgrading, download a server JSON backup and stop StackMap cleanly to make a cold backup of the complete `/config` directory. Preserve the same `/config` mount when recreating the container. Version 1.1.2 makes no database or portable-backup schema change, so existing v1.1.1 data remains compatible.
+
+### Known limitations
+
+- Portainer import remains manual and create-only, with no synchronization, polling, background refresh, overwrite, merge, or service updates.
+- Cleartext HTTP remains restricted to destinations resolving exclusively to RFC1918 IPv4; HTTPS remains preferred.
+- Cloudflare Access integration and custom TLS trust controls are not included.
+- Published container validation covers Linux/amd64; ARM64 remains unvalidated.
+
+### Validation
+
+Release-candidate validation covers the exact local Docker endpoint response, explicit Docker-engine compatibility, unsupported/non-Docker rejection, existing discovery and import regressions, the complete application and demo suites, and Linux/amd64 container validation.
+
 ## StackMap v1.1.1
 
 ### Highlights

@@ -12,6 +12,8 @@ const MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 const MAX_ENVIRONMENTS = 100
 const MAX_CONTAINERS = 5_000
 const MAX_SELECTED_ENVIRONMENTS = 10
+const DOCKER_ENVIRONMENT_TYPES = new Set([1, 2, 4])
+const LOCAL_DOCKER_ENVIRONMENT_TYPE = 1
 
 export type PortainerFetcher = (input: string, init: RequestInit) => Promise<Response>
 
@@ -21,6 +23,8 @@ export interface PortainerEnvironment {
   containerEngine: string
   publicUrl: string
 }
+
+type PortainerEndpoint = PortainerEnvironment & { type?: number }
 
 type DockerInfo = { name: string; operatingSystem: string; osType: string; architecture: string }
 type DockerVersion = { version: string; apiVersion: string }
@@ -82,7 +86,7 @@ export class PortainerClient {
     this.fetcher = fetcher ?? createPortainerNetworkFetcher(baseUrl)
   }
 
-  environments(apiToken: string): Promise<PortainerEnvironment[]> {
+  environments(apiToken: string): Promise<PortainerEndpoint[]> {
     return this.get('/api/endpoints', apiToken, projectEnvironments)
   }
 
@@ -148,7 +152,9 @@ export class PortainerPreviewService {
   async connect(apiToken: string) {
     this.cleanup()
     if (this.sessions.size >= CAPACITY) throw new PortainerError('PORTAINER_CAPACITY', 'Too many Portainer previews are active.')
-    const environments = (await this.client.environments(apiToken)).filter((item) => item.containerEngine.toLowerCase() === 'docker')
+    const environments = (await this.client.environments(apiToken))
+      .filter(isDockerCompatibleEnvironment)
+      .map(({ id, name, containerEngine, publicUrl }) => ({ id, name, containerEngine, publicUrl }))
     const sessionToken = opaqueToken()
     const session: Session = { apiToken, environments, expiresAt: this.now() + this.sessionTtlMs }
     this.sessions.set(sessionToken, session)
@@ -316,12 +322,23 @@ function confirmationInvalid() {
   return new PortainerError('PORTAINER_CONFIRMATION_INVALID', 'The Portainer confirmation does not match the reviewed preview.')
 }
 
-function projectEnvironments(value: unknown): PortainerEnvironment[] {
+function projectEnvironments(value: unknown): PortainerEndpoint[] {
   if (!Array.isArray(value) || value.length > MAX_ENVIRONMENTS) invalid()
   return value.map((item) => {
     const record = object(item)
-    return { id: integer(record.Id), name: nonBlank(record.Name), containerEngine: string(record.ContainerEngine), publicUrl: string(record.PublicURL) }
+    return {
+      id: integer(record.Id),
+      name: nonBlank(record.Name),
+      ...(record.Type === undefined ? {} : { type: integer(record.Type) }),
+      containerEngine: string(record.ContainerEngine),
+      publicUrl: record.PublicURL === undefined ? '' : string(record.PublicURL),
+    }
   })
+}
+function isDockerCompatibleEnvironment(environment: PortainerEndpoint): boolean {
+  const containerEngine = environment.containerEngine.trim().toLowerCase()
+  if (environment.type !== undefined && !DOCKER_ENVIRONMENT_TYPES.has(environment.type)) return false
+  return containerEngine === 'docker' || (containerEngine === '' && environment.type === LOCAL_DOCKER_ENVIRONMENT_TYPE)
 }
 function projectInfo(value: unknown): DockerInfo {
   const record = object(value)
