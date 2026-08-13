@@ -228,3 +228,42 @@ Return:
 - merge commit
 - final main state
 - confirmation planning/release/publication were untouched
+
+---
+
+Close out the v1.1.2 Portainer environment compatibility plan after the merged implementation.
+
+Follow AGENTS.md.
+
+Record the single v1.1.2 task as Complete with:
+
+- implementation commit `bb7312f3128dd36e22f0610a72af4c35529aa930`
+- Entire checkpoint `a759d27cc49f`
+- PR #41
+- merge commit `4246f11c658f0047f18dc6bbc075770bf969ab52`
+- focused and full validation
+- exact-head CI and Semgrep results
+- final compatibility behavior:
+
+- Portainer `Type: 1` with blank `ContainerEngine` is accepted
+- documented Docker endpoint types remain supported
+- explicit Docker engine responses remain supported as implemented
+- unsupported/non-Docker environments remain rejected
+- confirmation that existing security, import, database, UI, and demo behavior remained unchanged
+
+Mark the v1.1.2 plan Complete with no additional task.
+
+Update only the planning/current-task documents required by AGENTS.md.
+
+Do not change application code, version metadata, workflows, release notes, GHCR, Pages, tags, or releases.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- final task/plan status
+- validation
