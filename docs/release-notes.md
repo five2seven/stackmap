@@ -1,5 +1,31 @@
 # Release Notes
 
+## StackMap v1.1.1
+
+### Highlights
+
+- Allows `STACKMAP_PORTAINER_URL` to use HTTP only when startup resolution and every actual connection resolve exclusively to RFC1918 IPv4.
+- Pins each HTTP connection to its validated address set while preserving the configured hostname, preventing DNS rebinding from redirecting API-token traffic.
+- Rejects public, mixed, IPv6, loopback, link-local, metadata-service, multicast, unspecified, CGNAT, and every other non-RFC1918 HTTP destination before sending credentials.
+- Preserves HTTPS certificate validation, redirect rejection, the fixed GET-only endpoint allowlist, short-lived in-memory tokens, strict response projection, SQLite authority, and public-demo isolation.
+
+### Upgrade guidance
+
+Before upgrading, download a server JSON backup and stop StackMap cleanly to make a cold backup of the complete `/config` directory. Preserve the same `/config` mount when recreating the container. Version 1.1.1 makes no database or portable-backup schema change, so existing v1.1.0 data remains compatible.
+
+HTTPS remains preferred. Operators choosing HTTP must use a trusted private LAN and understand that cleartext traffic exposes the Portainer API token and discovered inventory to observers on that network. There is no TLS-verification bypass.
+
+### Known limitations
+
+- HTTP is limited to destinations resolving exclusively to `10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`; IPv6 and mixed address sets are rejected.
+- Portainer import remains manual and create-only, with no synchronization, polling, background refresh, overwrite, merge, or service updates.
+- Cloudflare Access integration and custom TLS trust controls are not included.
+- Published container validation covers Linux/amd64; ARM64 remains unvalidated.
+
+### Validation
+
+Release-candidate validation covers focused address-policy, DNS-rebinding, connection-pinning, redirect, credential, and HTTPS regressions; the complete application and demo suites; and a real RFC1918 Docker-network Portainer import through the hardened production container.
+
 ## StackMap v1.1.0
 
 ### Highlights

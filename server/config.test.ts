@@ -21,11 +21,12 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ PORT: 'nope' })).toThrow(/PORT/)
   })
 
-  it('disables Portainer import when unset and accepts only safe HTTPS configuration', () => {
+  it('disables Portainer import when unset and accepts HTTP or HTTPS origins for network-policy validation', () => {
     expect(loadConfig({}).portainerUrl).toBeUndefined()
     expect(loadConfig({ STACKMAP_PORTAINER_URL: 'https://portainer.example/' }).portainerUrl).toBe('https://portainer.example')
-    expect(() => loadConfig({ STACKMAP_PORTAINER_URL: 'http://portainer.example' })).toThrow(/HTTPS/)
+    expect(loadConfig({ STACKMAP_PORTAINER_URL: 'http://portainer.lan:9000/' }).portainerUrl).toBe('http://portainer.lan:9000')
     expect(() => loadConfig({ STACKMAP_PORTAINER_URL: 'https://user:secret@portainer.example' })).toThrow(/credentials/)
-    expect(() => loadConfig({ STACKMAP_PORTAINER_URL: 'not a URL' })).toThrow(/valid HTTPS URL/)
+    expect(() => loadConfig({ STACKMAP_PORTAINER_URL: 'ftp://portainer.example' })).toThrow(/HTTP or HTTPS/)
+    expect(() => loadConfig({ STACKMAP_PORTAINER_URL: 'not a URL' })).toThrow(/valid HTTP or HTTPS URL/)
   })
 })

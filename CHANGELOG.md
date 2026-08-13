@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 1.1.1
+
+### Added
+
+- Allow cleartext Portainer HTTP only when startup and per-request connection resolution are exclusively RFC1918 IPv4.
+
+### Security
+
+- Pin HTTP connections to the per-request validated private address set, reject DNS rebinding and all non-RFC1918/IPv6 results before sending `X-API-Key`, and preserve redirect rejection and normal HTTPS certificate validation.
+
+## Earlier releases
+
 ### Added
 
 - First functional local-first StackMap MVP increment

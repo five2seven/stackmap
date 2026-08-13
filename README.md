@@ -140,7 +140,9 @@ The retired browser migration workflow is not part of backup or restore. Server 
 
 ## Import from Portainer
 
-Set `STACKMAP_PORTAINER_URL` to the HTTPS origin of the Portainer server to enable manual import. In the production UI, enter a Portainer API token, select environments and containers, review host, network, port, and bind-mount choices, then explicitly confirm. StackMap performs read-only Portainer discovery and creates the selected records atomically in SQLite. Tokens remain short-lived server memory only.
+Set `STACKMAP_PORTAINER_URL` to the HTTPS origin of the Portainer server to enable manual import. HTTPS uses normal system certificate and hostname validation and remains preferred. For a trusted private LAN only, HTTP is also accepted when every address resolved at startup and for each connection is RFC1918 IPv4 (`10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`). Mixed, public, loopback, link-local, metadata-service, CGNAT, multicast, unspecified, and IPv6 destinations are rejected. Hostname text alone is not trusted, redirects are not followed, and TLS verification cannot be disabled. HTTP exposes the API token and returned inventory data to observers on that LAN.
+
+In the production UI, enter a Portainer API token, select environments and containers, review host, network, port, and bind-mount choices, then explicitly confirm. StackMap performs read-only Portainer discovery and creates the selected records atomically in SQLite. Tokens remain short-lived server memory only.
 
 Portainer import is create-only: it never updates, synchronizes, refreshes, or deletes existing services, and previously imported containers are skipped by default. The public demo has no Portainer integration. Portable JSON backup schema version 1 remains unchanged; a successful full restore clears Portainer repeat-import metadata because restored inventory has no source bindings.
 

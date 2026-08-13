@@ -38,10 +38,10 @@ function parsePortainerUrl(value: string | undefined): string | undefined {
   try {
     parsed = new URL(value)
   } catch {
-    throw new Error('STACKMAP_PORTAINER_URL must be a valid HTTPS URL')
+    throw new Error('STACKMAP_PORTAINER_URL must be a valid HTTP or HTTPS URL')
   }
-  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.search || parsed.hash) {
-    throw new Error('STACKMAP_PORTAINER_URL must be an HTTPS URL without credentials, query, or fragment')
+  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error('STACKMAP_PORTAINER_URL must be an HTTP or HTTPS URL without credentials, query, or fragment')
   }
   return parsed.toString().replace(/\/$/, '')
 }

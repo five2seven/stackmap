@@ -29,6 +29,7 @@ trap cleanup EXIT
 
 run_container() {
   local config="$1"
+  local portainer_url="${2:-http://stackmap-portainer-validation:9000}"
   docker rm --force "$container" >/dev/null 2>&1 || true
   docker run --detach --name "$container" --init --read-only --tmpfs /tmp \
     --cap-drop ALL --security-opt no-new-privileges:true \
@@ -36,7 +37,7 @@ run_container() {
     --mount "type=bind,source=$config,target=/config" \
     --mount "type=bind,source=$root/portainer-cert.pem,target=/tmp/portainer-cert.pem,readonly" \
     --env NODE_EXTRA_CA_CERTS=/tmp/portainer-cert.pem \
-    --env STACKMAP_PORTAINER_URL=https://stackmap-portainer-validation:9443 \
+    --env STACKMAP_PORTAINER_URL="$portainer_url" \
     --publish "${port}:8080" "$image" >/dev/null
 }
 
@@ -89,6 +90,17 @@ assert.ok(service.ports.some((entry) => entry.published === '18089' && entry.tar
 assert.ok(service.healthcheck)
 NODE
 
+log "Reject non-RFC1918 Portainer HTTP at startup"
+rejected="$root/rejected-http"
+mkdir "$rejected"
+chmod 0777 "$rejected"
+run_container "$rejected" "http://127.0.0.1:9000"
+if wait_for_health; then echo 'loopback Portainer HTTP unexpectedly became healthy' >&2; exit 1; fi
+test "$(docker inspect --format='{{.State.ExitCode}}' "$container")" != 0
+docker logs "$container" >"$root/rejected-http.log" 2>&1
+grep --quiet 'must resolve exclusively to RFC1918 IPv4 addresses' "$root/rejected-http.log"
+docker exec "$portainer_container" node -e "const f=require('node:fs');if(f.existsSync('/tmp/request-history.jsonl')&&f.statSync('/tmp/request-history.jsonl').size)process.exit(1)"
+
 log "Validate forward migration from a Task 1 database"
 upgrade="$root/upgrade"
 mkdir "$upgrade"
@@ -121,6 +133,19 @@ process.stdout.write(JSON.stringify({
 NODE
 curl --fail --silent --show-error -H 'content-type: application/json' --data-binary @"$root/portainer-confirm.json" \
   "http://127.0.0.1:${port}/api/v1/portainer/imports" >"$root/portainer-import.json"
+docker exec "$portainer_container" cat /tmp/request-history.jsonl >"$root/request-history.jsonl"
+REQUEST_HISTORY="$root/request-history.jsonl" node <<'NODE'
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const requests = fs.readFileSync(process.env.REQUEST_HISTORY, 'utf8').trim().split('\n').map(JSON.parse)
+assert.deepEqual(requests.map(({ url }) => url), [
+  '/api/endpoints',
+  '/api/endpoints/7/docker/info',
+  '/api/endpoints/7/docker/version',
+  '/api/endpoints/7/docker/containers/json?all=true',
+])
+assert.ok(requests.every(({ method, host, apiKeyAccepted }) => method === 'GET' && host === 'stackmap-portainer-validation:9000' && apiKeyAccepted))
+NODE
 docker exec --interactive "$container" node <<'NODE'
 const assert = require('node:assert/strict')
 const Database = require('better-sqlite3')

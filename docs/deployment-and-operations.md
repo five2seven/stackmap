@@ -17,7 +17,9 @@ Use the image-based Stack in the README. Replace `/path/to/stackmap/config` with
 host directory that the container identity `10001:10001` can write. Preserve the `/config` mount across
 all updates and recreations. The container listens on port `8080`; the example publishes host port `8088`.
 
-To enable manual Portainer import, set `STACKMAP_PORTAINER_URL` to the Portainer HTTPS origin and recreate StackMap. Users provide the API token only when starting discovery; it is never persisted. Leave the setting absent to disable all production Portainer routes and UI. Normal system certificate validation is mandatory.
+To enable manual Portainer import, set `STACKMAP_PORTAINER_URL` to the Portainer origin and recreate StackMap. HTTPS is preferred and always uses normal system certificate and hostname validation. HTTP is allowed only on a trusted private LAN when every DNS result at startup and every actual connection is IPv4 in `10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`. StackMap rejects mixed/private-public DNS, IPv6, loopback, link-local and metadata-service, multicast, unspecified, CGNAT, public, and every other non-RFC1918 HTTP destination. It pins each HTTP connection to the address set validated for that request while preserving the configured hostname, and it never follows redirects.
+
+Users provide the API token only when starting discovery; it is never persisted. Leave the setting absent to disable all production Portainer routes and UI. There is no insecure-TLS option. Cleartext HTTP exposes the token and returned inventory data to anyone able to observe that LAN, so use HTTPS whenever practical.
 
 After deployment, wait for the health check and open `http://<docker-host-ip>:8088`. If the container
 does not become healthy, inspect its logs before changing files or mounts:
