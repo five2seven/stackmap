@@ -2,32 +2,23 @@
 
 ## Private-LAN Portainer HTTP support
 
-- **Status:** Ready
-- **Planned implementation branch:** `codex/portainer-private-lan-http`
-- **Plan:** `docs/v1.1.1-private-lan-portainer-http-plan.md`
+- **Status:** Complete
+- **Implementation branch:** `codex/portainer-private-lan-http`
+- **Implementation commit:** `ac656c1b2422dc55917274a406c75df4ed40327d`
+- **Entire checkpoint:** `116447fcc737`
+- **Pull request:** #36
+- **Merge commit:** `d5a38c6b8c6948e39e2a4bc30ae3228e285007b7`
 - **Version target:** 1.1.1
-- **Goal:** Permit the server-configured Portainer origin to use HTTP only when startup resolution and the actual connection lookup both establish that every destination is RFC1918 IPv4.
-- **Datastore authority:** SQLite remains the sole production-authoritative inventory and provenance datastore. This task changes no database schema, data mapping, backup/restore behavior, or UI workflow.
+- **Focused validation:** The configuration, network-policy, Portainer client, and Portainer API suite passed 49/49 tests. Coverage includes exact RFC1918 boundaries, rejected address classes, literal and DNS destinations, mixed/private-public and IPv6 resolution, startup timeout/failure, per-request rebinding rejection before requester construction, pinned connection identity with preserved `Host`, redirect rejection, and unchanged HTTPS delegation. Server TypeScript and lint also passed.
+- **Full validation:** The complete suite passed 232/232 tests; production and demo builds passed; production E2E passed 12/12; demo-isolation E2E passed 1/1; the production dependency audit reported zero vulnerabilities; fake-Portainer script syntax and `git diff --check` passed. The exact-head Linux/amd64 workflow passed its image build, smoke test, real RFC1918 Docker-network HTTP Portainer import, request-history allowlist/hostname/token assertions, loopback startup rejection without a credential-bearing request, and deployment, persistence, backup/restore, upgrade, health, shutdown, and failure regressions.
+- **Exact-head CI:** At `ac656c1b2422dc55917274a406c75df4ed40327d`, the build/test/container workflow run `31646192861` and Semgrep scan `209633276` both passed.
+- **Datastore authority:** SQLite remains the sole production-authoritative inventory and provenance datastore. This task made no database, repository, backup-schema, restore, mapping, confirmation, or UI workflow change.
+- **Final security boundary:** HTTPS continues to use native fetch with normal system certificate and hostname validation. HTTP is accepted only when startup resolution and every actual connection-time lookup return exclusively IPv4 in `10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`. Literal IPs and DNS hostnames use the same classifier. Empty, failed, loopback, link-local/metadata-service, multicast, unspecified, CGNAT, IPv6, mixed private/public, and every other non-RFC1918 result fail closed. Each HTTP socket is pinned to the addresses validated for that request while preserving the configured hostname and `Host`; validation failure occurs before requester construction, redirects are not followed, and the existing four-route GET-only allowlist and short-lived non-persistent token handling remain unchanged.
+- **Completion boundary:** No TLS bypass, custom trust control, Cloudflare Access support, synchronization, polling, refresh, update, merge, overwrite, background work, arbitrary Portainer destination/route, Docker or Portainer mutation, database/UI behavior, or public-demo integration was added.
 
-### Required scope
+## Plan status
 
-- Keep existing HTTPS behavior and normal certificate validation unchanged.
-- Accept HTTP only for destinations resolving exclusively to `10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`.
-- Validate at startup and enforce the same policy in the actual per-request connection lookup, preserving the configured hostname and `Host` header while connecting only to a validated address.
-- Fail closed for loopback, link-local, metadata-service, multicast, unspecified, CGNAT, IPv6, mixed private/public DNS, resolution failure, and every other non-RFC1918 destination.
-- Reject redirects and ensure `X-API-Key` is never attached or sent when destination validation fails.
-- Preserve the GET-only route allowlist, short-lived non-persistent token handling, response limits, strict projection, and secret exclusions.
-- Add focused network-policy tests and real container/E2E proof using an RFC1918 Docker-network Portainer fixture.
-- Update operator/security documentation and version/release metadata for 1.1.1 during implementation and release-readiness work, not in this planning change.
+- **Single-task v1.1.1 private-LAN Portainer HTTP plan:** Complete
+- **Additional task:** Does not exist
 
-### Explicit exclusions
-
-No insecure-TLS or certificate-verification bypass; Cloudflare Access support; synchronization, update, polling, refresh, or background behavior; database changes; backup-schema changes; Portainer/Docker mutation; UI workflow changes; public-demo integration; or unrelated product work.
-
-### Start condition
-
-Implementation may begin only after this planning pull request receives a separate read-only review, is marked ready, and is merged normally. The implementation must use its own feature branch and pull request and must not tag, release, publish GHCR, or deploy Pages.
-
-## Prior plan
-
-The two-phase StackMap v1.1 Portainer import plan remains Complete in `docs/v1.1-portainer-import-plan.md`; no Phase 3 was added.
+This closeout records the merged implementation only. It does not tag or release v1.1.1, publish GHCR, deploy Pages, or authorize another product task.
