@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f4194f678607",
+  "strategy": "manual-commit",
+  "branch": "codex/v1-1-3-portainer-port-summary-compatibility-plan",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "docs/current-task.md",
+    "docs/v1.1.3-portainer-port-summary-compatibility-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f4/194f678607/0/metadata.json",
+      "transcript": "/f4/194f678607/0/full.jsonl",
+      "compact_transcript": "/f4/194f678607/0/transcript.jsonl",
+      "content_hash": "/f4/194f678607/0/content_hash.txt",
+      "prompt": "/f4/194f678607/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 699445,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 24345088,
+    "output_tokens": 74605,
+    "api_call_count": 211
+  }
+}
