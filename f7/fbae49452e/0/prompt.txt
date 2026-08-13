@@ -1,0 +1,1058 @@
+Plan StackMap v1.1 Portainer API import only. Do not implement yet.
+
+Follow AGENTS.md.
+
+Research the current StackMap model and Portainer API integration requirements, then propose a scoped implementation plan for:
+
+- server-side Portainer URL + API-token handling
+- read-only API access using X-API-Key
+- environment discovery
+- container discovery
+- mapping Portainer/Docker fields into existing StackMap hosts, services, ports, paths, networks, exposure, and dependencies where supported
+- import preview before mutation
+- duplicate/conflict handling
+- explicit user selection and confirmation
+- credential storage/security model
+- timeout/TLS/error handling
+- focused tests and E2E coverage
+
+Constraints:
+
+- no Docker socket
+- no Portainer or Docker mutations
+- no background sync
+- no automatic import
+- no environment-variable values, secrets, registry credentials, labels containing secrets, or other sensitive values imported
+- no change to SQLite authority
+- preserve current backup/restore and public demo behavior
+
+Identify open product/security decisions before implementation.
+
+Return:
+
+- proposed architecture
+- exact API endpoints needed
+- field-mapping table
+- security risks/mitigations
+- implementation phases
+- test plan
+- unresolved decisions
+
+Do not modify files, create branches, commit, or open a PR.
+
+---
+
+Create the concrete StackMap v1.1 Portainer import plan using the decisions below. Do not re-research or reopen these decisions.
+
+Follow AGENTS.md.
+
+Approved v1.1 behavior:
+
+- Portainer import is manual, read-only discovery followed by explicit import.
+- SQLite remains authoritative.
+- No Docker socket, Portainer mutation, Docker mutation, synchronization, polling, or background refresh.
+- Portainer URL is configured server-side through `STACKMAP_PORTAINER_URL`; users cannot supply arbitrary outbound URLs.
+- Import is disabled when that setting is absent.
+- User supplies only the Portainer API token through the production UI.
+- Token is session-only, server-memory-only, short-lived, never persisted, logged, returned to the browser, backed up, or placed in URLs.
+- HTTPS with normal system certificate validation only. No insecure TLS bypass.
+- Only these outbound GET routes are permitted:
+
+- `/api/endpoints`
+- `/api/endpoints/{id}/docker/info`
+- `/api/endpoints/{id}/docker/version`
+- `/api/endpoints/{id}/docker/containers/json?all=true`
+- Never call container inspect, stacks, registries, secrets, configs, logs, stats, events, or arbitrary Docker proxy paths.
+- Never read/import labels, environment-variable values, registry credentials, or secrets.
+- Add non-secret Portainer source/binding metadata in SQLite for repeat-import detection.
+- Existing portable backup schema remains unchanged.
+- A full StackMap restore clears Portainer source/binding metadata transactionally.
+- Import creates new records only; it never updates/synchronizes existing services.
+- User may attach discovered containers to an existing StackMap host.
+- Multiple networks require explicit user selection.
+- Discover stopped containers and let the user choose whether to import them.
+- Default status mapping: running/restarting → active; stopped/paused/created/exited/dead → paused, editable in preview.
+- Import bind mounts only; skip named/anonymous volume backing paths with a warning.
+- Leave host IP blank unless a trustworthy literal IP is available.
+- Exposure: loopback-only published bindings → local; all others → unknown.
+- Do not infer dependencies.
+- Preview must show mapped hosts/services, ports, bind mounts, networks, warnings, duplicates, and conflicts before any mutation.
+- Allow users to deselect containers and, where practical, individual ports/bind mounts.
+- Confirmation uses expected inventory revision and one atomic SQLite transaction.
+- Re-import of an already-bound container defaults to skipped.
+- No automatic overwrite, merge, or refresh behavior.
+- Public demo must contain no Portainer UI/client/routes or outbound integration code.
+
+Structure implementation into only two feature PRs:
+
+1. Portainer discovery + preview, with no inventory mutation.
+2. Atomic confirmation/import + hardening, E2E/container regression coverage, and documentation.
+
+Create a new v1.1 planning/current-task branch and planning PR defining these two phases and their acceptance criteria.
+
+Do not implement Phase 1 yet.
+
+Return only:
+
+- planning branch
+- commit
+- Entire checkpoint
+- PR URL
+- Phase 1 and Phase 2 scope
+- validation
+
+---
+
+Review planning PR #29.
+
+Follow AGENTS.md.
+
+Verify:
+
+- v1.1 is a new post-v1.0 plan
+- Phase 1 is discovery + preview only, with no inventory mutation
+- Phase 2 owns provenance, atomic import, restore cleanup, hardening, E2E/container coverage, and docs
+- approved Portainer security/product decisions are recorded without reopening them
+- only planning files changed
+- Phase 1 implementation did not begin
+
+If ready:
+
+- mark PR #29 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin Phase 1.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement v1.1 Portainer Import Phase 1 only.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Scope:
+
+- server-configured `STACKMAP_PORTAINER_URL`
+- import disabled when unset
+- production UI accepts API token only
+- token is short-lived, server-memory-only, never persisted/logged/returned
+- GET-only allowlisted Portainer client for the approved endpoints
+- environment discovery
+- Docker info/version/container-list discovery
+- strict projection/validation and sensitive-field exclusion
+- mapping into StackMap preview candidates
+- duplicate/conflict analysis
+- production-only import preview UI
+- preview/cancel/expiry behavior
+- no inventory mutation
+
+Do not:
+
+- add provenance tables
+- add confirm/import mutation
+- change restore behavior
+- add sync/refresh/background jobs
+- expose Portainer UI/routes in demo
+- implement Phase 2
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- validation
+- exact-head CI result
+- confirmation Phase 2 was not started
+
+---
+
+Review PR #30 at exact head `5cf9c620acd396409d096d994950e3f17dc5ebdc` against `origin/main`.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Review Phase 1 completely, especially:
+
+- `STACKMAP_PORTAINER_URL` server configuration
+- import-disabled behavior when unset
+- API-token handling and non-persistence
+- GET-only Portainer endpoint allowlist
+- environment/container discovery
+- strict response projection and sensitive-field exclusion
+- mapping, duplicate/conflict analysis, and preview behavior
+- expiry/cancel/error handling
+- production-only UI
+- demo isolation
+- proof that no inventory mutation or Phase 2 work exists
+
+Do not modify files or PR state.
+
+Report:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge or begin Phase 2.
+
+---
+
+Fix only the recorded PR #30 review findings on `codex/portainer-discovery-preview`.
+
+Follow AGENTS.md.
+
+Required fixes:
+
+1. Token/session expiry
+
+- Make the Portainer connection/session TTL actively enforced, not lazy.
+- Expired sessions must release the API token from memory without requiring another request.
+- Add focused tests for idle expiry, cleanup, late events, cancellation, and no token retention after expiry.
+
+2. Host-scoped conflict analysis
+
+- Container-name and host-port conflicts must be evaluated against the actual proposed target host.
+- If the user switches a candidate to an existing StackMap host, recompute conflicts for that host.
+- Preserve StackMap’s current host-scoped conflict semantics.
+- Add focused tests for new-host, existing-host, cross-host, and changed-target-host cases.
+
+3. Nested deselection
+
+- Port and bind-mount deselection in the preview must change the actual stored candidate used for confirmation later.
+- Do not make this cosmetic-only UI state.
+- Add tests proving deselected ports/mounts are excluded from the preview candidate payload/state.
+
+Do not add provenance tables, confirmation/import mutation, restore changes, synchronization, polling, background refresh, or any other Phase 2 work.
+
+Validate fully, commit, push, keep PR #30 draft, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- files changed
+- focused test results
+- full validation
+- exact-head CI result
+- confirmation Phase 2 remains untouched
+
+---
+
+Final re-review PR #30 at exact head `7617893cd51bb87d2c2435d2c4e0a798b9957d45`.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Verify only the three prior findings are resolved:
+
+- active token/session expiry and cleanup
+- host-scoped conflict analysis after target-host changes
+- persisted port/bind-mount deselection
+
+Also verify exact-head CI/Semgrep passed and Phase 2 remains untouched.
+
+If ready:
+
+- mark PR #30 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin Phase 2.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement v1.1 Portainer Import Phase 2 only.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Scope:
+
+- add Portainer source/binding provenance schema and repository support
+- preserve SQLite as sole authority
+- confirmation endpoint using preview token + expected inventory revision
+- create-only import; never update/sync existing services
+- allow selected candidates to attach to an explicitly chosen existing host
+- atomically insert selected hosts/services/ports/paths/provenance in one SQLite transaction
+- imported records start at revision 1
+- advance global inventory revision exactly once on successful import
+- fail stale previews without mutation
+- consumed/expired preview tokens cannot import twice
+- repeat imports of already-bound containers default to skipped
+- full StackMap restore clears Portainer provenance transactionally
+- add confirmation UI, progress/error handling, and safe retry behavior
+- preserve Phase 1 deselection and conflict resolutions
+- add hardening, focused regression tests, E2E/container coverage, backup/restore regression, and documentation
+
+Do not:
+
+- add background sync, polling, refresh/update semantics, or automatic discovery
+- update existing services
+- persist Portainer API tokens
+- change backup JSON schema
+- expose Portainer functionality in the public demo
+- add unrelated v1.1 features
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI result
+- confirmation no sync/update behavior was added
+
+---
+
+Advance the v1.1 Portainer import plan after Phase 1.
+
+Follow AGENTS.md.
+
+Record Phase 1 as Complete with:
+
+- implementation branch
+- implementation/fix commits
+- Entire checkpoints
+- PR #30
+- merge commit `8c8aa921b5e914721da5fd73f1b5faee6de634d7`
+- validation and exact-head CI/Semgrep
+- confirmation that Phase 2 was not started
+
+Then mark Phase 2 Ready because Phase 1 is merged and no blocker remains.
+
+Update only:
+
+- `docs/current-task.md`
+- `docs/v1.1-portainer-import-plan.md`
+
+Do not implement Phase 2.
+Do not change application code.
+Do not merge the planning PR.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- Phase 1/Phase 2 statuses
+- validation
+
+---
+
+Review planning PR #31.
+
+Follow AGENTS.md.
+
+Verify:
+
+- Phase 1 is accurately Complete
+- Phase 2 is the only Ready phase
+- only `docs/current-task.md` and `docs/v1.1-portainer-import-plan.md` changed
+- Phase 2 implementation did not begin
+
+If ready:
+
+- mark PR #31 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin Phase 2.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement v1.1 Portainer Import Phase 2 only.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Scope:
+
+- add non-secret Portainer source/binding provenance schema and repository support
+- preserve SQLite as sole production authority
+- add confirmation using preview token + expected inventory revision
+- create-only import; never update or synchronize existing services
+- allow selected candidates to attach to an explicitly chosen existing host
+- atomically insert selected hosts, services, ports, paths, and provenance in one SQLite transaction
+- imported hosts/services start at revision 1
+- advance global inventory revision exactly once on success
+- stale previews fail without mutation
+- consumed/expired preview tokens cannot import twice
+- already-bound containers default to skipped
+- full StackMap restore clears Portainer provenance transactionally
+- preserve Phase 1 conflict resolutions and port/bind-mount deselection
+- add confirmation UI, safe retry/error behavior, hardening, focused regression tests, E2E/container coverage, backup/restore regression, and documentation
+
+Do not:
+
+- add background sync, polling, refresh/update semantics, or automatic discovery
+- update existing services
+- persist Portainer API tokens
+- change the portable backup JSON schema
+- expose Portainer functionality in the public demo
+- add unrelated v1.1 features
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI result
+- confirmation no sync/update behavior was added
+
+---
+
+Review PR #32 at exact head `763d8548b21b3ba98365947c4e2b70f1f8182521` against `origin/main`.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Review Phase 2 completely, especially:
+
+- provenance schema and repeat-import bindings
+- create-only import semantics
+- existing-host attachment without host mutation
+- preview-token + expected-revision confirmation
+- atomic host/service/port/path/provenance insertion
+- record/global revision behavior
+- stale/expired/consumed-token handling
+- rollback at every transaction stage
+- restore-time provenance cleanup
+- preservation of Phase 1 deselection/conflict resolution
+- confirmation UI and retry/error behavior
+- backup/restore regression
+- demo isolation
+- proof that no sync/update/background behavior exists
+
+Do not modify files or PR state.
+
+Report:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge or begin any new v1.1 work.
+
+---
+
+Fix only the recorded PR #32 review findings on the existing Phase 2 branch.
+
+Follow AGENTS.md.
+
+Required fixes:
+
+1. Explicit container selection
+
+- Do not preselect discovered containers automatically.
+- Users must deliberately select each container they want imported.
+- Stopped containers must remain unselected by default.
+- Import confirmation must be impossible when nothing is explicitly selected.
+- Add focused UI/state tests.
+
+2. Import-success vs refresh-failure state
+
+- After confirmation succeeds, immediately mark the preview consumed/complete in UI state.
+- Inventory refresh must happen afterward as a separate operation.
+- If refresh fails, report a refresh error without representing the import itself as failed.
+- Do not leave a consumed preview retryable.
+- Add focused tests for successful import + failed refresh and retry behavior.
+
+3. Real Phase 2 E2E/container coverage
+   Replace mocked-confirmation-only proof with real server-backed coverage that validates:
+
+- atomic import creates actual SQLite records
+- selected ports/mounts are respected
+- existing-host attachment
+- stale confirmation in a second browser
+- repeat import / provenance behavior
+- restart and container recreation persistence
+- restore clears provenance as designed
+- no Phase 2 mutation occurs in demo
+
+Keep UI-only tests where useful, but do not rely on mocked confirmation as Phase 2 workflow proof.
+
+4. Transaction-stage rollback tests
+   Add deterministic injected-failure coverage after each meaningful transaction stage:
+
+- source/provenance-source creation
+- host insertion
+- service insertion
+- child port/path insertion
+- binding/provenance insertion
+- global revision write
+
+Each failure must prove complete rollback of inventory, children, provenance, and revision.
+
+5. Stale copy
+   Remove the Phase 1-only “Nothing can be imported in Phase 1” text and replace it with current Phase 2 wording.
+
+Do not add sync, polling, refresh/update semantics, background work, existing-service updates, token persistence, backup-schema changes, or unrelated features.
+
+Validate fully, commit, push, keep PR #32 draft, and wait for exact-head CI.
+
+Return:
+
+- commit
+- Entire checkpoint
+- changed files
+- focused tests
+- full validation
+- exact-head CI
+- confirmation no sync/update behavior was added
+
+---
+
+Final re-review PR #32 at exact head `0ded11911d4eae01661ee600d4d443cff0ab98ee`.
+
+Follow AGENTS.md and `docs/current-task.md`.
+
+Verify the prior findings are resolved:
+
+- explicit container selection
+- successful import state is committed before refresh
+- real Phase 2 E2E/container coverage
+- rollback coverage for all six transaction stages
+- stale Phase 1 copy removed
+- no sync/update/background behavior added
+
+If ready:
+
+- mark PR #32 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin new v1.1 work.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Close out the v1.1 Portainer import plan after Phase 2.
+
+Follow AGENTS.md.
+
+Record Phase 2 as Complete with:
+- implementation branch
+- implementation/fix commits
+- Entire checkpoints
+- PR #32
+- merge commit 05a4050fc6a9a5629a57c02b638897dcfd6883c3
+- focused/full validation
+- exact-head CI and Semgrep
+- datastore authority
+- confirmation that no sync/update/background behavior was added
+
+Mark the two-phase v1.1 Portainer plan Complete. No Phase 3 exists.
+
+Update only:
+- docs/current-task.md
+- docs/v1.1-portainer-import-plan.md
+
+Do not change application code, version, workflows, release artifacts, GHCR, or Pages.
+Do not tag or release v1.1.0.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return branch, commit, Entire checkpoint, PR URL, final phase statuses, and validation.
+
+---
+
+Review planning PR #33.
+
+Follow AGENTS.md.
+
+Verify:
+
+- Phase 1 is accurately Complete
+- Phase 2 is accurately Complete
+- the two-phase v1.1 Portainer import plan is Complete
+- no Phase 3 exists
+- only `docs/current-task.md` and `docs/v1.1-portainer-import-plan.md` changed
+- Phase 2 traceability, validation, CI/Semgrep, datastore authority, and no-sync boundary are accurate
+
+If ready:
+
+- mark PR #33 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin new v1.1 work.
+Do not tag or release v1.1.0 yet.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Perform a final v1.1.0 release-readiness review from current main.
+
+Follow AGENTS.md and the release checklist.
+
+Review:
+
+- package/app version and release metadata
+- README and Portainer setup/import documentation
+- `STACKMAP_PORTAINER_URL` configuration guidance
+- API-token/security guidance
+- create-only/no-sync behavior
+- backup/restore and provenance behavior
+- demo isolation
+- public URLs, GHCR, and deployment instructions
+- whether any stale v1.0 wording remains
+- whether any new screenshots/docs are required before release
+- whether any sensitive or environment-specific information was introduced
+
+Validate the full application, demo, container/deployment matrix, and Semgrep.
+
+Do not modify files, tag, release, republish GHCR, or redeploy Pages.
+
+Return:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- validation
+- final recommendation: Ready for v1.1.0 release or Changes required
+
+---
+
+Fix only the recorded v1.1.0 release-readiness documentation findings.
+
+Follow AGENTS.md and the release checklist.
+
+Required fixes:
+
+1. `docs/release-notes.md`
+
+- Correct the stale v1.0.0 historical statement so it accurately reflects that the v1.0.0 tag and GitHub Release exist.
+- Expand the v1.1.0 release-note section to include:
+
+- upgrade guidance
+- recommendation to take a server JSON backup and a cold backup of the complete stopped `/config` directory before upgrading
+- note that the database schema migrates forward
+- rollback limitations
+- known v1.1 limitations
+- concise validation summary
+
+2. `docs/architecture.md`
+
+- Remove stale wording that calls the public demo URL “planned.”
+- Describe the current live public demo accurately.
+
+3. `docs/deployment-and-operations.md`
+
+- Remove stale instructions treating the custom demo hostname as unpublished.
+- Describe the current live hostname accurately.
+
+Do not change application code, version, workflows, planning, backup schema, GHCR, Pages, tags, or releases.
+
+Validate:
+
+- documentation links
+- stale-text audit
+- `git diff --check`
+- exact changed-file scope
+
+Commit, push, open or update a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- validation
+- exact-head CI/Semgrep result
+
+---
+
+Final re-review PR #34 at exact head `d7a2051668cb68971efdb80cea3ac8bcfa0e7ebd`.
+
+Follow AGENTS.md and the release checklist.
+
+Verify:
+
+- the stale v1.0.0 release-note statement is corrected
+- v1.1.0 release notes now include upgrade guidance, JSON + cold `/config` backup guidance, forward migration, rollback limits, known limitations, and validation summary
+- architecture and deployment docs now describe the live demo accurately
+- only the three intended documentation files changed
+- exact-head CI and Semgrep passed
+
+If ready:
+
+- mark PR #34 ready
+- merge normally
+- sync local main with origin/main
+
+Do not tag or release v1.1.0 yet.
+Do not republish GHCR or redeploy Pages.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Release StackMap v1.1.0 from clean synchronized main at
+5fe9d8a8d86ec7c5c7301bdf44c570674e6b83e0.
+
+Follow AGENTS.md and the release checklist.
+
+Proceed in this order:
+
+1. Verify no v1.1.0 tag or GitHub Release already exists.
+2. Create and push annotated tag `v1.1.0` at the current main commit.
+3. Explicitly dispatch the container publication workflow on ref `v1.1.0`.
+   - verify the versioned GHCR image is published and anonymously pullable
+4. Explicitly dispatch the container publication workflow on ref `main`.
+   - verify `ghcr.io/five2seven/stackmap:latest` is updated
+5. Verify the versioned image and `latest` represent the same current v1.1.0 build.
+6. Only after all publication checks pass, create the immutable GitHub Release for `v1.1.0` using the prepared v1.1.0 release notes.
+7. Verify the public tag, Release page, repository, versioned GHCR image, latest GHCR image, and live demo.
+
+Do not deploy Cloudflare Pages; the demo intentionally excludes Portainer integration and is already healthy.
+Do not modify code, documentation, planning, version metadata, workflows, or release notes during this operation.
+
+If any tag/image/publication validation fails, stop before creating the GitHub Release.
+
+Return:
+- annotated tag SHA and tagged commit
+- workflow run IDs/results
+- GHCR versioned tag and latest digests
+- GitHub Release URL
+- final validation
+- final repository state
+
+---
+
+Plan a narrowly scoped StackMap v1.1.1 change to allow Portainer over HTTP only on trusted private LAN addresses.
+
+Follow AGENTS.md.
+
+Approved behavior:
+
+- `STACKMAP_PORTAINER_URL` may use `http://` only when the destination resolves exclusively to RFC1918 private IPv4 space:
+
+- 10.0.0.0/8
+- 172.16.0.0/12
+- 192.168.0.0/16
+- HTTPS remains required for public/non-private destinations.
+- Reject loopback, link-local, multicast, unspecified, metadata-service, and other non-RFC1918 HTTP destinations.
+- Validate DNS-resolved addresses, not just hostname text.
+- If a hostname resolves to both private and public addresses, reject it for HTTP.
+- Preserve redirect rejection so credentials are never forwarded elsewhere.
+- Preserve server-only, short-lived Portainer API token handling.
+- Preserve GET-only hard-coded Portainer endpoint allowlist.
+- Do not add an insecure-TLS/skip-certificate-verification option.
+- Do not add Cloudflare Access support in this change.
+- No sync/update/background behavior.
+- No unrelated product changes.
+
+Plan:
+
+- exact validation rules
+- implementation files likely affected
+- unit/integration/E2E cases
+- documentation changes
+- release/version impact for v1.1.1
+
+Do not implement yet.
+Do not modify files, create a branch, commit, tag, or release.
+
+Return only:
+
+- proposed validation logic
+- edge cases
+- test matrix
+- affected files
+- whether this is safe and appropriately scoped for v1.1.1
+
+---
+
+Create the StackMap v1.1.1 planning task for private-LAN Portainer HTTP support.
+
+Follow AGENTS.md.
+
+Use the already-approved design; do not reopen architecture decisions.
+
+Single task only:
+
+Allow `STACKMAP_PORTAINER_URL` to use HTTP when, and only when, the actual connection destination resolves exclusively to RFC1918 IPv4:
+
+- 10.0.0.0/8
+- 172.16.0.0/12
+- 192.168.0.0/16
+
+Requirements:
+
+- HTTPS behavior remains unchanged.
+- HTTP public/non-RFC1918 destinations fail closed.
+- Reject loopback, link-local, metadata, multicast, unspecified, CGNAT, IPv6, mixed private/public DNS, and all other non-RFC1918 destinations.
+- Validate at startup and enforce again in the actual per-request connection lookup to prevent DNS rebinding.
+- Preserve hostname/Host header while connecting only to a validated address.
+- Reject redirects.
+- Never attach/send `X-API-Key` when destination validation fails.
+- Preserve GET-only endpoint allowlist, token lifetime/non-persistence, response limits, projection, and secret exclusions.
+- No TLS bypass.
+- No Cloudflare Access support.
+- No sync/update/background behavior.
+- No database or UI workflow changes.
+- Version target: 1.1.1.
+
+Required validation includes focused network-policy tests plus real container/E2E proof using an RFC1918 Docker-network Portainer fixture.
+
+Create/update only the planning/current-task documents required by AGENTS.md.
+
+Do not implement the change yet.
+Do not change package version yet.
+Do not tag, release, publish GHCR, or deploy Pages.
+
+Commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- task status
+- validation
+
+---
+
+Review planning PR #35.
+
+Follow AGENTS.md.
+
+Verify:
+
+- exactly one v1.1.1 task exists and is Ready
+- the approved RFC1918-only HTTP policy is recorded accurately
+- startup and per-request DNS enforcement are required
+- HTTPS behavior remains unchanged
+- no implementation/version/release work began
+- only the intended planning files changed
+
+If ready:
+
+- mark PR #35 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin implementation yet.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement the single Ready v1.1.1 task from `docs/current-task.md`.
+
+Follow AGENTS.md and the merged v1.1.1 plan.
+
+Requirements:
+
+- allow `STACKMAP_PORTAINER_URL` over HTTP only when every resolved destination is RFC1918 IPv4:
+
+- 10.0.0.0/8
+- 172.16.0.0/12
+- 192.168.0.0/16
+- reject loopback, link-local, metadata, multicast, unspecified, CGNAT, IPv6, mixed private/public DNS, and all other non-RFC1918 HTTP targets
+- validate at startup and enforce again in the actual per-request connection lookup
+- prevent DNS rebinding by ensuring the request connects only to addresses validated for that request
+- preserve the configured hostname/Host header
+- never send `X-API-Key` when destination validation fails
+- preserve redirect rejection and the existing GET-only Portainer endpoint allowlist
+- preserve HTTPS behavior and normal certificate validation unchanged
+- no TLS bypass
+- no Cloudflare Access support
+- no sync/update/background behavior
+- no database or UI workflow changes
+
+Also:
+
+- update version metadata to `1.1.1`
+- update README/deployment/architecture/release notes as required
+- add focused unit/integration coverage for the network policy
+- add real container/E2E proof using an RFC1918 Docker-network Portainer fixture
+- preserve demo isolation
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation no unrelated behavior was added
+
+---
+
+Review PR #36 at exact head `ac656c1b2422dc55917274a406c75df4ed40327d` against `origin/main`.
+
+Follow AGENTS.md and the v1.1.1 plan.
+
+Review the implementation completely, with particular attention to the security boundary:
+
+- HTTP is allowed only when every actual destination is RFC1918 IPv4
+- exact CIDR boundaries for 10/8, 172.16/12, and 192.168/16
+- loopback, link-local, metadata, multicast, unspecified, CGNAT, IPv6, mixed private/public DNS, and all other destinations fail closed
+- literal IPs and DNS hostnames follow the same policy
+- startup validation occurs
+- every Portainer request performs connection-time enforcement
+- DNS rebinding cannot cause a token-bearing request to connect to an address that was not validated for that request
+- validated connection address is actually used while preserving the configured hostname/Host semantics
+- `X-API-Key` cannot be transmitted when validation fails
+- redirects remain rejected
+- GET-only endpoint allowlist remains intact
+- HTTPS behavior and normal TLS/certificate validation are unchanged
+- real container validation proves RFC1918 HTTP connectivity rather than merely mocking it
+- version/docs accurately describe v1.1.1
+- demo isolation remains intact
+- no TLS bypass, Cloudflare Access, database/UI changes, sync, polling, updates, or background behavior was added
+
+Do not modify files or PR state.
+
+Report:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge, release, publish, deploy, or advance planning.
+
+---
+
+Merge PR #36.
+
+Follow AGENTS.md.
+
+- mark PR #36 ready
+- merge normally
+- sync local main with origin/main
+- verify the merge commit
+- do not advance planning yet
+- do not tag or release v1.1.1
+- do not publish GHCR or deploy Pages
+
+Return:
+
+- merge commit
+- final main state
+- confirmation planning/release/publication were untouched
+
+---
+
+Close out the v1.1.1 private-LAN Portainer HTTP plan after the merged implementation.
+
+Follow AGENTS.md.
+
+Record the single v1.1.1 task as Complete with:
+
+- implementation branch
+- implementation commit `ac656c1b2422dc55917274a406c75df4ed40327d`
+- Entire checkpoint `116447fcc737`
+- PR #36
+- merge commit `d5a38c6b8c6948e39e2a4bc30ae3228e285007b7`
+- focused/full validation
+- exact-head CI and Semgrep
+- final security boundary
+- confirmation no unrelated behavior was added
+
+Mark the v1.1.1 plan Complete. No additional task exists.
+
+Update only the planning/current-task documents required by AGENTS.md.
+
+Do not change application code, version, workflows, release notes, GHCR, Pages, tags, or releases.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- final task status
+- validation
+
+---
+
+Review planning PR #37.
+
+Follow AGENTS.md.
+
+Verify:
+
+- the single v1.1.1 task is accurately Complete
+- the v1.1.1 plan is Complete with no additional task
+- implementation/PR/merge/checkpoint/CI/Semgrep traceability is accurate
+- RFC1918-only HTTP security boundary is recorded correctly
+- only the intended planning files changed
+- no release/publication work began
+
+If ready:
+
+- mark PR #37 ready
+- merge normally
+- sync local main with origin/main
+
+Do not tag or release v1.1.1 yet.
+Do not publish GHCR or deploy Pages.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Perform the final v1.1.1 release-readiness review from current main.
+
+Follow AGENTS.md and the release checklist.
+
+Verify:
+
+- package/app version is 1.1.1 everywhere required
+- README, deployment docs, architecture, changelog, and release notes accurately describe RFC1918-only HTTP Portainer support
+- HTTPS behavior remains unchanged
+- no stale v1.1.0 wording remains
+- no sensitive or environment-specific information was introduced
+- full application/demo/container/deployment validation passes
+- exact-main CI and Semgrep pass
+- no v1.1.1 tag or GitHub Release exists yet
+- no GHCR or Pages publication has occurred yet
+
+Do not modify files, tag, release, publish GHCR, or deploy Pages.
+
+Return:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- validation
+- final recommendation: Ready for v1.1.1 release or Changes required
