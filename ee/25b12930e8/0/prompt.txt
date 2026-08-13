@@ -1,0 +1,186 @@
+Initial read-only review of draft PR #15 at head 1235b832b6ed2f22623b90eb885134bde9b57b99.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Verify Task 8 fully satisfies deployment, backup, upgrade, persistence, failure-handling, and Portainer validation requirements without changing product scope.
+
+Confirm exact-head CI run 31339564793 passed.
+
+Pay particular attention to:
+- cold /config backup/restore correctness
+- failed/unsupported upgrade behavior
+- unwritable-volume failure diagnostics
+- restart/recreation persistence
+- graceful shutdown
+- concurrent-client behavior
+- preservation of Task 5 backup/restore
+- Task 6 receipt/database compatibility
+- Task 7 retired IndexedDB/migration paths
+- Compose/Portainer contract accuracy
+- README/architecture operational guidance
+
+Report Blocking, Important, Minor, and No issue findings.
+
+Do not modify files, mark ready, merge, advance planning, or begin Task 9.
+
+---
+
+Send Codex this:
+
+```text
+PR #15 review passed.
+
+Follow AGENTS.md.
+
+Mark PR #15 ready and merge it normally at head 1235b832b6ed2f22623b90eb885134bde9b57b99.
+
+Then sync local main with origin/main.
+
+Do not advance planning or begin Task 9.
+
+Return merge commit and final main state.
+```
+
+---
+
+Next is the **planning advancement after Task 8**. Send Codex:
+
+```text
+Task 8 is merged as fe921dd77c7405d69ce02634f21745210b9b8466.
+
+Follow AGENTS.md and perform planning advancement only:
+- Record Task 8 as Complete with final implementation/merge traceability.
+- Evaluate Task 9 against its dependencies and mark it Ready only if satisfied.
+- Keep later tasks Blocked as appropriate.
+- Update only the planning files required by the repository process.
+- Validate the planning diff.
+- Commit, push a new planning branch, and open a draft PR.
+
+Do not implement Task 9 or modify application code.
+
+Return the branch, commit, Entire checkpoint, PR, task statuses, and validation result.
+```
+
+---
+
+PR #15 review passed.
+
+Follow AGENTS.md.
+
+Mark PR #15 ready and merge it normally at head 1235b832b6ed2f22623b90eb885134bde9b57b99.
+
+Then sync local main with origin/main.
+
+Do not advance planning or begin Task 9.
+
+Return merge commit and final main state.
+
+---
+
+Advance planning after Task 8.
+
+Follow AGENTS.md.
+
+Task 8 merge commit:
+fe921dd77c7405d69ce02634f21745210b9b8466
+
+Create the planning branch/PR, mark Task 8 Complete, evaluate Task 9 readiness, and update only the required planning files.
+
+Do not implement Task 9.
+Do not merge the planning PR.
+
+Return branch, commit, Entire checkpoint, PR URL, task statuses, and validation.
+
+---
+
+The proposed Task 9 public-demo behavior is explicitly approved.
+
+Update existing planning PR #16 only:
+- record the approval
+- mark Task 9 Ready
+- keep Task 10 Blocked
+- do not implement Task 9
+- do not merge PR #16
+
+Follow AGENTS.md. Validate, commit, push, and return the new head/checkpoint.
+
+---
+
+Review planning PR #16.
+
+Follow AGENTS.md.
+
+Verify:
+- Task 8 is accurately Complete
+- Task 9 is the only Ready task with explicit demo approval recorded
+- Task 10 remains Blocked
+- only planning files changed
+- Task 9 implementation did not begin
+
+If ready:
+- mark PR #16 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin Task 9.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement Task 9 on codex/public-demo-mode.
+
+Follow AGENTS.md and docs/current-task.md.
+
+Build the approved Cloudflare Pages demo using bundled sample data and an in-memory repository only. Edits must be session-only and reset on refresh. Keep the demo clearly labeled and completely isolated from production API, SQLite, IndexedDB, and other persistence.
+
+Preserve self-hosted production behavior unchanged.
+
+Validate, commit, push, open a draft PR, and wait for exact-head CI.
+
+Do not implement Task 10, publish a release, or advance planning.
+
+Return commit, Entire checkpoint, PR URL, validation summary, CI result, and confirmation Task 10/planning were untouched.
+
+---
+
+Fix only the nine Semgrep findings blocking the v1.1.1 release.
+
+Follow AGENTS.md and the release checklist.
+
+Scope:
+
+- `.github/workflows/deploy-cloudflare-pages.yml`
+- `.github/workflows/publish-container.yml`
+
+For every GitHub Action currently referenced by a mutable tag:
+
+- resolve the exact upstream commit SHA for the currently intended action version
+- replace the mutable tag with that immutable SHA
+- retain the human-readable version as an inline comment, e.g. `# v4`
+- do not upgrade action major/minor versions unless required to resolve the currently used version
+- do not change workflow triggers, permissions, validation behavior, publication gates, secrets, or deployment behavior
+
+Validate:
+
+- workflow YAML parses
+- all `uses:` references are pinned to full immutable commit SHAs
+- no mutable action tags remain
+- full Semgrep scan passes with zero blocking findings
+- application validation still passes
+- `git diff --check`
+
+Commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Do not tag or release v1.1.1.
+Do not publish GHCR or deploy Pages.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- pinned actions with retained version comments
+- validation
+- exact-head CI/Semgrep

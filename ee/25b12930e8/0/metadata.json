@@ -1,0 +1,51 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "ee25b12930e8",
+  "session_id": "019fe8a9-eeb5-70c3-b100-5e4940af7b54",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-13T13:18:52.4297193Z",
+  "branch": "codex/pin-github-actions-v1.1.1",
+  "checkpoints_count": 1,
+  "files_touched": [
+    ".github/workflows/deploy-cloudflare-pages.yml",
+    ".github/workflows/publish-container.yml"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "f72c560393fd",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 647342,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 15292416,
+    "output_tokens": 41218,
+    "api_call_count": 117
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-13T13:18:52.1042904Z",
+    "agent_lines": 0,
+    "agent_removed": 7,
+    "human_added": 0,
+    "human_modified": 400,
+    "human_removed": 0,
+    "total_committed": 398,
+    "total_lines_changed": 407,
+    "agent_percentage": 1.71990171990172,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 251,
+      "user_lines_removed": 251,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "scripts/validate-deployment.sh": 251
+      },
+      "user_removed_per_file": {
+        "scripts/validate-deployment.sh": 251
+      }
+    }
+  ]
+}
