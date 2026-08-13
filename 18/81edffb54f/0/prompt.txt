@@ -1,0 +1,31 @@
+Release StackMap v1.1.1 from clean synchronized main at `57426c5e053af223568c9d1cb2107b3a14edb1cd`.
+
+Follow AGENTS.md and the release checklist.
+
+Proceed in this order:
+
+1. Verify no `v1.1.1` tag or GitHub Release exists.
+2. Create and push annotated tag `v1.1.1` at current main.
+3. Explicitly dispatch container publication for ref `v1.1.1`.
+
+- verify `ghcr.io/five2seven/stackmap:1.1.1` is anonymously accessible
+4. Explicitly dispatch container publication for ref `main`.
+
+- verify `ghcr.io/five2seven/stackmap:latest` is updated
+5. Verify `1.1.1` and `latest` contain the same runnable application layers and identify commit `57426c5e053af223568c9d1cb2107b3a14edb1cd`.
+6. Create the immutable GitHub Release for `v1.1.1` using the prepared release notes.
+7. Verify the public repository, tag, Release page, versioned GHCR image, latest GHCR image, and live demo.
+
+Do not redeploy Cloudflare Pages.
+Do not modify code, documentation, planning, version metadata, workflows, or release notes.
+
+If any publication or verification step fails, stop before creating the GitHub Release.
+
+Return:
+
+- annotated tag SHA and tagged commit
+- publication workflow run IDs/results
+- GHCR `1.1.1` and `latest` digests
+- GitHub Release URL
+- final validation
+- final repository state
