@@ -483,3 +483,59 @@ If ready:
 Do not begin implementation yet.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement the single Ready v1.1.3 task from `docs/current-task.md`.
+
+Follow AGENTS.md and the merged v1.1.3 Portainer compatibility plan.
+
+Confirmed root cause:
+
+- Docker container summary port objects require `PrivatePort` and `Type`.
+- `IP` may be omitted.
+- `PublicPort` may be omitted or null for unpublished ports.
+- StackMap currently rejects these valid shapes and returns `PORTAINER_INVALID_RESPONSE`.
+
+Requirements:
+
+- accept valid port entries when `IP` is omitted
+- accept unpublished ports when `PublicPort` is omitted or null
+- do not create a host-port mapping for unpublished ports
+- preserve published-port behavior when `PublicPort` is present and valid
+- keep `PrivatePort` and `Type` validation strict
+- do not broadly relax unrelated Docker response fields
+- preserve duplicate-port handling and existing protocol mapping behavior
+- preserve all Portainer security controls, token handling, route allowlisting, RFC1918 HTTP policy, HTTPS behavior, redirect rejection, create-only import, provenance, SQLite authority, confirmation flow, UI workflow, and demo isolation
+- no sync, polling, refresh, update, overwrite, or background behavior
+
+Add regression coverage for:
+
+- omitted `IP`
+- omitted `PublicPort`
+- `PublicPort: null`
+- published port with valid `PublicPort`
+- invalid required `PrivatePort`
+- invalid required `Type`
+- exact real-world fixture shape from the OMV/Portainer deployment
+- preview/import behavior remains correct and unpublished ports do not create false host bindings
+
+Also:
+
+- update version metadata to `1.1.3`
+- update changelog/release notes/docs only as required
+- preserve demo isolation
+- run focused and full validation
+
+Commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation no unrelated behavior was added
