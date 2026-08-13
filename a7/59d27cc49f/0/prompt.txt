@@ -122,3 +122,56 @@ If ready:
 Do not begin implementation yet.
 
 Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement the single Ready v1.1.2 task from `docs/current-task.md`.
+
+Follow AGENTS.md and the merged v1.1.2 compatibility plan.
+
+Requirements:
+
+- accept valid local Docker Portainer environments where:
+
+- `Type: 1`
+- `ContainerEngine` is blank
+- preserve support for endpoints explicitly reporting `ContainerEngine: docker`
+- continue rejecting clearly unsupported/non-Docker environment types
+- base compatibility on documented Portainer endpoint semantics, not arbitrary heuristics
+- preserve all existing Portainer security controls, API-token handling, RFC1918 HTTP policy, HTTPS behavior, create-only import, provenance, and confirmation flow
+- no UI redesign
+- no sync, polling, update, or background behavior
+
+Add regression coverage for:
+
+- `Type: 1` + blank `ContainerEngine` => accepted
+- explicit Docker `ContainerEngine` => accepted
+- unsupported/non-Docker endpoint types => rejected
+- exact real-world fixture:
+
+- `Id: 1`
+- `Name: local`
+- `Type: 1`
+- `ContainerEngine: ""`
+- `URL: unix:///var/run/docker.sock`
+- `Status: 1`
+- existing discovery/import behavior remains unchanged
+
+Also:
+
+- update version metadata to `1.1.2`
+- update release notes/changelog/docs only as required
+- preserve demo isolation
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation no unrelated behavior was added
