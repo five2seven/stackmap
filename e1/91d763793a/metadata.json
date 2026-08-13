@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "e191d763793a",
+  "strategy": "manual-commit",
+  "branch": "codex/close-v1-1-2-portainer-environment-compatibility-plan",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/current-task.md",
+    "docs/v1.1.2-portainer-environment-compatibility-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e1/91d763793a/0/metadata.json",
+      "transcript": "/e1/91d763793a/0/full.jsonl",
+      "compact_transcript": "/e1/91d763793a/0/transcript.jsonl",
+      "content_hash": "/e1/91d763793a/0/content_hash.txt",
+      "prompt": "/e1/91d763793a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 471375,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 16429568,
+    "output_tokens": 45655,
+    "api_call_count": 122
+  }
+}

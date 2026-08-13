@@ -1,0 +1,230 @@
+Release StackMap v1.1.1 from clean synchronized main at `57426c5e053af223568c9d1cb2107b3a14edb1cd`.
+
+Follow AGENTS.md and the release checklist.
+
+Proceed in this order:
+
+1. Verify no `v1.1.1` tag or GitHub Release exists.
+2. Create and push annotated tag `v1.1.1` at current main.
+3. Explicitly dispatch container publication for ref `v1.1.1`.
+
+- verify `ghcr.io/five2seven/stackmap:1.1.1` is anonymously accessible
+4. Explicitly dispatch container publication for ref `main`.
+
+- verify `ghcr.io/five2seven/stackmap:latest` is updated
+5. Verify `1.1.1` and `latest` contain the same runnable application layers and identify commit `57426c5e053af223568c9d1cb2107b3a14edb1cd`.
+6. Create the immutable GitHub Release for `v1.1.1` using the prepared release notes.
+7. Verify the public repository, tag, Release page, versioned GHCR image, latest GHCR image, and live demo.
+
+Do not redeploy Cloudflare Pages.
+Do not modify code, documentation, planning, version metadata, workflows, or release notes.
+
+If any publication or verification step fails, stop before creating the GitHub Release.
+
+Return:
+
+- annotated tag SHA and tagged commit
+- publication workflow run IDs/results
+- GHCR `1.1.1` and `latest` digests
+- GitHub Release URL
+- final validation
+- final repository state
+
+---
+
+Fix the Portainer environment detection bug found during real-world deployment.
+
+Context:
+
+- StackMap is running on Docker/OpenMediaVault.
+- Portainer is connected to the local Docker socket.
+- `/api/endpoints` returns:
+
+```json
+{
+  "Id": 1,
+  "Name": "local",
+  "Type": 1,
+  "ContainerEngine": "",
+  "URL": "unix:///var/run/docker.sock",
+  "Status": 1
+}
+```
+
+Current bug:
+
+- StackMap filters environments with:
+  `containerEngine.toLowerCase() === 'docker'`
+- Because `ContainerEngine` is blank, a valid local Docker environment is incorrectly excluded.
+- The UI therefore shows: `No accessible Docker environments were found.`
+
+Implement a narrow compatibility fix.
+
+Requirements:
+
+- Recognize Portainer local Docker environments such as `Type: 1` as Docker-compatible even when `ContainerEngine` is blank.
+- Preserve support for environments that explicitly report `ContainerEngine: docker`.
+- Continue rejecting clearly unsupported/non-Docker environment types.
+- Do not infer Docker compatibility from arbitrary fields unless Portainer endpoint semantics support it.
+- Preserve all existing Portainer security controls, API-token handling, HTTP/HTTPS network policy, import behavior, provenance, and create-only semantics.
+- No UI workflow redesign.
+- No sync, polling, update, or background behavior.
+- Add a regression fixture matching the exact endpoint response above.
+- Add tests for:
+
+- Type 1 + blank ContainerEngine => accepted
+- explicit Docker ContainerEngine => accepted
+- unsupported/non-Docker endpoint types => rejected
+- existing discovery/import behavior remains unchanged
+
+Treat this as a patch compatibility fix. Determine the appropriate patch version based on the repository's current release state; do not skip required planning gates in AGENTS.md.
+
+Do not release or publish anything yet.
+
+Return:
+
+- whether a planning gate is required
+- proposed version
+- changed files
+- tests/validation
+- commit
+- Entire checkpoint
+- draft PR URL
+
+---
+
+Review planning PR #40.
+
+Follow AGENTS.md.
+
+Verify:
+
+- v1.1.2 is the correct patch target
+- exactly one implementation task exists and is Ready
+- the plan accurately records the Portainer compatibility bug:
+
+- valid local Docker endpoint
+- `Type: 1`
+- blank `ContainerEngine`
+- current filtering incorrectly excludes it
+- the planned fix accepts supported Docker endpoints without weakening rejection of unsupported/non-Docker environments
+- no implementation or release work began
+- only the intended planning files changed
+
+Do not modify files during review.
+
+If ready:
+
+- mark PR #40 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin implementation yet.
+
+Return findings, validation, merge commit, and final main state.
+
+---
+
+Implement the single Ready v1.1.2 task from `docs/current-task.md`.
+
+Follow AGENTS.md and the merged v1.1.2 compatibility plan.
+
+Requirements:
+
+- accept valid local Docker Portainer environments where:
+
+- `Type: 1`
+- `ContainerEngine` is blank
+- preserve support for endpoints explicitly reporting `ContainerEngine: docker`
+- continue rejecting clearly unsupported/non-Docker environment types
+- base compatibility on documented Portainer endpoint semantics, not arbitrary heuristics
+- preserve all existing Portainer security controls, API-token handling, RFC1918 HTTP policy, HTTPS behavior, create-only import, provenance, and confirmation flow
+- no UI redesign
+- no sync, polling, update, or background behavior
+
+Add regression coverage for:
+
+- `Type: 1` + blank `ContainerEngine` => accepted
+- explicit Docker `ContainerEngine` => accepted
+- unsupported/non-Docker endpoint types => rejected
+- exact real-world fixture:
+
+- `Id: 1`
+- `Name: local`
+- `Type: 1`
+- `ContainerEngine: ""`
+- `URL: unix:///var/run/docker.sock`
+- `Status: 1`
+- existing discovery/import behavior remains unchanged
+
+Also:
+
+- update version metadata to `1.1.2`
+- update release notes/changelog/docs only as required
+- preserve demo isolation
+
+Validate fully, commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation no unrelated behavior was added
+
+---
+
+Review PR #41 at exact head `bb7312f3128dd36e22f0610a72af4c35529aa930` against `origin/main`.
+
+Follow AGENTS.md and the v1.1.2 compatibility plan.
+
+Verify:
+
+- `Type: 1` with blank `ContainerEngine` is accepted as Docker-compatible
+- explicit `ContainerEngine: docker` remains accepted
+- unsupported/non-Docker endpoint types remain rejected
+- compatibility logic is based on Portainer endpoint semantics, not broad heuristics
+- the exact real-world local Docker socket fixture is covered
+- existing Portainer discovery/import behavior remains unchanged
+- API-token handling, route allowlisting, RFC1918 HTTP enforcement, HTTPS validation, redirect rejection, SQLite authority, provenance, confirmation, and create-only semantics are unchanged
+- no sync, polling, update, refresh, or background behavior was added
+- version metadata and release notes consistently reflect `1.1.2`
+- demo isolation remains intact
+- exact-head CI and Semgrep passed
+
+Do not modify files or PR state.
+
+Report:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge, release, publish, deploy, or advance planning.
+
+---
+
+Merge PR #41.
+
+Follow AGENTS.md.
+
+- mark PR #41 ready
+- merge normally
+- sync local main with origin/main
+- verify the merge commit
+- do not advance planning yet
+- do not tag or release v1.1.2
+- do not publish GHCR or deploy Pages
+
+Return:
+
+- merge commit
+- final main state
+- confirmation planning/release/publication were untouched
