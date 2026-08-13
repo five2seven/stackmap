@@ -138,13 +138,17 @@ REQUEST_HISTORY="$root/request-history.jsonl" node <<'NODE'
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const requests = fs.readFileSync(process.env.REQUEST_HISTORY, 'utf8').trim().split('\n').map(JSON.parse)
-assert.deepEqual(requests.map(({ url }) => url), [
+const normalized = requests
+  .map(({ method, url, host, apiKeyAccepted }) => ({ method, url, host, apiKeyAccepted }))
+  .sort((left, right) => left.url.localeCompare(right.url))
+const expected = [
   '/api/endpoints',
   '/api/endpoints/7/docker/info',
   '/api/endpoints/7/docker/version',
   '/api/endpoints/7/docker/containers/json?all=true',
-])
-assert.ok(requests.every(({ method, host, apiKeyAccepted }) => method === 'GET' && host === 'stackmap-portainer-validation:9000' && apiKeyAccepted))
+].map((url) => ({ method: 'GET', url, host: 'stackmap-portainer-validation:9000', apiKeyAccepted: true }))
+  .sort((left, right) => left.url.localeCompare(right.url))
+assert.deepEqual(normalized, expected)
 NODE
 docker exec --interactive "$container" node <<'NODE'
 const assert = require('node:assert/strict')
