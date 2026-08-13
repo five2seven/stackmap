@@ -674,3 +674,43 @@ Return:
 - final local/main and origin/main state
 - worktree status
 - confirmation planning, release, publication, and deployment were untouched
+
+---
+
+Close out the v1.1.3 Portainer PortSummary compatibility plan after the merged implementation.
+
+Follow AGENTS.md.
+
+Record the single v1.1.3 task as Complete with:
+
+- implementation commit `5978c82d2dbba610eac59780b85a97c3370a6e19`
+- Entire checkpoint `b14f157ecf8d`
+- PR #44
+- merge commit `f8f753119dbd4c2675c2234f897ceccc836ad093`
+- focused and full validation
+- exact-head CI and Semgrep results
+- final compatibility behavior:
+
+- omitted `IP` accepted
+- omitted/null `PublicPort` treated as unpublished
+- unpublished ports do not create host-port mappings
+- required `PrivatePort` and `Type` remain strict
+- malformed present values remain rejected
+- confirmation that existing security, import, database, UI, and demo behavior remained unchanged
+
+Mark the v1.1.3 plan Complete with no additional task.
+
+Update only the planning/current-task documents required by AGENTS.md.
+
+Do not change application code, version metadata, workflows, release notes, GHCR, Pages, tags, or releases.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- final task/plan status
+- validation
