@@ -7,6 +7,15 @@ const emptyInventory = (): InventorySnapshot => ({ revision: 4, hosts: [], servi
 const response = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } })
 afterEach(() => vi.useRealTimers())
 
+const localDockerEndpoint = {
+  Id: 1,
+  Name: 'local',
+  Type: 1,
+  ContainerEngine: '',
+  URL: 'unix:///var/run/docker.sock',
+  Status: 1,
+}
+
 function fixtures() {
   return {
     endpoints: [{ Id: 7, Name: 'docker-01', ContainerEngine: 'docker', PublicURL: 'https://192.0.2.10:9443', Labels: { secret: 'do-not-return' } }],
@@ -23,6 +32,27 @@ function fixtures() {
 }
 
 describe('Portainer discovery', () => {
+  it('accepts documented Docker endpoint types and rejects unsupported or non-Docker environments', async () => {
+    const client = new PortainerClient('https://portainer.example', async () => response([
+      localDockerEndpoint,
+      { Id: 2, Name: 'docker-agent', Type: 2, ContainerEngine: 'DoCkEr', PublicURL: '' },
+      { Id: 3, Name: 'legacy-docker', ContainerEngine: 'docker', PublicURL: '' },
+      { Id: 4, Name: 'kubernetes', Type: 5, ContainerEngine: 'docker', PublicURL: '' },
+      { Id: 5, Name: 'podman', Type: 1, ContainerEngine: 'podman', PublicURL: '' },
+      { Id: 6, Name: 'local', Type: 99, ContainerEngine: '', URL: 'unix:///var/run/docker.sock', Status: 1 },
+    ]))
+    const service = new PortainerPreviewService(client, emptyInventory)
+
+    const connected = await service.connect('secret')
+
+    expect(connected.environments).toEqual([
+      { id: 1, name: 'local', containerEngine: '', publicUrl: '' },
+      { id: 2, name: 'docker-agent', containerEngine: 'DoCkEr', publicUrl: '' },
+      { id: 3, name: 'legacy-docker', containerEngine: 'docker', publicUrl: '' },
+    ])
+    service.clear()
+  })
+
   it('uses only allowlisted GET routes with X-API-Key and projects sensitive fields out', async () => {
     const data = fixtures()
     const requests: Array<{ url: string; init: RequestInit }> = []

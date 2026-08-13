@@ -3,10 +3,10 @@ import { createServer as createHttpServer } from 'node:http'
 import { createServer } from 'node:https'
 
 const responses = new Map([
-  ['/api/endpoints', [{ Id: 7, Name: 'Container lab', ContainerEngine: 'docker', PublicURL: '' }]],
-  ['/api/endpoints/7/docker/info', { Name: 'container-lab', OperatingSystem: 'Linux', OSType: 'linux', Architecture: 'amd64' }],
-  ['/api/endpoints/7/docker/version', { Version: '28.0.0', ApiVersion: '1.48' }],
-  ['/api/endpoints/7/docker/containers/json?all=true', [{
+  ['/api/endpoints', [{ Id: 1, Name: 'local', Type: 1, ContainerEngine: '', URL: 'unix:///var/run/docker.sock', Status: 1 }]],
+  ['/api/endpoints/1/docker/info', { Name: 'container-lab', OperatingSystem: 'Linux', OSType: 'linux', Architecture: 'amd64' }],
+  ['/api/endpoints/1/docker/version', { Version: '28.0.0', ApiVersion: '1.48' }],
+  ['/api/endpoints/1/docker/containers/json?all=true', [{
     Id: 'container-validation-id', Names: ['/Container validation'], Image: 'example/container-validation:1', State: 'running',
     Ports: [{ PrivatePort: 80, PublicPort: 9080, Type: 'tcp', IP: '' }, { PrivatePort: 443, PublicPort: 9443, Type: 'tcp', IP: '' }],
     Mounts: [{ Type: 'bind', Source: '/srv/container/config', Destination: '/config', RW: true }, { Type: 'bind', Source: '/srv/container/data', Destination: '/data', RW: false }],
