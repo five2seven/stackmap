@@ -3,7 +3,7 @@
   "checkpoint_id": "ee25b12930e8",
   "strategy": "manual-commit",
   "branch": "codex/pin-github-actions-v1.1.1",
-  "checkpoints_count": 1,
+  "checkpoints_count": 3,
   "files_touched": [
     ".github/workflows/deploy-cloudflare-pages.yml",
     ".github/workflows/publish-container.yml"
@@ -15,13 +15,20 @@
       "compact_transcript": "/ee/25b12930e8/0/transcript.jsonl",
       "content_hash": "/ee/25b12930e8/0/content_hash.txt",
       "prompt": "/ee/25b12930e8/0/prompt.txt"
+    },
+    {
+      "metadata": "/ee/25b12930e8/1/metadata.json",
+      "transcript": "/ee/25b12930e8/1/full.jsonl",
+      "compact_transcript": "/ee/25b12930e8/1/transcript.jsonl",
+      "content_hash": "/ee/25b12930e8/1/content_hash.txt",
+      "prompt": "/ee/25b12930e8/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 647342,
+    "input_tokens": 2848189,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 15292416,
-    "output_tokens": 41218,
-    "api_call_count": 117
+    "cache_read_tokens": 89569280,
+    "output_tokens": 252224,
+    "api_call_count": 688
   }
 }
