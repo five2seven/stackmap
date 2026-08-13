@@ -1,0 +1,35 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "b14f157ecf8d",
+  "strategy": "manual-commit",
+  "branch": "codex/portainer-port-summary-compatibility",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "CHANGELOG.md",
+    "docs/release-notes.md",
+    "package-lock.json",
+    "package.json",
+    "scripts/fake-portainer-server.mjs",
+    "scripts/validate-deployment.sh",
+    "server/app.test.ts",
+    "server/portainer-api.test.ts",
+    "server/portainer.test.ts",
+    "server/portainer.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b1/4f157ecf8d/0/metadata.json",
+      "transcript": "/b1/4f157ecf8d/0/full.jsonl",
+      "compact_transcript": "/b1/4f157ecf8d/0/transcript.jsonl",
+      "content_hash": "/b1/4f157ecf8d/0/content_hash.txt",
+      "prompt": "/b1/4f157ecf8d/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 761810,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 28529664,
+    "output_tokens": 87089,
+    "api_call_count": 241
+  }
+}
