@@ -966,3 +966,38 @@ Return:
 - merge commit
 - final main state
 - confirmation planning/release/publication were untouched
+
+---
+
+Close out the v1.1.1 private-LAN Portainer HTTP plan after the merged implementation.
+
+Follow AGENTS.md.
+
+Record the single v1.1.1 task as Complete with:
+
+- implementation branch
+- implementation commit `ac656c1b2422dc55917274a406c75df4ed40327d`
+- Entire checkpoint `116447fcc737`
+- PR #36
+- merge commit `d5a38c6b8c6948e39e2a4bc30ae3228e285007b7`
+- focused/full validation
+- exact-head CI and Semgrep
+- final security boundary
+- confirmation no unrelated behavior was added
+
+Mark the v1.1.1 plan Complete. No additional task exists.
+
+Update only the planning/current-task documents required by AGENTS.md.
+
+Do not change application code, version, workflows, release notes, GHCR, Pages, tags, or releases.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- final task status
+- validation
