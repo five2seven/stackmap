@@ -2,31 +2,23 @@
 
 ## Portainer environment compatibility
 
-- **Status:** Ready
-- **Planned implementation branch:** `codex/portainer-environment-compatibility`
-- **Plan:** `docs/v1.1.2-portainer-environment-compatibility-plan.md`
+- **Status:** Complete
+- **Implementation branch:** `codex/portainer-environment-compatibility`
+- **Implementation commit:** `bb7312f3128dd36e22f0610a72af4c35529aa930`
+- **Entire checkpoint:** `a759d27cc49f`
+- **Pull request:** #41
+- **Merge commit:** `4246f11c658f0047f18dc6bbc075770bf969ab52`
 - **Version target:** 1.1.2
-- **Goal:** Recognize Portainer endpoint type 1 as Docker-compatible when `ContainerEngine` is blank, while preserving explicit Docker-engine support and rejecting unsupported endpoint types.
-- **Datastore authority:** SQLite remains the sole production-authoritative inventory and provenance datastore. This task changes no database schema, data mapping, backup/restore behavior, provenance behavior, or UI workflow.
+- **Focused validation:** The configuration, Portainer network-policy, Portainer client, and Portainer API suite passed 50/50 tests. Coverage includes the exact real-world local endpoint response with `Type: 1`, blank `ContainerEngine`, `unix:///var/run/docker.sock`, and omitted `PublicURL`; explicit Docker-engine responses; documented Docker endpoint types; unsupported/non-Docker rejection; and unchanged HTTP/HTTPS network, credential, route, discovery, and import behavior.
+- **Full validation:** Lint passed; the complete suite passed 233/233 tests; production and demo builds passed; production E2E passed 12/12; demo-isolation E2E passed 1/1; the production dependency audit reported zero vulnerabilities; fake-Portainer JavaScript and deployment Bash syntax passed; and `git diff --check` passed. The exact-head Linux/amd64 workflow passed application validation, image build, container smoke testing, the exact local-Docker endpoint fixture through real discovery and explicitly confirmed create-only import, provenance and repeat-import checks, persistence, backup/restore, upgrade, health, shutdown, and failure regressions.
+- **Exact-head CI:** At `bb7312f3128dd36e22f0610a72af4c35529aa930`, build/test/container workflow run `31715823603` and Semgrep scan `210062745` passed.
+- **Datastore authority:** SQLite remains the sole production-authoritative inventory and provenance datastore. This task made no database, schema, repository, backup, restore, mapping, confirmation, or transaction change.
+- **Final compatibility behavior:** Portainer endpoint `Type: 1` is accepted as local Docker-compatible when `ContainerEngine` is blank. Documented Docker endpoint types remain supported, and explicit Docker-engine responses remain supported as implemented, including legacy responses without `Type`. Clearly unsupported numeric endpoint types and non-Docker engines remain rejected; compatibility is not inferred from endpoint name, URL, status, or other arbitrary fields.
+- **Unchanged boundaries:** API tokens remain short-lived and server-memory-only; the fixed GET route allowlist, response limits and projection, redirect rejection, RFC1918 HTTP enforcement, HTTPS certificate validation, manual discovery, preview, confirmation, create-only import, provenance, SQLite authority, UI workflow, and public-demo isolation remain unchanged. No synchronization, polling, update, merge, overwrite, automatic refresh/import, scheduled work, background behavior, Portainer/Docker mutation, or Docker socket access was added.
 
-### Required scope
+## Plan status
 
-- Accept a Portainer environment with `Type: 1` and a blank `ContainerEngine` as Docker-compatible, matching Portainer's local Docker endpoint semantics.
-- Continue accepting environments that explicitly report `ContainerEngine: docker`; use endpoint type to reject a response only when it clearly identifies a non-Docker environment.
-- Continue rejecting clearly unsupported or non-Docker endpoint types; do not infer compatibility from endpoint name, URL, status, or other arbitrary fields.
-- Treat the omitted optional `PublicURL` in the exact reported response as empty without relaxing validation of required endpoint fields.
-- Add an exact regression fixture for the reported local endpoint response and focused accepted/rejected environment tests.
-- Preserve discovery, preview, confirmation, create-only import, provenance, API-token handling, route allowlisting, HTTP/HTTPS network policy, response projection, and demo isolation.
-- Update patch-version and release-readiness metadata for 1.1.2 during implementation only where required by established repository practice.
+- **Single-task v1.1.2 Portainer environment compatibility plan:** Complete
+- **Additional task:** Does not exist
 
-### Explicit exclusions
-
-No UI redesign; synchronization, polling, update, merge, overwrite, automatic import, refresh, or background behavior; database or backup-schema change; Portainer or Docker mutation; Docker socket access; new outbound routes; TLS-policy change; public-demo integration; release, tag, GHCR publication, Pages deployment; or unrelated product work.
-
-### Start condition
-
-Implementation may begin only after this planning pull request receives a separate read-only review, is marked ready, and is merged normally. Implementation must then use its own feature branch and pull request. No release or publication action is authorized.
-
-## Prior plan
-
-The StackMap v1.1.1 private-LAN Portainer HTTP plan remains Complete in `docs/v1.1.1-private-lan-portainer-http-plan.md`. Version 1.1.1 is already released, so this compatibility fix targets the next patch version, 1.1.2.
+This closeout records the merged implementation only. It does not tag or release v1.1.2, publish GHCR, deploy Pages, or authorize another product task.
