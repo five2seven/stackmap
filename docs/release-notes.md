@@ -1,5 +1,28 @@
 # Release Notes
 
+## StackMap v1.1.3
+
+### Highlights
+
+- Accepts valid Docker container-list port summaries for unpublished ports when `IP` is omitted and `PublicPort` is omitted or null.
+- Keeps unpublished container ports in Portainer preview and import without manufacturing host-port mappings or conflicts.
+- Preserves published-port behavior, strict required-field validation, duplicate and protocol handling, and all existing Portainer security and create-only import boundaries.
+
+### Upgrade guidance
+
+Before upgrading, download a server JSON backup and stop StackMap cleanly to make a cold backup of the complete `/config` directory. Preserve the same `/config` mount when recreating the container. Version 1.1.3 makes no database or portable-backup schema change, so existing v1.1.2 data remains compatible.
+
+### Known limitations
+
+- Portainer import remains manual and create-only, with no synchronization, polling, background refresh, overwrite, merge, or service updates.
+- Cleartext HTTP remains restricted to destinations resolving exclusively to RFC1918 IPv4; HTTPS remains preferred.
+- Cloudflare Access integration and custom TLS trust controls are not included.
+- Published container validation covers Linux/amd64; ARM64 remains unvalidated.
+
+### Validation
+
+Release-candidate validation covers exact real-world unpublished-port response shapes, strict required and malformed-field rejection, published-port compatibility, preview and import behavior, the complete application and demo suites, and Linux/amd64 container validation.
+
 ## StackMap v1.1.2
 
 ### Highlights

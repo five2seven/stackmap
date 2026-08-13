@@ -356,11 +356,20 @@ function projectContainers(value: unknown): DockerContainer[] {
     const networks = object(networkSettings.Networks)
     return {
       id: nonBlank(record.Id), names: strings(record.Names), image: string(record.Image), state: string(record.State),
-      ports: array(record.Ports).map((port) => { const p = object(port); return { privatePort: portNumber(p.PrivatePort), ...(p.PublicPort === undefined ? {} : { publicPort: portNumber(p.PublicPort) }), type: string(p.Type), ip: string(p.IP) } }),
+      ports: array(record.Ports).map(projectPort),
       mounts: array(record.Mounts).map((mount) => { const m = object(mount); return { type: string(m.Type), source: string(m.Source), destination: string(m.Destination), readWrite: boolean(m.RW) } }),
       networks: Object.keys(networks).sort((a, b) => a.localeCompare(b)),
     }
   })
+}
+function projectPort(value: unknown): DockerPort {
+  const port = object(value)
+  return {
+    privatePort: portNumber(port.PrivatePort),
+    ...(port.PublicPort === undefined || port.PublicPort === null ? {} : { publicPort: portNumber(port.PublicPort) }),
+    type: string(port.Type),
+    ip: port.IP === undefined ? '' : string(port.IP),
+  }
 }
 
 function mapEnvironment(environment: PortainerEnvironment, info: DockerInfo, version: DockerVersion, containers: DockerContainer[], inventory: InventorySnapshot, bindings: PortainerBindingSnapshot) {
