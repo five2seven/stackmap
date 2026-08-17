@@ -1281,3 +1281,54 @@ Return:
 - README changes made
 - validation
 - confirmation no other behavior or release state changed
+
+---
+
+Authorize this as a post-release documentation-only README correction on main.
+
+Do not create or plan v1.2.2. This README update does not require a new StackMap application release.
+
+Follow AGENTS.md and any required planning/review gates for a post-release documentation-only change.
+
+Review README.md against the current StackMap v1.2.1 implementation and update it so it accurately reflects the current product, including where appropriate:
+
+- Portainer discovery and preview/import workflow
+- Select all / clear all preview controls
+- Bulk host assignment for selected services
+- Per-service host assignment
+- stopped/paused container selection behavior
+- live-binding duplicate-import protection
+- stale-binding behavior introduced in v1.2.1:
+  - deleting an imported StackMap service preserves provenance
+  - a stale binding whose service no longer exists does not permanently block re-import
+  - successful re-import restores duplicate-import protection
+- explicit confirmation and create-only import behavior
+- supported Portainer/Docker compatibility
+- HTTPS preference and the RFC1918-only HTTP exception
+- SQLite persistence and backup/restore behavior
+- demo isolation and limitations
+- current container deployment/GHCR usage
+
+Keep the README user-focused and concise. Do not duplicate implementation details that belong in architecture, ADRs, or completed plans.
+
+Do not:
+- change application code
+- change version metadata
+- modify the existing v1.2.1 tag or immutable Release
+- republish v1.2.1 or latest
+- create v1.2.2
+- deploy Pages
+- reopen completed v1.2.1 planning
+- introduce new product behavior
+
+Use the normal branch/PR/review process required by AGENTS.md.
+
+Return:
+- whether a planning gate is required
+- branch
+- commit
+- Entire checkpoint
+- PR
+- README changes
+- validation
+- confirmation that application and release state remain unchanged
