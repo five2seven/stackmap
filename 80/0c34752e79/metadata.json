@@ -1,0 +1,32 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "800c34752e79",
+  "strategy": "manual-commit",
+  "branch": "codex/portainer-preview-bulk-actions",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "CHANGELOG.md",
+    "docs/release-notes.md",
+    "e2e/stackmap.spec.ts",
+    "server/app.test.ts",
+    "src/components/PortainerImportPanel.css",
+    "src/components/PortainerImportPanel.test.tsx",
+    "src/components/PortainerImportPanel.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/80/0c34752e79/0/metadata.json",
+      "transcript": "/80/0c34752e79/0/full.jsonl",
+      "compact_transcript": "/80/0c34752e79/0/transcript.jsonl",
+      "content_hash": "/80/0c34752e79/0/content_hash.txt",
+      "prompt": "/80/0c34752e79/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 279553,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 14050048,
+    "output_tokens": 45796,
+    "api_call_count": 125
+  }
+}
