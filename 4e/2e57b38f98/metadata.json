@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "4e2e57b38f98",
+  "strategy": "manual-commit",
+  "branch": "codex/portainer-bind-mount-purpose-inference",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "CHANGELOG.md",
+    "README.md",
+    "docs/release-notes.md",
+    "package-lock.json",
+    "package.json",
+    "server/app.test.ts",
+    "server/portainer-api.test.ts",
+    "server/portainer.test.ts",
+    "server/portainer.ts",
+    "src/App.test.tsx",
+    "src/App.tsx",
+    "src/components/PathMapView.tsx",
+    "src/components/PortainerImportPanel.css",
+    "src/components/PortainerImportPanel.test.tsx",
+    "src/components/PortainerImportPanel.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4e/2e57b38f98/0/metadata.json",
+      "transcript": "/4e/2e57b38f98/0/full.jsonl",
+      "compact_transcript": "/4e/2e57b38f98/0/transcript.jsonl",
+      "content_hash": "/4e/2e57b38f98/0/content_hash.txt",
+      "prompt": "/4e/2e57b38f98/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 1244437,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 61678080,
+    "output_tokens": 167314,
+    "api_call_count": 495
+  }
+}
