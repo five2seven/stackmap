@@ -144,7 +144,7 @@ describe('PortainerImportPanel', () => {
     expect(within(selectedCard).getByText('Container name matches Existing app on the selected host.')).toBeVisible()
     expect(within(selectedCard).getByText('8080/tcp overlaps Existing app on the selected host.')).toBeVisible()
 
-    await user.selectOptions(within(selectedCard).getByLabelText('Target host'), 'new-host-two')
+    await user.selectOptions(within(selectedCard).getByLabelText('Target host'), 'new-host-one')
     expect(within(selectedCard).queryByText(/on the selected host/)).not.toBeInTheDocument()
     await user.selectOptions(within(selectedCard).getByLabelText('Target host'), 'existing-host')
     await user.click(within(unselectedCard).getByRole('checkbox', { name: /^Unselected app running$/i }))
@@ -155,6 +155,51 @@ describe('PortainerImportPanel', () => {
     await waitFor(() => expect(confirm).toHaveBeenCalledTimes(1))
     expect(confirm.mock.calls[0][2]).toHaveLength(1)
     expect(confirm.mock.calls[0][2][0]).toMatchObject({ id: selected.id, hostId: 'existing-host' })
+  })
+
+  it('offers only confirmation-valid hosts per service and their intersection in bulk', async () => {
+    const environmentOne = candidate('Environment one app', 'running')
+    const environmentTwo = candidate('Environment two app', 'running', { environmentId: 2, hostId: 'new-host-two' })
+    const confirm = vi.spyOn(portainerImportClient, 'confirm').mockResolvedValue({ inventoryRevision: 4, hostIds: [], serviceIds: [] })
+    const user = await renderPreview(previewFixture([environmentOne, environmentTwo]))
+    const firstCard = screen.getByRole('checkbox', { name: /^Environment one app running$/i }).closest('article')!
+    const secondCard = screen.getByRole('checkbox', { name: /^Environment two app running$/i }).closest('article')!
+    const firstHost = within(firstCard).getByLabelText('Target host')
+    const secondHost = within(secondCard).getByLabelText('Target host')
+
+    expect(within(firstHost).getByRole('option', { name: 'New: Docker one' })).toBeInTheDocument()
+    expect(within(firstHost).queryByRole('option', { name: 'New: Docker two' })).not.toBeInTheDocument()
+    expect(within(secondHost).getByRole('option', { name: 'New: Docker two' })).toBeInTheDocument()
+    expect(within(secondHost).queryByRole('option', { name: 'New: Docker one' })).not.toBeInTheDocument()
+    expect(within(firstHost).getByRole('option', { name: 'Existing: Existing' })).toBeInTheDocument()
+    expect(within(secondHost).getByRole('option', { name: 'Existing: Existing' })).toBeInTheDocument()
+
+    await user.click(within(firstCard).getByRole('checkbox', { name: /^Environment one app running$/i }))
+    const bulkHost = screen.getByLabelText('Set host for selected services')
+    expect(within(bulkHost).getByRole('option', { name: 'New: Docker one' })).toBeInTheDocument()
+    expect(within(bulkHost).queryByRole('option', { name: 'New: Docker two' })).not.toBeInTheDocument()
+
+    await user.selectOptions(bulkHost, 'new-host-one')
+    await user.click(within(secondCard).getByRole('checkbox', { name: /^Environment two app running$/i }))
+    expect(bulkHost).toHaveValue('')
+    expect(within(bulkHost).queryByRole('option', { name: 'New: Docker one' })).not.toBeInTheDocument()
+    expect(within(bulkHost).queryByRole('option', { name: 'New: Docker two' })).not.toBeInTheDocument()
+    expect(within(bulkHost).getByRole('option', { name: 'Existing: Existing' })).toBeInTheDocument()
+
+    await user.selectOptions(bulkHost, 'existing-host')
+    await user.click(screen.getByRole('button', { name: 'Apply host' }))
+    expect(firstHost).toHaveValue('existing-host')
+    expect(secondHost).toHaveValue('existing-host')
+
+    await user.selectOptions(firstHost, 'new-host-one')
+    await user.selectOptions(secondHost, 'new-host-two')
+    await user.click(screen.getByRole('checkbox', { name: /I reviewed this selection/ }))
+    await user.click(screen.getByRole('button', { name: 'Import selected' }))
+    await waitFor(() => expect(confirm).toHaveBeenCalledTimes(1))
+    expect(confirm.mock.calls[0][2]).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: environmentOne.id, hostId: 'new-host-one' }),
+      expect.objectContaining({ id: environmentTwo.id, hostId: 'new-host-two' }),
+    ]))
   })
 
   it('confirms the stored edited candidate and refreshes inventory after success', async () => {

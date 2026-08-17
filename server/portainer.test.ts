@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { openDatabase, type StackMapDatabase } from './database.js'
 import { PortainerClient, PortainerError, PortainerPreviewService } from './portainer.js'
-import type { InventorySnapshot } from './repository.js'
+import { SqliteInventoryRepository, type InventorySnapshot } from './repository.js'
 
 const emptyInventory = (): InventorySnapshot => ({ revision: 4, hosts: [], services: [] })
 const response = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } })
-afterEach(() => vi.useRealTimers())
+const databases: StackMapDatabase[] = []
+afterEach(() => { vi.useRealTimers(); for (const database of databases.splice(0)) database.checkpointAndClose() })
 
 const localDockerEndpoint = {
   Id: 1,
@@ -147,6 +149,45 @@ describe('Portainer discovery', () => {
     await expect(service.preview(connected.sessionToken, [7])).rejects.toBeInstanceOf(PortainerError)
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
     await expect(service.preview(connected.sessionToken, [7])).rejects.toMatchObject({ code: 'PORTAINER_SESSION_INVALID' })
+  })
+
+  it('accepts own proposed or existing hosts and rejects cross-environment proposed hosts', async () => {
+    async function setup() {
+      const database = openDatabase(':memory:')
+      databases.push(database)
+      const repository = new SqliteInventoryRepository(database.connection)
+      repository.createHost({ id: 'existing-host', name: 'Existing', type: 'physical', ipAddress: '', operatingSystem: '', notes: '', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' })
+      const endpoints = [
+        { Id: 1, Name: 'Docker one', Type: 1, ContainerEngine: 'docker', PublicURL: '' },
+        { Id: 2, Name: 'Docker two', Type: 1, ContainerEngine: 'docker', PublicURL: '' },
+      ]
+      const client = new PortainerClient('https://portainer.example', async (url) => {
+        if (url.endsWith('/api/endpoints')) return response(endpoints)
+        if (url.endsWith('/docker/info')) return response({ Name: 'engine', OperatingSystem: 'Linux', OSType: 'linux', Architecture: 'amd64' })
+        if (url.endsWith('/docker/version')) return response({ Version: '28.0.0', ApiVersion: '1.48' })
+        const environmentId = Number(url.match(/endpoints\/(\d+)/)?.[1])
+        return response([{ Id: `container-${environmentId}`, Names: [`/app-${environmentId}`], Image: 'example/app:1', State: 'running', Ports: [], Mounts: [], NetworkSettings: { Networks: { bridge: {} } } }])
+      })
+      const service = new PortainerPreviewService(client, () => repository.inventorySnapshot(), Date.now, 5 * 60 * 1000, 'https://portainer.example', repository)
+      const connected = await service.connect('secret')
+      const preview = await service.preview(connected.sessionToken, [1, 2])
+      return { service, preview }
+    }
+
+    for (const environmentId of [1, 2]) {
+      for (const target of ['own', 'existing'] as const) {
+        const { service, preview } = await setup()
+        const candidate = preview.services.find((item) => item.environmentId === environmentId)!
+        const ownHost = preview.hosts.find((host) => host.environmentId === environmentId)!.id
+        expect(() => service.confirm(preview.previewToken, preview.expectedInventoryRevision, [{ ...candidate, hostId: target === 'own' ? ownHost : 'existing-host' }])).not.toThrow()
+      }
+    }
+
+    const { service, preview } = await setup()
+    const environmentOne = preview.services.find(({ environmentId }) => environmentId === 1)!
+    const environmentTwoHost = preview.hosts.find(({ environmentId }) => environmentId === 2)!.id
+    expect(() => service.confirm(preview.previewToken, preview.expectedInventoryRevision, [{ ...environmentOne, hostId: environmentTwoHost }]))
+      .toThrowError(expect.objectContaining<Partial<PortainerError>>({ code: 'PORTAINER_CONFIRMATION_INVALID' }))
   })
 
   it('actively expires idle sessions and releases their token capacity without another request', async () => {

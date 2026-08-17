@@ -27,12 +27,27 @@ export function PortainerImportPanel({ hosts, services, onImported }: Props) {
   const allServicesSelected = importableServiceIds.length > 0 && importableServiceIds.every((id) => selectedServices.includes(id))
   const someServicesSelected = importableServiceIds.some((id) => selectedServices.includes(id)) && !allServicesSelected
   const selectAllRef = useRef<HTMLInputElement>(null)
-  const targetHosts = useMemo(() => {
-    const choices = new Map<string, { id: string; label: string }>()
-    preview?.hosts.forEach(({ id, name }) => choices.set(id, { id, label: `New: ${name}` }))
-    preview?.existingHosts.forEach(({ id, name }) => choices.set(id, { id, label: `Existing: ${name}` }))
-    return [...choices.values()]
-  }, [preview])
+  const existingTargetHosts = useMemo(
+    () => preview?.existingHosts.map(({ id, name }) => ({ id, label: `Existing: ${name}` })) ?? [],
+    [preview],
+  )
+  const proposedHostByEnvironment = useMemo(
+    () => new Map(preview?.hosts.map(({ environmentId, id, name }) => [environmentId, { id, label: `New: ${name}` }]) ?? []),
+    [preview],
+  )
+  const targetHostsForService = (service: PortainerPreview['services'][number]) => {
+    const proposedHost = proposedHostByEnvironment.get(service.environmentId)
+    return proposedHost ? [proposedHost, ...existingTargetHosts] : existingTargetHosts
+  }
+  const bulkTargetHosts = useMemo(() => {
+    const selected = preview?.services.filter(({ id }) => selectedServices.includes(id)) ?? []
+    if (!selected.length) return []
+    const proposedHostIds = selected.map(({ environmentId }) => proposedHostByEnvironment.get(environmentId)?.id)
+    const sharedProposedHost = proposedHostIds[0] && proposedHostIds.every((id) => id === proposedHostIds[0])
+      ? proposedHostByEnvironment.get(selected[0].environmentId)
+      : undefined
+    return sharedProposedHost ? [sharedProposedHost, ...existingTargetHosts] : existingTargetHosts
+  }, [existingTargetHosts, preview, proposedHostByEnvironment, selectedServices])
   const displayedPreview = useMemo(
     () => preview && recomputePreviewConflicts(preview, services, selectedServices),
     [preview, selectedServices, services],
@@ -84,7 +99,7 @@ export function PortainerImportPanel({ hosts, services, onImported }: Props) {
   }
 
   function applyBulkHost() {
-    if (!bulkHostId || !selectedServices.length || busy) return
+    if (!bulkHostId || !selectedServices.length || busy || !bulkTargetHosts.some(({ id }) => id === bulkHostId)) return
     const selected = new Set(selectedServices)
     setPreview((current) => current && ({
       ...current,
@@ -130,17 +145,17 @@ export function PortainerImportPanel({ hosts, services, onImported }: Props) {
         <p><strong>{displayedPreview.hosts.length} proposed hosts</strong> and <strong>{displayedPreview.services.length} discovered containers</strong>. Inventory revision {displayedPreview.expectedInventoryRevision}. No changes have been made.</p>
         {displayedPreview.hosts.map((host) => <article className="portainer-host" key={host.id}><h4>{host.name}</h4><p>{host.operatingSystem || 'Operating system unavailable'} · IP {host.ipAddress || 'not inferred'}</p>{host.existingHostMatches.length > 0 && <p className="path-warning">Possible existing host match: {host.existingHostMatches.map((id) => hosts.find((item) => item.id === id)?.name ?? id).join(', ')}</p>}</article>)}
         <div className="portainer-bulk-actions">
-          <label className="portainer-service-select"><input ref={selectAllRef} type="checkbox" checked={allServicesSelected} disabled={!importableServiceIds.length || busy} onChange={(event) => setSelectedServices(event.target.checked ? importableServiceIds : [])} />Select all services</label>
-          <label className="field"><span>Set host for selected services</span><select value={bulkHostId} disabled={!selectedServices.length || busy} onChange={(event) => setBulkHostId(event.target.value)}><option value="">Choose a target host</option>{targetHosts.map((host) => <option value={host.id} key={host.id}>{host.label}</option>)}</select></label>
+          <label className="portainer-service-select"><input ref={selectAllRef} type="checkbox" checked={allServicesSelected} disabled={!importableServiceIds.length || busy} onChange={(event) => { setSelectedServices(event.target.checked ? importableServiceIds : []); setBulkHostId('') }} />Select all services</label>
+          <label className="field"><span>Set host for selected services</span><select value={bulkHostId} disabled={!selectedServices.length || busy} onChange={(event) => setBulkHostId(event.target.value)}><option value="">Choose a target host</option>{bulkTargetHosts.map((host) => <option value={host.id} key={host.id}>{host.label}</option>)}</select></label>
           <button className="button ghost" type="button" disabled={!selectedServices.length || !bulkHostId || busy} onClick={applyBulkHost}>Apply host</button>
         </div>
         <div className="portainer-services">{displayedPreview.services.map((service) => {
           const checked = selectedServices.includes(service.id)
           return <article className="portainer-service" key={service.id}>
-            <label className="portainer-service-select"><input type="checkbox" checked={checked} disabled={service.alreadyBound || busy} onChange={(event) => setSelectedServices((current) => event.target.checked ? [...current, service.id] : current.filter((id) => id !== service.id))} /><strong>{service.name}</strong> <span>{service.sourceState}</span></label>
+            <label className="portainer-service-select"><input type="checkbox" checked={checked} disabled={service.alreadyBound || busy} onChange={(event) => { setSelectedServices((current) => event.target.checked ? [...current, service.id] : current.filter((id) => id !== service.id)); setBulkHostId('') }} /><strong>{service.name}</strong> <span>{service.sourceState}</span></label>
             <div className="form-grid">
               <label className="field"><span>Status</span><select value={service.status} onChange={(event) => patchService(service.id, { status: event.target.value as Service['status'] })}>{SERVICE_STATUSES.map((status) => <option key={status}>{status}</option>)}</select></label>
-              <label className="field"><span>Target host</span><select value={service.hostId} onChange={(event) => patchService(service.id, { hostId: event.target.value })}>{targetHosts.map((host) => <option value={host.id} key={host.id}>{host.label}</option>)}</select></label>
+              <label className="field"><span>Target host</span><select value={service.hostId} onChange={(event) => patchService(service.id, { hostId: event.target.value })}>{targetHostsForService(service).map((host) => <option value={host.id} key={host.id}>{host.label}</option>)}</select></label>
               <label className="field"><span>Network</span><select value={service.network} onChange={(event) => patchService(service.id, { network: event.target.value })}><option value="">{service.networkOptions.length > 1 ? 'Select one network' : 'No network'}</option>{service.networkOptions.map((network) => <option key={network}>{network}</option>)}</select></label>
             </div>
             <p>{service.dockerImage} · exposure {service.exposure}</p>
