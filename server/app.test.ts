@@ -29,7 +29,7 @@ describe('server application', () => {
     const app = await fixture()
     expect((await app.inject('/health')).json()).toEqual({
       status: 'ok',
-      applicationVersion: '1.1.3',
+      applicationVersion: '1.2.0',
       databaseSchemaVersion: 4,
       datastoreAuthority: 'sqlite',
     })
@@ -53,7 +53,7 @@ describe('server application', () => {
     expect(response.statusCode).toBe(503)
     expect(response.json()).toEqual({
       status: 'unavailable',
-      applicationVersion: '1.1.3',
+      applicationVersion: '1.2.0',
       databaseSchemaVersion: null,
       datastoreAuthority: 'sqlite',
     })

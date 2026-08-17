@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.0
+
+### Added
+
+- Add preview-scoped controls to select or clear all importable Portainer services and assign one target host to the current selection, while preserving per-service edits and explicit confirmation.
+
 ## 1.1.3
 
 ### Fixed
