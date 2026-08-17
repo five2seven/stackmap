@@ -144,7 +144,7 @@ Set `STACKMAP_PORTAINER_URL` to the HTTPS origin of the Portainer server to enab
 
 In the production UI, enter a Portainer API token, select environments and containers, review host, network, port, and bind-mount choices, then explicitly confirm. StackMap performs read-only Portainer discovery and creates the selected records atomically in SQLite. Tokens remain short-lived server memory only.
 
-Portainer import is create-only: it never updates, synchronizes, refreshes, or deletes existing services, and previously imported containers are skipped by default. The public demo has no Portainer integration. Portable JSON backup schema version 1 remains unchanged; a successful full restore clears Portainer repeat-import metadata because restored inventory has no source bindings.
+Portainer import is create-only: it never updates, synchronizes, refreshes, or deletes existing services. Containers bound to an existing StackMap service are skipped by default; if that service was deleted, the preserved binding can be attached to a newly created service by a later confirmed import. The public demo has no Portainer integration. Portable JSON backup schema version 1 remains unchanged; a successful full restore clears Portainer repeat-import metadata because restored inventory has no source bindings.
 
 For disaster recovery or image rollback, use a cold filesystem backup: stop the container cleanly, copy
 the complete `/config` directory, and then restart it. Copying only `stackmap.db` while StackMap is running

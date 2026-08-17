@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.1
+
+### Fixed
+
+- Allow a Portainer container to be imported again after its previously imported StackMap service is deleted, while preserving atomic create-only import and duplicate protection for live bindings.
+
 ## 1.2.0
 
 ### Added
