@@ -790,3 +790,87 @@ Return:
 - GitHub Release URL
 - final validation
 - final repository state
+
+---
+
+Investigate and fix the post-delete Portainer re-import behavior found in production StackMap v1.2.0.
+
+Follow AGENTS.md and required planning gates. Do not implement if planning is required.
+
+Observed real-world behavior:
+
+- 25 services were imported from Portainer.
+- The 25 StackMap services were then manually deleted so the inventory could be rebuilt using the new v1.2.0 bulk controls.
+- A fresh Portainer preview still reports every container as:
+  `This container was imported previously and is skipped by default.`
+- `Select all services` appears checked, but individual previously imported services remain unselected/non-importable.
+- `Set host for selected services` can show `Existing: OMV`, but clicking `Apply host` makes no visible change.
+
+Likely relationship:
+- Portainer provenance/container bindings survive deletion of their target StackMap services.
+- The preview therefore treats the containers as previously imported even though their target records no longer exist.
+- With no eligible selected services, bulk host assignment has nothing to update.
+- The select-all checked state may also be incorrect when the eligible-service set is empty.
+
+Do not assume this diagnosis blindly. Inspect the repository/provenance/repeat-import logic and confirm the exact cause.
+
+Desired behavior:
+
+1. Stale Portainer bindings
+- If a Portainer container binding points to a StackMap service that still exists, preserve current repeat-import protection.
+- If the binding points to a StackMap service that has been deleted, treat that binding as stale/re-importable.
+- A deleted target must not permanently prevent intentional re-import of the live Portainer container.
+- Preserve provenance/history as appropriate; do not simply erase all provenance globally.
+- Re-import must create a new service normally and establish the current binding correctly.
+- Repeat import after that new service exists must again be blocked/skipped according to existing semantics.
+
+2. Preview messaging
+- Do not show `previously imported and skipped by default` when the prior target service no longer exists and the container is eligible for re-import.
+- If useful, a distinct non-blocking message such as `Previously imported service was deleted; this container can be imported again` may be used, but keep UX concise.
+
+3. Select-all correctness
+- `Select all services` must reflect only actually eligible/importable services.
+- It must not render checked merely because the eligible-service collection is empty.
+- Zero eligible services should produce an unchecked, non-indeterminate state.
+- If some eligible services exist, select-all/indeterminate behavior must continue to work correctly.
+
+4. Bulk host action
+- `Apply host` must only be enabled/useful when at least one eligible service is actually selected.
+- Applying a host after stale bindings become re-importable must update those selected preview services normally.
+- Preserve selected-only behavior and host-option intersection rules from v1.2.0.
+
+Regression coverage:
+- import Portainer container
+- delete resulting StackMap service
+- fresh preview treats container as re-importable
+- select it and assign an existing host
+- confirmation/import succeeds
+- new provenance/binding points to the new service
+- subsequent preview again detects the live binding and prevents accidental duplicate import
+- live existing bindings remain protected
+- stale/deleted bindings do not block re-import
+- zero eligible services does not make Select all appear checked
+- Apply host is disabled or otherwise unavailable when selection count is zero
+- existing v1.2.0 bulk-selection, bulk-host, cross-environment, conflict, and confirmation tests remain valid
+
+Preserve:
+- create-only import semantics
+- expected revision handling
+- atomic transactions
+- SQLite authority
+- Portainer security/network policy/token handling
+- backup/restore behavior unless a narrowly required provenance cleanup change is justified
+- demo isolation
+- no synchronization, polling, automatic refresh/update, overwrite, or background work
+
+Treat this as a compatibility/UX bug fix and determine the correct version from repository state, likely v1.2.1 if consistent with repository policy.
+
+Do not release or publish anything.
+
+Return:
+- whether planning is required
+- confirmed root cause
+- proposed version
+- proposed scope
+- test plan
+- planning branch/commit/Entire checkpoint/PR if planning is required
