@@ -31,7 +31,7 @@ function AssignmentIssues({ assignment }: { assignment: PathAssignment }) {
       {assignment.incompletePair && <span>Mapping warning: incomplete host/container pair.</span>}
       {assignment.mixedHostPaths && <span>Service warning: host paths mix absolute and relative styles.</span>}
       {assignment.mixedContainerPaths && <span>Service warning: container paths mix absolute and relative styles.</span>}
-      {assignment.missingConfiguration && <span>Service warning: no configuration-purpose mapping recorded.</span>}
+      {assignment.missingConfiguration && <span>Service warning: no path is marked for configuration.</span>}
     </div>
   )
 }

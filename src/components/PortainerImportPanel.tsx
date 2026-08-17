@@ -160,7 +160,10 @@ export function PortainerImportPanel({ hosts, services, onImported }: Props) {
             </div>
             <p>{service.dockerImage} · exposure {service.exposure}</p>
             <div><strong>Ports:</strong> {service.ports.length ? service.ports.map((port) => <label key={port.id}><input type="checkbox" checked onChange={() => patchService(service.id, { ports: service.ports.filter(({ id }) => id !== port.id) })} /> {port.hostPort ?? 'unpublished'} → {port.containerPort}/{port.protocol}</label>) : 'none'}</div>
-            <div><strong>Bind mounts:</strong> {service.paths.length ? service.paths.map((path) => <label key={path.id}><input type="checkbox" checked onChange={() => patchService(service.id, { paths: service.paths.filter(({ id }) => id !== path.id) })} /> {path.hostPath} → {path.containerPath}{path.readOnly ? ' (read-only)' : ''}</label>) : 'none'}</div>
+            <div><strong>Bind mounts:</strong> {service.paths.length ? <div className="portainer-bind-mounts">{service.paths.map((path) => <div className="portainer-bind-mount" key={path.id}>
+              <label><input type="checkbox" checked onChange={() => patchService(service.id, { paths: service.paths.filter(({ id }) => id !== path.id) })} /> {path.hostPath} → {path.containerPath}{path.readOnly ? ' (read-only)' : ''}</label>
+              <label className="field"><span>Purpose for {path.containerPath}</span><input aria-label={`${service.name} bind mount ${path.containerPath} purpose`} value={path.purpose} maxLength={4096} disabled={busy} onChange={(event) => patchService(service.id, { paths: service.paths.map((item) => item.id === path.id ? { ...item, purpose: event.target.value } : item) })} /></label>
+            </div>)}</div> : 'none'}</div>
             {[...service.warnings, ...service.conflicts].map((item, index) => <p className="path-warning" key={`${item.code}-${index}`}>{item.message}</p>)}
           </article>
         })}</div>

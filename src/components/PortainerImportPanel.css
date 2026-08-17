@@ -11,8 +11,12 @@
 .portainer-service-select, .portainer-service div > label { display: inline-flex; align-items: center; gap: 0.35rem; margin-right: 0.8rem; }
 .portainer-service-select input, .portainer-service div > label input { width: auto; min-height: 0; }
 .portainer-service-select span { color: var(--muted); font-size: 0.78rem; }
+.portainer-bind-mounts { display: grid; gap: 0.65rem; margin-top: 0.45rem; }
+.portainer-bind-mount { display: grid; grid-template-columns: minmax(14rem, 1fr) minmax(12rem, 0.7fr); align-items: end; gap: 0.65rem; }
+.portainer-bind-mount > .field { display: grid; margin-right: 0; }
+.portainer-bind-mount > .field input { width: 100%; min-height: 2.5rem; }
 .portainer-phase-boundary { display: flex; gap: 0.7rem; padding: 0.8rem; border: 1px solid #e3bd83; border-radius: 0.5rem; background: #fffaf1; }
 
 @media (max-width: 48rem) {
-  .portainer-token-row, .portainer-bulk-actions { grid-template-columns: 1fr; }
+  .portainer-token-row, .portainer-bulk-actions, .portainer-bind-mount { grid-template-columns: 1fr; }
 }

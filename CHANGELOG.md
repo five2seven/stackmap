@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 1.3.0
+
+### Added
+
+- Infer conservative purposes for high-confidence Portainer bind-mount destinations and let users edit or clear those purposes in the preview before explicit create-only import confirmation.
+
+### Changed
+
+- Clarify the configuration-path warning without changing its configuration-specific behavior.
+
 ## 1.2.1
 
 ### Fixed

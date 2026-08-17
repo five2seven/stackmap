@@ -43,6 +43,69 @@ describe('Portainer preview API', () => {
     expect(secondPreview.services[0].conflicts).toContainEqual(expect.objectContaining({ code: 'ALREADY_BOUND', blocking: true }))
   })
 
+  it('persists inferred, overridden, and cleared bind-mount purposes while rejecting mount tampering', async () => {
+    const fetcher = vi.fn(async (url: string) => {
+      const json = (value: unknown) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } })
+      if (url.endsWith('/api/endpoints')) return json([{ Id: 1, Name: 'host', ContainerEngine: 'docker', PublicURL: '' }])
+      if (url.endsWith('/info')) return json({ Name: 'host', OperatingSystem: 'Linux', OSType: 'linux', Architecture: 'amd64' })
+      if (url.endsWith('/version')) return json({ Version: '28', ApiVersion: '1.48' })
+      return json([{
+        Id: 'purpose-app', Names: ['/purpose-app'], Image: 'app:1', State: 'running', Ports: [],
+        Mounts: [
+          { Type: 'bind', Source: '/srv/config', Destination: '/config', RW: true },
+          { Type: 'bind', Source: '/srv/metadata', Destination: '/metadata/', RW: false },
+          { Type: 'bind', Source: '/srv/movies', Destination: '/library/movies', RW: false },
+          { Type: 'bind', Source: '/srv/config-name-only', Destination: '/data', RW: true },
+        ],
+        NetworkSettings: { Networks: { bridge: {} } },
+      }])
+    })
+    const database = openDatabase(':memory:')
+    const app = await buildApp({ database, staticRoot: 'missing', portainerUrl: 'https://portainer.example', portainerFetcher: fetcher }); apps.push(app)
+    const connection = (await app.inject({ method: 'POST', url: '/api/v1/portainer/sessions', payload: { apiToken: 'secret' } })).json().data
+    const preview = (await app.inject({ method: 'POST', url: '/api/v1/portainer/previews', payload: { sessionToken: connection.sessionToken, environmentIds: [1] } })).json().data
+    expect(preview.services[0].paths).toEqual([
+      expect.objectContaining({ hostPath: '/srv/config', containerPath: '/config', purpose: 'Configuration', readOnly: false }),
+      expect.objectContaining({ hostPath: '/srv/metadata', containerPath: '/metadata/', purpose: 'Metadata', readOnly: true }),
+      expect.objectContaining({ hostPath: '/srv/movies', containerPath: '/library/movies', purpose: 'Media library', readOnly: true }),
+      expect.objectContaining({ hostPath: '/srv/config-name-only', containerPath: '/data', purpose: '', readOnly: false }),
+    ])
+
+    const finalPaths = preview.services[0].paths.map((path: { containerPath: string }) => path.containerPath === '/config'
+      ? { ...path, purpose: 'Secrets and settings' }
+      : path.containerPath === '/metadata/' ? { ...path, purpose: '' } : path)
+    const selected = [{ ...preview.services[0], paths: finalPaths }]
+    const before = database.connection.serialize()
+    for (const paths of [
+      finalPaths.map((path: { containerPath: string }) => path.containerPath === '/config' ? { ...path, hostPath: '/tampered' } : path),
+      finalPaths.map((path: { containerPath: string }) => path.containerPath === '/config' ? { ...path, containerPath: '/tampered' } : path),
+      finalPaths.map((path: { containerPath: string }) => path.containerPath === '/config' ? { ...path, readOnly: true } : path),
+      [...finalPaths, { ...finalPaths[0], id: 'unoffered' }],
+      [...finalPaths, finalPaths[0]],
+      finalPaths.map((path: { containerPath: string }) => path.containerPath === '/config' ? { ...path, unknown: true } : path),
+      finalPaths.map((path: { containerPath: string }) => path.containerPath === '/config' ? { ...path, purpose: 42 } : path),
+    ]) {
+      const response = await app.inject({
+        method: 'POST', url: '/api/v1/portainer/imports',
+        payload: { previewToken: preview.previewToken, expectedInventoryRevision: 0, selectedServices: [{ ...selected[0], paths }], acknowledged: true },
+      })
+      expect(response.statusCode).toBe(400)
+      expect(database.connection.serialize()).toEqual(before)
+    }
+
+    const confirmed = await app.inject({
+      method: 'POST', url: '/api/v1/portainer/imports',
+      payload: { previewToken: preview.previewToken, expectedInventoryRevision: 0, selectedServices: selected, acknowledged: true },
+    })
+    expect(confirmed.statusCode).toBe(200)
+    expect((await app.inject('/api/v1/services')).json().data[0].paths).toEqual([
+      expect.objectContaining({ containerPath: '/config', purpose: 'Secrets and settings' }),
+      expect.objectContaining({ containerPath: '/metadata/', purpose: '' }),
+      expect.objectContaining({ containerPath: '/library/movies', purpose: 'Media library' }),
+      expect.objectContaining({ containerPath: '/data', purpose: '' }),
+    ])
+  })
+
   it('re-imports a container after its bound service is deleted, then protects the new live binding', async () => {
     const fetcher = vi.fn(async (url: string) => {
       const json = (value: unknown) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } })

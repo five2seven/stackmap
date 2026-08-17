@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import { isIP } from 'node:net'
-import type { InventoryHost, InventoryPort, InventoryService } from './inventory.js'
+import type { InventoryHost, InventoryPath, InventoryPort, InventoryService } from './inventory.js'
 import { portProtocolsOverlap } from './portainer-conflicts.js'
 import { InventoryValidationError, PortainerImportConflictError, type InventorySnapshot, type PortainerBindingSnapshot, type SqliteInventoryRepository } from './repository.js'
 import { createPortainerNetworkFetcher } from './portainer-network-policy.js'
@@ -305,7 +305,7 @@ function validateConfirmationSelection(value: unknown, preview: PortainerPreview
     if (!candidate.hostId || !allowedHosts.has(candidate.hostId)) throw confirmationInvalid()
     if (candidate.networkOptions.length > 1 && !candidate.network) throw new PortainerError('PORTAINER_CONFIRMATION_INVALID', 'Select one network for every selected container.')
     if (candidate.network && !candidate.networkOptions.includes(candidate.network)) throw confirmationInvalid()
-    if (!isExactSubset(candidate.ports, original.ports) || !isExactSubset(candidate.paths, original.paths)) throw confirmationInvalid()
+    if (!isExactSubset(candidate.ports, original.ports) || !isPurposeEditablePathSubset(candidate.paths, original.paths)) throw confirmationInvalid()
     return structuredClone(candidate)
   })
 }
@@ -316,6 +316,19 @@ function isExactSubset<T extends { id: string }>(selected: unknown, original: T[
   if (new Set(typed.map(({ id }) => id)).size !== typed.length) return false
   const originals = new Map(original.map((item) => [item.id, item]))
   return typed.every((item) => JSON.stringify(item) === JSON.stringify(originals.get(item.id)))
+}
+
+function isPurposeEditablePathSubset(selected: unknown, original: InventoryPath[]): selected is InventoryPath[] {
+  if (!Array.isArray(selected) || selected.some((item) => !item || typeof item !== 'object' || Array.isArray(item))) return false
+  const typed = selected as InventoryPath[]
+  if (new Set(typed.map(({ id }) => id)).size !== typed.length) return false
+  const originals = new Map(original.map((item) => [item.id, item]))
+  return typed.every((item) => {
+    const offered = typeof item.id === 'string' ? originals.get(item.id) : undefined
+    if (!offered || Object.keys(item).sort().join('\0') !== Object.keys(offered).sort().join('\0')) return false
+    if (typeof item.purpose !== 'string' || item.purpose.length > 4096) return false
+    return item.hostPath === offered.hostPath && item.containerPath === offered.containerPath && item.readOnly === offered.readOnly
+  })
 }
 
 function confirmationInvalid() {
@@ -399,7 +412,10 @@ function mapContainer(environmentId: number, hostId: string, container: DockerCo
     if (mount.type === 'bind') return true
     warnings.push({ code: 'VOLUME_SKIPPED', message: `Skipped ${mount.type || 'unknown'} volume at ${mount.destination || 'unknown destination'}.` })
     return false
-  }).map((mount) => ({ id: randomUUID(), hostPath: mount.source, containerPath: mount.destination, purpose: '', readOnly: !mount.readWrite }))
+  }).map((mount) => ({
+    id: randomUUID(), hostPath: mount.source, containerPath: mount.destination,
+    purpose: inferBindMountPurpose(mount.destination), readOnly: !mount.readWrite,
+  }))
   const networkOptions = container.networks
   const conflicts: PreviewConflict[] = []
   if (networkOptions.length > 1) conflicts.push({ code: 'NETWORK_SELECTION_REQUIRED', message: 'Select one Docker network before Phase 2 confirmation.', blocking: true })
@@ -449,6 +465,18 @@ function addSelectionConflicts(services: PortainerServiceCandidate[]) {
       candidate.conflicts.push({ code: 'DISCOVERED_HOST_PORT_CONFLICT', message: `${candidatePort.hostPort}/${candidatePort.protocol} overlaps ${service.name}.`, blocking: false })
     }
   }))
+}
+
+export function inferBindMountPurpose(containerPath: string): string {
+  const trimmed = containerPath.trim()
+  if (!trimmed.startsWith('/')) return ''
+  const normalized = trimmed.replace(/\/{2,}/g, '/').replace(/\/+$/g, '').toLowerCase()
+  if (!normalized || normalized === '/') return ''
+  const terminal = normalized.slice(normalized.lastIndexOf('/') + 1)
+  if (['config', 'configs', 'configuration', 'conf'].includes(terminal)) return 'Configuration'
+  if (terminal === 'metadata') return 'Metadata'
+  if (['movies', 'tv', 'music', 'audiobooks', 'books', 'photos'].includes(terminal)) return 'Media library'
+  return ''
 }
 
 function isLoopbackOnly(ports: DockerPort[]) { const published = ports.filter((port) => port.publicPort !== undefined); return published.length > 0 && published.every((port) => ['127.0.0.1', '::1'].includes(port.ip)) }

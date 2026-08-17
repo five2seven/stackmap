@@ -1,5 +1,29 @@
 # Release Notes
 
+## StackMap v1.3.0
+
+### Highlights
+
+- Infers `Configuration`, `Metadata`, or `Media library` for high-confidence Portainer bind-mount destinations while leaving `/data` and other ambiguous paths blank.
+- Shows every included bind mount's purpose in the Portainer preview so it can be edited or cleared before confirmation; the confirmed create-only import persists exactly that final value.
+- Rewords the configuration-path warning as `No path is marked for configuration.` without broadening it into a generic missing-purpose warning.
+
+### Upgrade guidance
+
+Before upgrading, download a server JSON backup and stop StackMap cleanly to make a cold backup of the complete `/config` directory. Preserve the same `/config` mount when recreating the container. Version 1.3.0 makes no database or portable-backup schema change, so existing v1.2.1 inventory and Portainer provenance remain compatible.
+
+### Known limitations
+
+- Purpose inference uses only exact, high-confidence terminal segments of absolute container paths. It does not inspect host paths, image names, labels, or partial/fuzzy matches, and generic `/data` remains blank.
+- Portainer import remains manual and create-only, with no synchronization, polling, background refresh, overwrite, merge, or service updates.
+- Cleartext HTTP remains restricted to destinations resolving exclusively to RFC1918 IPv4; HTTPS remains preferred.
+- Cloudflare Access integration and custom TLS trust controls are not included.
+- Published container validation covers Linux/amd64; ARM64 remains unvalidated.
+
+### Validation
+
+Release-candidate validation covers inference and normalization, ambiguous-path exclusions, editable and clearable preview values, confirmation tamper rejection, exact persisted overrides, retained stale/live binding and bulk-control behavior, complete application and demo suites, and Linux/amd64 container validation.
+
 ## StackMap v1.2.1
 
 ### Highlights

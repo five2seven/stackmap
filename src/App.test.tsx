@@ -541,7 +541,7 @@ describe('StackMap service workflows', () => {
     expect(screen.getByText('Read-only')).toBeVisible()
     expect(screen.getAllByText('Mapping is incomplete.')).toHaveLength(2)
     expect(screen.getAllByText('Service warning: host paths mix absolute and relative styles.')).toHaveLength(2)
-    expect(screen.getAllByText('Service warning: no configuration-purpose mapping recorded.').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Service warning: no path is marked for configuration.').length).toBeGreaterThan(0)
   })
 
   it('preserves stored host paths and gives every path group one valid unique accessible label', async () => {
