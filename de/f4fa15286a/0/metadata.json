@@ -1,0 +1,64 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "def4fa15286a",
+  "session_id": "01a00fab-592d-7b20-b150-e97b1a7abb2e",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-17T16:00:58.7538688Z",
+  "branch": "codex/portainer-preview-bulk-actions",
+  "checkpoints_count": 2,
+  "save_step_count": 3,
+  "files_touched": [
+    "server/portainer.test.ts",
+    "src/components/PortainerImportPanel.test.tsx",
+    "src/components/PortainerImportPanel.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "97d68eabe6c8",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 384405,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 19382784,
+    "output_tokens": 58139,
+    "api_call_count": 171
+  },
+  "session_metrics": {
+    "turn_count": 12
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-17T16:00:58.5717936Z",
+    "agent_lines": 0,
+    "agent_removed": 12,
+    "human_added": 101,
+    "human_modified": 249,
+    "human_removed": 0,
+    "total_committed": 337,
+    "total_lines_changed": 362,
+    "agent_percentage": 3.314917127071823,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 262,
+      "agent_lines_removed": 262
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 262,
+      "agent_lines_removed": 262
+    }
+  ]
+}
