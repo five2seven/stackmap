@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "7eef27a97fb3",
+  "strategy": "manual-commit",
+  "branch": "codex/v1-2-1-stale-binding-reimport-closeout",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "docs/current-task.md",
+    "docs/v1.2.1-portainer-stale-binding-reimport-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/7e/ef27a97fb3/0/metadata.json",
+      "transcript": "/7e/ef27a97fb3/0/full.jsonl",
+      "compact_transcript": "/7e/ef27a97fb3/0/transcript.jsonl",
+      "content_hash": "/7e/ef27a97fb3/0/content_hash.txt",
+      "prompt": "/7e/ef27a97fb3/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 787094,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 41736448,
+    "output_tokens": 112056,
+    "api_call_count": 355
+  }
+}
