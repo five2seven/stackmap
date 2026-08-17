@@ -629,3 +629,46 @@ Return:
 - final local main and origin/main state
 - worktree status
 - confirmation planning, release, publication, and deployment were untouched
+
+---
+
+Close out the v1.2.0 Portainer preview bulk-actions plan after the merged implementation.
+
+Follow AGENTS.md.
+
+Record the single v1.2.0 task as Complete with:
+- implementation PR #47
+- implementation head `0e647ea9228b5b59d1370533d80540cfae757c26`
+- Entire checkpoint `def4fa15286a`
+- merge commit `58a2baa4de0968b58ac01a2b094ce77246188b48`
+- focused and full validation
+- exact-head CI and Semgrep results
+- final behavior:
+  - select all / clear all
+  - indeterminate selection state
+  - stopped/paused services unselected by default but explicitly selectable
+  - provenance-bound/non-importable services excluded
+  - bulk host assignment applies only to selected services
+  - bulk host choices are valid for all selected services
+  - cross-environment proposed hosts are not offered
+  - existing hosts remain valid choices
+  - host-scoped conflicts recompute correctly
+  - individual controls continue to work
+  - confirmation/import behavior remains unchanged
+- confirmation that preview-only, create-only, provenance, SQLite, security/network-policy, and demo boundaries remain unchanged
+
+Mark the v1.2.0 plan Complete with no additional task.
+
+Update only the planning/current-task documents required by AGENTS.md.
+
+Do not change application code, version metadata, workflows, release notes, tags, GHCR, Pages, or Releases.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- final task/plan status
+- validation
