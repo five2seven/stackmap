@@ -402,3 +402,77 @@ Return:
 - merge commit
 - final main state
 - confirmation implementation and release work remain untouched
+
+---
+
+Implement the single Ready v1.2.0 task from `docs/current-task.md`.
+
+Follow AGENTS.md and the merged v1.2.0 Portainer preview bulk-actions plan.
+
+Requirements:
+
+1. Select all services
+
+- Add a top-level `Select all services` checkbox in the Portainer preview.
+- Checked: select every currently importable service.
+- Unchecked: clear every service selection.
+- Partial selection: show an indeterminate state.
+- Preserve existing per-service checkboxes.
+- Stopped/paused services remain unselected by default.
+- Explicit Select all must include stopped/paused services if they are otherwise importable.
+- Provenance-bound or otherwise non-importable services must not be selected by Select all.
+
+2. Bulk target-host assignment
+
+- Add a control labeled `Set host for selected services`.
+- Present the same valid target-host choices available through the individual service controls.
+- Applying a target host updates only currently selected services.
+- Unselected services remain unchanged.
+- Preserve existing per-service target-host controls.
+- Recompute host-scoped conflicts after the bulk host update using the same existing conflict semantics as individual host changes.
+
+3. Preview-only state
+
+- Bulk actions modify preview state only.
+- No inventory/database mutation before explicit confirmation/import.
+- Existing expected-revision, confirmation, and atomic create-only import behavior remains unchanged.
+
+4. Preserve boundaries
+
+- No changes to Portainer discovery, network policy, token lifecycle, route allowlisting, HTTPS validation, RFC1918 HTTP behavior, redirects, provenance, SQLite authority, backup/restore, or demo isolation.
+- No synchronization, polling, refresh, overwrite, update, automatic import, scheduled work, or background behavior.
+
+5. Tests
+   Add focused coverage for:
+
+- select all
+- clear all
+- indeterminate state
+- stopped/paused default behavior
+- explicit Select all includes stopped/paused importable services
+- non-importable/provenance-bound services excluded
+- bulk host assignment affects selected services only
+- unselected services remain unchanged
+- host-scoped conflicts recompute correctly
+- individual service selection/host controls still work after bulk actions
+- confirmation/import behavior remains unchanged
+
+Also:
+
+- update version metadata to `1.2.0`
+- update changelog/release notes/docs only as required
+- preserve demo isolation
+- run focused and full validation
+
+Commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation no unrelated behavior was added
