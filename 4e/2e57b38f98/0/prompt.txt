@@ -1470,3 +1470,27 @@ When planning is required, plan first and record the plan in the repository or P
 Before completion, run all relevant validation, perform an independent self-review against the issue/request and source-of-truth docs, fix blocking findings, then commit, push, and open or update the PR.
 
 You may plan, implement, test, review, commit, push, and open/update pull requests autonomously. You may not merge a pull request or push directly to master unless the owner explicitly tells you to merge that specific PR.
+
+---
+
+I authorize you to merge planning PR #54 normally and then own the rest of the v1.3.0 process end-to-end.
+
+After merging #54:
+- synchronize main
+- implement the single Ready v1.3.0 task
+- validate fully
+- self-review against the merged plan
+- fix any findings you identify
+- open the implementation PR
+- continue through required review/merge/planning-closeout/release-readiness/release steps as far as repository policy allows
+
+Do not require routine copy/paste handoffs from me.
+
+Only stop and ask me when:
+- repository policy explicitly requires my authorization
+- a security/product decision is genuinely ambiguous
+- a destructive or irreversible action requires approval
+- an external approval/check cannot be satisfied autonomously
+- a release/publication step requires explicit authorization under AGENTS.md
+
+Otherwise, proceed autonomously and report milestones rather than asking me to relay prompts between agents.
