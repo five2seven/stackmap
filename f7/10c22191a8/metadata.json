@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "f710c22191a8",
+  "strategy": "manual-commit",
+  "branch": "codex/v1-2-0-portainer-preview-bulk-actions-plan",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "docs/current-task.md",
+    "docs/v1.2.0-portainer-preview-bulk-actions-plan.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f7/10c22191a8/0/metadata.json",
+      "transcript": "/f7/10c22191a8/0/full.jsonl",
+      "compact_transcript": "/f7/10c22191a8/0/transcript.jsonl",
+      "content_hash": "/f7/10c22191a8/0/content_hash.txt",
+      "prompt": "/f7/10c22191a8/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 187536,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 6900992,
+    "output_tokens": 28119,
+    "api_call_count": 83
+  }
+}
