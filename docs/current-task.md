@@ -2,7 +2,7 @@
 
 ## Portainer stale-binding re-import compatibility
 
-- **Status:** Ready
+- **Status:** Complete
 - **Planned implementation branch:** `codex/portainer-stale-binding-reimport`
 - **Plan:** `docs/v1.2.1-portainer-stale-binding-reimport-plan.md`
 - **Version target:** 1.2.1
@@ -34,6 +34,20 @@
 ### Explicit exclusions
 
 No broad provenance deletion or migration; replacement of live bindings; update or overwrite import semantics; backup format change; Portainer discovery, token lifecycle, route allowlist, RFC1918 HTTP policy, HTTPS validation, redirect handling, SQLite authority, public-demo integration, synchronization, polling, automatic refresh/import, scheduled/background work, Portainer/Docker mutation, Docker socket access, unrelated UI redesign, release, tag, GHCR publication, or Pages deployment.
+
+### Completion record
+
+- **Implementation pull request:** #50
+- **Implementation commit:** `5bb509cab8a0740176058e2a52e6f30bbadf7fee`
+- **Entire checkpoint:** `db6557066a4c`
+- **Merge commit:** `e9034aeb28ffb9d7608f23acba4e6e4a6053d8ed`
+- **Focused validation:** The repository, Portainer API lifecycle, preview component, and health/version suites passed 33/33 tests. Coverage verifies live-binding rejection; null-target stale-binding eligibility and reattachment; tampered confirmation without mutation; stale expected-revision rejection; injected transaction rollback; the complete import-delete-preview-re-import lifecycle; restored repeat-import protection; zero-eligible Select all state; and disabled no-selection host application.
+- **Full validation:** Lint passed; the complete suite passed 243/243 tests; production and demo builds passed; production E2E passed 12/12; demo-isolation E2E passed 1/1; the production dependency audit reported zero vulnerabilities; and `git diff --check` passed. Exact-head Linux/amd64 validation passed the application suite, image build, container smoke test, and deployment, persistence, backup/restore, upgrade, health, shutdown, and failure-handling matrix.
+- **Exact-head checks:** At `5bb509cab8a0740176058e2a52e6f30bbadf7fee`, build/test/container workflow run `32057531960` passed and Semgrep scan `211865808` passed.
+- **Final behavior:** Live Portainer bindings continue to block accidental duplicate imports. Preserved null-target bindings become importable after their former StackMap service is deleted, and explicit confirmed create-only import atomically attaches the existing stale row to the newly created service without creating duplicate provenance. A subsequent preview recognizes that binding as live and restores repeat-import protection. Expected-revision enforcement and rollback remain intact. Zero eligible services leaves Select all unchecked and non-indeterminate, no-selection Apply host remains unavailable, and the complete v1.2.0 bulk-selection, selected-only host assignment, valid-host intersection, cross-environment restriction, conflict recomputation, per-service control, and confirmation behavior remains unchanged.
+- **Completion boundary:** SQLite remains the sole production-authoritative inventory and provenance datastore. Backup/restore behavior and format, atomic create-only import, Portainer discovery and security/network-policy controls, token handling, route allowlisting, redirect rejection, and public-demo isolation remain unchanged. No synchronization, polling, refresh, update, merge, overwrite, automatic import, scheduled/background work, release, publication, or deployment behavior was added.
+
+The single StackMap v1.2.1 stale-binding re-import task is Complete. No additional task exists in this plan; release readiness and any eventual v1.2.1 release remain separate, explicitly authorized work.
 
 ## Prior plan
 
