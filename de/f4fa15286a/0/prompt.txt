@@ -514,3 +514,58 @@ Report:
 - Final recommendation: Ready to merge or Changes required
 
 Do not merge, release, publish, deploy, or advance planning.
+
+---
+
+Fix the blocking review finding in PR #47 only.
+
+Follow AGENTS.md.
+
+Confirmed issue:
+- The preview UI builds one shared `targetHosts` list containing all proposed hosts from all selected Portainer environments plus existing hosts.
+- Both the bulk host control and per-service host dropdown use that shared list.
+- Server confirmation validation only accepts:
+  - the service's own proposed host, or
+  - an existing StackMap host.
+- Therefore, in a multi-environment preview, the UI can offer environment B's proposed host for a service discovered from environment A, but confirmation later fails with `PORTAINER_CONFIRMATION_INVALID`.
+
+Required fix:
+- Restrict each service's valid target-host choices to exactly the same choices the server confirmation accepts:
+  - that service's own proposed host
+  - existing StackMap hosts
+- The bulk `Set host for selected services` control must only offer/apply choices that are valid for every currently selected service.
+- Do not broaden server confirmation rules unless the merged v1.2.0 plan explicitly requires cross-environment reassignment. Prefer aligning the UI to current server semantics.
+- Preserve existing same-environment proposed-host behavior and existing-host assignment.
+- Preserve all current conflict recomputation behavior.
+
+Add regression coverage for:
+- two proposed Portainer environments in one preview
+- service from environment A cannot select environment B's proposed host
+- service from environment B cannot select environment A's proposed host
+- each service can still select its own proposed host
+- both can select an existing StackMap host
+- bulk host options reflect the intersection of valid choices for the current selection
+- confirmation succeeds for every host choice the UI actually offers
+- confirmation rejects a deliberately tampered cross-environment proposed-host payload
+- existing select-all, indeterminate, stopped/paused, provenance-bound, per-service controls, and confirmation behavior continue to pass
+
+Do not change:
+- version
+- release notes/changelog unless strictly necessary
+- Portainer discovery/security/token/network policy
+- database/provenance/import semantics
+- demo behavior
+- synchronization/polling/update/background behavior
+
+Keep PR #47 open as draft.
+
+Validate focused and full suites, exact-head CI, Semgrep, and `git diff --check`.
+
+Return:
+- commit
+- Entire checkpoint
+- files changed
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation the blocking finding is resolved
