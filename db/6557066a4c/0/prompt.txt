@@ -924,3 +924,87 @@ Return:
 - Validation
 - Merge commit
 - Final main state
+
+---
+
+Implement the single Ready v1.2.1 task from `docs/current-task.md`.
+
+Follow AGENTS.md and the merged v1.2.1 stale-binding re-import plan.
+
+Confirmed defect:
+- Portainer provenance survives service deletion through `ON DELETE SET NULL`.
+- Preview and confirmation currently treat any matching binding row as live.
+- A container whose previously imported StackMap service was deleted is therefore still blocked from re-import.
+
+Requirements:
+
+1. Distinguish live vs stale Portainer bindings
+- A live binding is one whose target StackMap service still exists.
+- A stale binding is one whose target service no longer exists / binding target is null as defined by the current schema.
+- Live bindings must retain existing duplicate-import protection.
+- Stale bindings must not block preview selection or confirmed re-import.
+
+2. Preview behavior
+- Containers with stale bindings are importable again.
+- Do not show `previously imported and skipped by default` for stale bindings.
+- Keep concise messaging if useful to indicate prior import history, but it must not make the service non-importable.
+- Live bindings continue to show existing repeat-import behavior.
+
+3. Confirmed re-import
+- Re-import remains create-only.
+- Create a new StackMap service normally.
+- Atomically reattach/update only the stale Portainer binding to the newly created service.
+- Do not create duplicate provenance rows for the same source/container when a stale row can be safely rebound.
+- After successful re-import, the binding is live again and a subsequent preview must once again prevent accidental duplicate import.
+
+4. Transaction and failure behavior
+- Expected-revision enforcement remains unchanged.
+- Rebinding must occur inside the same atomic transaction as the new service/import records.
+- Injected failure must roll back both the new service and binding/provenance changes.
+- Live-binding confirmation rejection remains unchanged.
+- Tampered confirmation must still fail without mutation.
+
+5. Bulk-control regression
+Verify the reported production case:
+- zero eligible services does not make `Select all services` appear checked
+- no-selection `Apply host` remains disabled/unavailable
+- after stale bindings become re-importable, Select all and bulk host assignment work normally
+- preserve all v1.2.0 host-intersection and cross-environment rules
+
+6. Full lifecycle regression
+Cover:
+- import Portainer container
+- delete imported StackMap service
+- fresh preview identifies stale binding and permits re-import
+- select service
+- assign existing host
+- confirm/import succeeds
+- new service exists
+- stale binding is now attached to the new service
+- subsequent preview detects the live binding and prevents duplicate re-import
+
+Preserve:
+- SQLite authority
+- backup/restore behavior
+- create-only semantics
+- provenance history except for the narrowly required stale-binding reattachment
+- Portainer security/network policy/token handling/route allowlisting/redirect behavior
+- demo isolation
+- no sync, polling, refresh, overwrite, update, automatic import, scheduled work, or background behavior
+
+Also:
+- update version metadata to `1.2.1`
+- update changelog/release notes/docs only as required
+- run focused and full validation
+
+Commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation no unrelated behavior was added
