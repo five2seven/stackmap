@@ -2,7 +2,7 @@
 
 ## Portainer preview bulk actions
 
-- **Status:** Ready
+- **Status:** Complete
 - **Planned implementation branch:** `codex/portainer-preview-bulk-actions`
 - **Plan:** `docs/v1.2.0-portainer-preview-bulk-actions-plan.md`
 - **Version target:** 1.2.0
@@ -35,9 +35,19 @@
 
 No Portainer discovery, API response projection, token lifecycle, route allowlist, RFC1918 HTTP policy, HTTPS validation, redirect handling, provenance, import confirmation, create-only semantics, database or backup schema, SQLite authority, public-demo integration, synchronization, polling, refresh, update, merge, overwrite, automatic import, scheduled/background work, Portainer/Docker mutation, Docker socket access, release, tag, GHCR publication, Pages deployment, or unrelated UI redesign.
 
-### Start condition
+### Completion record
 
-Implementation may begin only after this planning pull request receives a separate read-only review, is marked ready, and is merged normally. Implementation must use its own feature branch and pull request. No release or publication action is authorized.
+- **Implementation pull request:** #47
+- **Implementation head:** `0e647ea9228b5b59d1370533d80540cfae757c26`
+- **Entire checkpoint:** `def4fa15286a`
+- **Merge commit:** `58a2baa4de0968b58ac01a2b094ce77246188b48`
+- **Focused validation:** The final Portainer preview component and confirmation-boundary suites passed 17/17 tests. Coverage verifies select all, clear all, indeterminate state, stopped/paused defaults and explicit inclusion, provenance-bound exclusion, selected-only bulk host assignment, per-service host restrictions, the valid-host intersection for bulk assignment, existing and same-environment proposed hosts, cross-environment exclusion and tamper rejection, conflict recomputation, individual controls, and final confirmation payloads.
+- **Full validation:** Lint passed; the complete suite passed 239/239 tests; production and demo builds passed; production E2E passed 12/12; demo-isolation E2E passed 1/1; the production dependency audit reported zero vulnerabilities; applicable syntax checks passed; and `git diff --check` passed. Exact-head Linux/amd64 validation passed the application suite, image build, container smoke test, and deployment, persistence, backup/restore, upgrade, health, shutdown, and failure-handling matrix.
+- **Exact-head checks:** At `0e647ea9228b5b59d1370533d80540cfae757c26`, build/test/container workflow run `32044100137` passed and Semgrep scan `211773735` passed.
+- **Final behavior:** `Select all services` selects every importable service and clearing it removes every selection, with a native indeterminate state for partial selection. Stopped and paused services remain unselected by default but are included by an explicit Select all action. Provenance-bound and otherwise non-importable services remain excluded. Bulk host assignment changes only selected candidates and offers only choices valid for every selected service: existing StackMap hosts remain available, while a proposed Portainer host is available only when it belongs to every selected service's environment. Cross-environment proposed hosts are not offered. Host-scoped conflicts recompute through the existing logic, individual selection and host controls remain functional, and confirmation submits the final selected preview candidates through the unchanged import boundary.
+- **Completion boundary:** Bulk actions remain scoped to the active browser preview. Explicit acknowledgement and confirmation remain the first database-mutation boundary, and atomic create-only import, expected-revision handling, provenance, SQLite authority, Portainer discovery and security/network-policy controls, and demo isolation remain unchanged. No synchronization, polling, refresh, update, merge, overwrite, automatic import, scheduled/background work, release, publication, or deployment behavior was added.
+
+The single StackMap v1.2.0 Portainer preview bulk-actions task is Complete. No additional task exists in this plan; release readiness and any eventual v1.2.0 release remain separate, explicitly authorized work.
 
 ## Prior plan
 
