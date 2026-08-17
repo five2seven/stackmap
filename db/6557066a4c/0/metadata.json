@@ -1,0 +1,72 @@
+{
+  "cli_version": "0.8.42",
+  "checkpoint_id": "db6557066a4c",
+  "session_id": "01a00fab-592d-7b20-b150-e97b1a7abb2e",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-17T18:55:28.049804Z",
+  "branch": "codex/portainer-stale-binding-reimport",
+  "checkpoints_count": 2,
+  "save_step_count": 3,
+  "files_touched": [
+    "CHANGELOG.md",
+    "README.md",
+    "docs/release-notes.md",
+    "package-lock.json",
+    "package.json",
+    "server/app.test.ts",
+    "server/portainer-api.test.ts",
+    "server/portainer-import.test.ts",
+    "server/portainer.ts",
+    "server/repository.ts",
+    "src/components/PortainerImportPanel.test.tsx"
+  ],
+  "agent": "Codex",
+  "model": "gpt-5.6-sol",
+  "turn_id": "14668f8b2260",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 728584,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 38459136,
+    "output_tokens": 104468,
+    "api_call_count": 328
+  },
+  "session_metrics": {
+    "turn_count": 22
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-17T18:55:27.7102569Z",
+    "agent_lines": 0,
+    "agent_removed": 2,
+    "human_added": 141,
+    "human_modified": 681,
+    "human_removed": 0,
+    "total_committed": 814,
+    "total_lines_changed": 824,
+    "agent_percentage": 0.24271844660194172,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    },
+    {
+      "checkpoint_number": 3,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 262,
+      "agent_lines_removed": 262
+    },
+    {
+      "checkpoint_number": 4,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 262,
+      "agent_lines_removed": 262
+    }
+  ]
+}
