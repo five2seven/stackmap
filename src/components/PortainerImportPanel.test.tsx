@@ -246,6 +246,35 @@ describe('PortainerImportPanel', () => {
     expect(await screen.findByText('Imported 1 services and 1 hosts. Inventory revision 4.')).toBeVisible()
   })
 
+  it('shows inferred bind-mount purposes and confirms user overrides and clears', async () => {
+    const service = candidate('Purpose app', 'running', { paths: [
+      { id: 'config', hostPath: '/srv/config', containerPath: '/config', purpose: 'Configuration', readOnly: false },
+      { id: 'metadata', hostPath: '/srv/metadata', containerPath: '/metadata', purpose: 'Metadata', readOnly: true },
+      { id: 'data', hostPath: '/srv/data', containerPath: '/data', purpose: '', readOnly: false },
+    ] })
+    const confirm = vi.spyOn(portainerImportClient, 'confirm').mockResolvedValue({ inventoryRevision: 4, hostIds: [], serviceIds: [service.id] })
+    const user = await renderPreview(previewFixture([service]))
+    const configPurpose = screen.getByLabelText('Purpose app bind mount /config purpose')
+    const metadataPurpose = screen.getByLabelText('Purpose app bind mount /metadata purpose')
+    const dataPurpose = screen.getByLabelText('Purpose app bind mount /data purpose')
+    expect(configPurpose).toHaveValue('Configuration')
+    expect(metadataPurpose).toHaveValue('Metadata')
+    expect(dataPurpose).toHaveValue('')
+
+    await user.clear(configPurpose)
+    await user.type(configPurpose, 'Secrets and settings')
+    await user.clear(metadataPurpose)
+    await user.click(screen.getByRole('checkbox', { name: /Purpose app running/i }))
+    await user.click(screen.getByRole('checkbox', { name: /I reviewed this selection/ }))
+    await user.click(screen.getByRole('button', { name: 'Import selected' }))
+    await waitFor(() => expect(confirm).toHaveBeenCalledTimes(1))
+    expect(confirm.mock.calls[0][2][0].paths).toEqual([
+      expect.objectContaining({ id: 'config', purpose: 'Secrets and settings' }),
+      expect.objectContaining({ id: 'metadata', purpose: '' }),
+      expect.objectContaining({ id: 'data', purpose: '' }),
+    ])
+  })
+
   it('keeps a successful import complete when the following inventory refresh fails', async () => {
     const user = userEvent.setup()
     vi.spyOn(portainerImportClient, 'status').mockResolvedValue({ enabled: true })

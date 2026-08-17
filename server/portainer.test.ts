@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { openDatabase, type StackMapDatabase } from './database.js'
-import { PortainerClient, PortainerError, PortainerPreviewService } from './portainer.js'
+import { inferBindMountPurpose, PortainerClient, PortainerError, PortainerPreviewService } from './portainer.js'
 import { SqliteInventoryRepository, type InventorySnapshot } from './repository.js'
 
 const emptyInventory = (): InventorySnapshot => ({ revision: 4, hosts: [], services: [] })
@@ -34,6 +34,17 @@ function fixtures() {
 }
 
 describe('Portainer discovery', () => {
+  it.each([
+    ['/config', 'Configuration'], ['/app/config/', 'Configuration'], [' /APP//CONFIGS/// ', 'Configuration'],
+    ['/configuration', 'Configuration'], ['/opt/app/conf', 'Configuration'], ['/metadata', 'Metadata'],
+    ['/movies', 'Media library'], ['/library/tv/', 'Media library'], ['/MUSIC', 'Media library'],
+    ['/audiobooks', 'Media library'], ['/books', 'Media library'], ['/photos', 'Media library'],
+    ['/data', ''], ['/srv/myconfig', ''], ['/metadata-cache', ''], ['/movies-old', ''],
+    ['config', ''], [String.raw`C:\config`, ''], ['/', ''], ['', ''],
+  ])('infers a conservative purpose for container path %j', (containerPath, expected) => {
+    expect(inferBindMountPurpose(containerPath)).toBe(expected)
+  })
+
   it('accepts documented Docker endpoint types and rejects unsupported or non-Docker environments', async () => {
     const client = new PortainerClient('https://portainer.example', async () => response([
       localDockerEndpoint,
@@ -114,6 +125,7 @@ describe('Portainer discovery', () => {
     expect(preview.services[0]).toMatchObject({ name: 'web', status: 'active', exposure: 'local', network: '', dependencyIds: [] })
     expect(preview.services[0].networkOptions).toEqual(['backend', 'frontend'])
     expect(preview.services[0].paths).toHaveLength(1)
+    expect(preview.services[0].paths[0]).toMatchObject({ hostPath: '/srv/web', containerPath: '/data', purpose: '' })
     expect(preview.services[0].warnings.map(({ code }) => code)).toEqual(expect.arrayContaining(['PROTOCOL_UNSUPPORTED', 'VOLUME_SKIPPED']))
     expect(preview.services[0].conflicts).toContainEqual(expect.objectContaining({ code: 'NETWORK_SELECTION_REQUIRED', blocking: true }))
   })

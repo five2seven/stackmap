@@ -32,7 +32,7 @@ connection or user-data upload.
 ## Deploy with Portainer
 
 The production container is published at `ghcr.io/five2seven/stackmap`. Use the versioned
-`ghcr.io/five2seven/stackmap:1.2.1` tag for a predictable deployment. The `latest` tag follows the most
+`ghcr.io/five2seven/stackmap:1.3.0` tag for a predictable deployment. The `latest` tag follows the most
 recently published release and can be used when automatic movement to a later release is intended.
 Ordinary `main` merges and tag pushes validate without publishing an image; image publication remains an
 explicitly dispatched workflow.
@@ -50,7 +50,7 @@ explicitly dispatched workflow.
 ---
 services:
   stackmap:
-    image: ghcr.io/five2seven/stackmap:1.2.1
+    image: ghcr.io/five2seven/stackmap:1.3.0
     init: true
     container_name: stackmap
     environment:
@@ -148,7 +148,7 @@ Set `STACKMAP_PORTAINER_URL` to the HTTPS origin of the Portainer server to enab
 
 StackMap supports Docker environments exposed through the configured Portainer server, including local Docker environments that omit the optional container-engine label. Docker container summaries may describe unpublished ports by omitting `IP` and by omitting `PublicPort` or setting it to `null`; these remain container ports and do not create host-port mappings. Unsupported or non-Docker environments are not offered for import.
 
-In the production UI, enter a Portainer API token, choose Docker environments, and build a preview. Review each container's host, network, ports, and bind mounts before importing. Containers may be selected individually; stopped and paused containers remain unselected by default. **Select all services** explicitly selects every currently importable container, including stopped or paused containers, while clearing it deselects all services and a partial selection is shown as indeterminate. Containers already bound to a live StackMap service remain protected from accidental duplicate import and are not eligible for selection.
+In the production UI, enter a Portainer API token, choose Docker environments, and build a preview. Review each container's host, network, ports, and bind mounts before importing. StackMap infers `Configuration`, `Metadata`, or `Media library` for bind mounts whose container paths provide a high-confidence signal. Ambiguous paths remain blank, and every purpose can be edited or cleared in the preview. Containers may be selected individually; stopped and paused containers remain unselected by default. **Select all services** explicitly selects every currently importable container, including stopped or paused containers, while clearing it deselects all services and a partial selection is shown as indeterminate. Containers already bound to a live StackMap service remain protected from accidental duplicate import and are not eligible for selection.
 
 Choose a target host with each service's **Target host** control, or use **Set host for selected services** to update only the current selection. The bulk control offers only host choices valid for every selected service; existing StackMap hosts remain available, while a proposed Portainer host is available only to services discovered from its environment. StackMap recalculates host-port conflicts in the preview after either kind of host change.
 

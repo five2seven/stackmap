@@ -657,7 +657,7 @@ function App({ repository, backupClient, mode = 'production', DiscoveryPanel }: 
                         <ul className="path-warnings" aria-label={`${service.name} path warnings`}>
                           {pathWarnings.mixedHostPaths && <li>Host paths mix absolute and relative styles.</li>}
                           {pathWarnings.mixedContainerPaths && <li>Container paths mix absolute and relative styles.</li>}
-                          {pathWarnings.missingConfiguration && <li>No configuration-purpose mapping recorded.</li>}
+                          {pathWarnings.missingConfiguration && <li>No path is marked for configuration.</li>}
                         </ul>
                       )}
                       {service.dependencyIds.length > 0 && (
