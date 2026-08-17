@@ -1365,3 +1365,83 @@ Return:
 - validation
 - merge commit
 - final main state
+
+---
+
+Add best-effort bind-mount purpose inference to Portainer imports.
+
+Follow AGENTS.md and required planning gates. Do not implement if planning is required.
+
+Problem observed in production:
+
+Portainer import correctly discovers bind mounts, but every imported path currently has an empty purpose. This causes otherwise well-described imported services to immediately show:
+
+`No configuration-purpose mapping recorded.`
+
+Many Docker bind mounts already expose a clear semantic purpose through their container-side path.
+
+Desired behavior:
+
+1. During Portainer preview construction, infer a path purpose when the container path provides a high-confidence signal.
+
+2. Keep inference conservative.
+   - Do not invent a purpose for ambiguous paths.
+   - Existing users must still be able to edit the purpose in the preview or after import.
+   - A blank purpose remains valid when no reliable classification exists.
+
+3. At minimum, evaluate high-confidence mappings such as:
+   - `/config` → configuration
+   - paths clearly representing configuration/config directories → configuration
+   - `/metadata` → metadata
+   - media-library paths such as `/movies`, `/tv`, `/music`, `/audiobooks`, `/books`, `/photos` → the appropriate existing StackMap purpose value
+   - application data paths such as `/data` only if the current StackMap purpose model has a sufficiently generic matching value; otherwise leave ambiguous values blank
+
+4. Inspect the existing StackMap path-purpose domain values first.
+   - Reuse existing purpose values exactly.
+   - Do not introduce new purpose categories merely to support inference unless separately justified and approved.
+
+5. Prefer container path semantics over host-path naming.
+   - Host paths may contain arbitrary administrator naming.
+   - Container paths are generally defined by the application and provide the stronger signal.
+   - Host path may be used only as a secondary signal where doing so is clearly safe.
+
+6. Preview behavior:
+   - inferred purposes must be visible in the Portainer preview before confirmation
+   - users must be able to change or clear an inferred purpose
+   - confirmation must import the final preview value, not recompute it server-side afterward
+
+7. Preserve:
+   - create-only import semantics
+   - explicit confirmation
+   - stale/live binding behavior
+   - bulk selection and host assignment
+   - Portainer security/network/token behavior
+   - SQLite authority
+   - backup/restore
+   - demo isolation
+   - no synchronization, polling, refresh, overwrite, automatic update, or background work
+
+Regression coverage should include:
+- `/config`
+- `/metadata`
+- representative media paths such as `/movies`, `/tv`, and `/audiobooks`
+- case/trailing-slash normalization if appropriate
+- ambiguous paths remain blank
+- user override of inferred purpose survives confirmation/import
+- user-cleared inferred purpose remains blank
+- existing Portainer import lifecycle tests continue to pass
+
+Also review whether the warning text `No configuration-purpose mapping recorded.` accurately describes the broader path-purpose field. If the field is not specifically limited to configuration paths, propose a clearer user-facing warning rather than changing it without justification.
+
+Treat this as a focused Portainer import usability improvement and determine the appropriate next version from repository state.
+
+Do not release or publish anything.
+
+Return:
+- whether planning is required
+- confirmed current path-purpose domain values
+- proposed inference rules
+- proposed version
+- planned scope
+- test plan
+- planning branch/commit/Entire checkpoint/PR if required
