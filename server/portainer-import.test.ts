@@ -48,6 +48,51 @@ describe('atomic Portainer import repository', () => {
     expect(database.connection.serialize()).toEqual(before)
   })
 
+  it('atomically rebinds deleted-service provenance and restores repeat-import protection', () => {
+    const { database, repository } = fixture()
+    repository.importPortainer({ origin: 'https://portainer.example', expectedRevision: 0, hosts: [{ environmentId: 7, host: host() }], services: [{ environmentId: 7, containerId: 'container-id', service: service() }] })
+    repository.deleteService('import-service', 1)
+
+    expect(repository.portainerBindings('https://portainer.example').containers).toEqual([{ environmentId: 7, containerId: 'container-id' }])
+    const result = repository.importPortainer({
+      origin: 'https://portainer.example', expectedRevision: 2, hosts: [],
+      services: [{ environmentId: 7, containerId: 'container-id', service: service('replacement') }],
+    })
+
+    expect(result).toEqual({ inventoryRevision: 3, hostIds: [], serviceIds: ['replacement'] })
+    expect(repository.getService('replacement')).toMatchObject({ hostId: 'import-host', revision: 1 })
+    expect(repository.portainerBindings('https://portainer.example').containers).toEqual([{ environmentId: 7, containerId: 'container-id', serviceId: 'replacement' }])
+    const before = database.connection.serialize()
+    expect(() => repository.importPortainer({
+      origin: 'https://portainer.example', expectedRevision: 3, hosts: [],
+      services: [{ environmentId: 7, containerId: 'container-id', service: service('duplicate') }],
+    })).toThrowError(new PortainerImportConflictError('PORTAINER_ALREADY_BOUND'))
+    expect(database.connection.serialize()).toEqual(before)
+  })
+
+  it('rolls back a stale-binding re-import failure without changing inventory or provenance', () => {
+    const { database, repository } = fixture()
+    repository.importPortainer({ origin: 'https://portainer.example', expectedRevision: 0, hosts: [{ environmentId: 7, host: host() }], services: [{ environmentId: 7, containerId: 'container-id', service: service() }] })
+    repository.deleteService('import-service', 1)
+    const before = database.connection.serialize()
+    expect(() => repository.importPortainer({
+      origin: 'https://portainer.example', expectedRevision: 1, hosts: [],
+      services: [{ environmentId: 7, containerId: 'container-id', service: service('stale-revision') }],
+    })).toThrowError(new PortainerImportConflictError('PORTAINER_PREVIEW_STALE'))
+    expect(database.connection.serialize()).toEqual(before)
+    const failingRepository = new SqliteInventoryRepository(database.connection, () => time, (stage) => {
+      if (stage === 'binding') throw new Error('injected stale-binding failure')
+    })
+
+    expect(() => failingRepository.importPortainer({
+      origin: 'https://portainer.example', expectedRevision: 2, hosts: [],
+      services: [{ environmentId: 7, containerId: 'container-id', service: service('replacement') }],
+    })).toThrow('injected stale-binding failure')
+    expect(database.connection.serialize()).toEqual(before)
+    expect(repository.getService('replacement')).toBeUndefined()
+    expect(repository.portainerBindings('https://portainer.example').containers).toEqual([{ environmentId: 7, containerId: 'container-id' }])
+  })
+
   it.each<PortainerImportStage>(['source', 'host', 'service', 'children', 'binding', 'revision'])(
     'rolls back every inventory and provenance write after the %s stage fails',
     (failedStage) => {

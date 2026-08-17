@@ -403,7 +403,7 @@ function mapContainer(environmentId: number, hostId: string, container: DockerCo
   const networkOptions = container.networks
   const conflicts: PreviewConflict[] = []
   if (networkOptions.length > 1) conflicts.push({ code: 'NETWORK_SELECTION_REQUIRED', message: 'Select one Docker network before Phase 2 confirmation.', blocking: true })
-  const alreadyBound = bindings.containers.some((item) => item.environmentId === environmentId && item.containerId === container.id)
+  const alreadyBound = bindings.containers.some((item) => item.environmentId === environmentId && item.containerId === container.id && item.serviceId !== undefined)
   const service: PortainerServiceCandidate = {
     environmentId, containerId: container.id, sourceState: container.state, networkOptions,
     id: randomUUID(), name, containerName: name, dockerImage: container.image, description: '', applicationUrl: '',

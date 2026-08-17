@@ -118,6 +118,22 @@ describe('PortainerImportPanel', () => {
     expect(pausedCheckbox).not.toBeChecked()
   })
 
+  it('keeps aggregate selection unchecked and host application unavailable with zero eligible services', async () => {
+    await renderPreview(previewFixture([
+      candidate('Imported app', 'running', {
+        alreadyBound: true,
+        conflicts: [{ code: 'ALREADY_BOUND', message: 'This container was imported previously and is skipped by default.', blocking: true }],
+      }),
+    ]))
+
+    const selectAll = screen.getByLabelText('Select all services')
+    expect(selectAll).toBeDisabled()
+    expect(selectAll).not.toBeChecked()
+    expect(selectAll).not.toBePartiallyChecked()
+    expect(screen.getByLabelText('Set host for selected services')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Apply host' })).toBeDisabled()
+  })
+
   it('assigns one host only to selected services and preserves individual controls and confirmation', async () => {
     const selected = candidate('Selected app', 'running', {
       containerName: 'shared-app',

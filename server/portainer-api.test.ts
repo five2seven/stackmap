@@ -43,6 +43,51 @@ describe('Portainer preview API', () => {
     expect(secondPreview.services[0].conflicts).toContainEqual(expect.objectContaining({ code: 'ALREADY_BOUND', blocking: true }))
   })
 
+  it('re-imports a container after its bound service is deleted, then protects the new live binding', async () => {
+    const fetcher = vi.fn(async (url: string) => {
+      const json = (value: unknown) => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } })
+      if (url.endsWith('/api/endpoints')) return json([{ Id: 1, Name: 'host', ContainerEngine: 'docker', PublicURL: '' }])
+      if (url.endsWith('/info')) return json({ Name: 'host', OperatingSystem: 'Linux', OSType: 'linux', Architecture: 'amd64' })
+      if (url.endsWith('/version')) return json({ Version: '28', ApiVersion: '1.48' })
+      return json([{ Id: 'abc', Names: ['/app'], Image: 'app:1', State: 'running', Ports: [], Mounts: [], NetworkSettings: { Networks: { bridge: {} } } }])
+    })
+    const database = openDatabase(':memory:')
+    const app = await buildApp({ database, staticRoot: 'missing', portainerUrl: 'https://portainer.example', portainerFetcher: fetcher }); apps.push(app)
+    const session = async () => (await app.inject({ method: 'POST', url: '/api/v1/portainer/sessions', payload: { apiToken: 'secret' } })).json().data
+    const preview = async () => {
+      const connection = await session()
+      return (await app.inject({ method: 'POST', url: '/api/v1/portainer/previews', payload: { sessionToken: connection.sessionToken, environmentIds: [1] } })).json().data
+    }
+
+    const initial = await preview()
+    expect((await app.inject({ method: 'POST', url: '/api/v1/portainer/imports', payload: { previewToken: initial.previewToken, expectedInventoryRevision: 0, selectedServices: initial.services, acknowledged: true } })).statusCode).toBe(200)
+    const originalId = initial.services[0].id
+    expect((await app.inject({ method: 'DELETE', url: `/api/v1/services/${originalId}`, payload: { expectedRevision: 1 } })).statusCode).toBe(200)
+
+    const stale = await preview()
+    expect(stale.expectedInventoryRevision).toBe(2)
+    expect(stale.services[0]).toMatchObject({ alreadyBound: false })
+    expect(stale.services[0].conflicts).not.toContainEqual(expect.objectContaining({ code: 'ALREADY_BOUND' }))
+    const existingHostId = stale.existingHosts[0].id
+    const selected = [{ ...stale.services[0], hostId: existingHostId }]
+    const beforeTamper = database.connection.serialize()
+    expect((await app.inject({
+      method: 'POST', url: '/api/v1/portainer/imports',
+      payload: { previewToken: stale.previewToken, expectedInventoryRevision: 2, selectedServices: [{ ...selected[0], containerId: 'tampered' }], acknowledged: true },
+    })).statusCode).toBe(400)
+    expect(database.connection.serialize()).toEqual(beforeTamper)
+    const reimport = await app.inject({ method: 'POST', url: '/api/v1/portainer/imports', payload: { previewToken: stale.previewToken, expectedInventoryRevision: 2, selectedServices: selected, acknowledged: true } })
+    expect(reimport.statusCode).toBe(200)
+    const replacementId = reimport.json().data.serviceIds[0]
+    expect(replacementId).not.toBe(originalId)
+    expect((await app.inject(`/api/v1/services/${replacementId}`)).json().data).toMatchObject({ id: replacementId, hostId: existingHostId })
+    expect(database.connection.prepare('SELECT service_id FROM portainer_container_bindings WHERE container_id = ?').pluck().get('abc')).toBe(replacementId)
+
+    const protectedPreview = await preview()
+    expect(protectedPreview.services[0]).toMatchObject({ alreadyBound: true })
+    expect(protectedPreview.services[0].conflicts).toContainEqual(expect.objectContaining({ code: 'ALREADY_BOUND', blocking: true }))
+  })
+
   it('previews and imports the real OMV unpublished-port shape without false host bindings', async () => {
     const unpublishedPorts = [2442, 2443, 3306, 8118, 8080, 9443]
     const fetcher = vi.fn(async (url: string) => {

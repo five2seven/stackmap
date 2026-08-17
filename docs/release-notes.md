@@ -1,5 +1,29 @@
 # Release Notes
 
+## StackMap v1.2.1
+
+### Highlights
+
+- Restores intentional Portainer re-import after a previously imported StackMap service is deleted. Preserved container provenance with no live service target is eligible again, and confirmed import atomically attaches that provenance to the newly created service.
+- Keeps live bindings protected from accidental duplicate imports and restores that protection immediately after a successful re-import.
+- Preserves v1.2.0 bulk selection, valid-host intersection, cross-environment restrictions, conflict recomputation, explicit confirmation, and preview-only behavior.
+
+### Upgrade guidance
+
+Before upgrading, download a server JSON backup and stop StackMap cleanly to make a cold backup of the complete `/config` directory. Preserve the same `/config` mount when recreating the container. Version 1.2.1 makes no database or portable-backup schema change, so existing v1.2.0 data and preserved Portainer provenance remain compatible.
+
+### Known limitations
+
+- Portainer import remains manual and create-only. Re-import is available only when the prior binding no longer targets an existing StackMap service; live bindings remain protected.
+- There is no synchronization, polling, background refresh, overwrite, merge, or service update behavior.
+- Cleartext HTTP remains restricted to destinations resolving exclusively to RFC1918 IPv4; HTTPS remains preferred.
+- Cloudflare Access integration and custom TLS trust controls are not included.
+- Published container validation covers Linux/amd64; ARM64 remains unvalidated.
+
+### Validation
+
+Release-candidate validation covers the import-delete-preview-re-import lifecycle, stale-row atomic reattachment and rollback, restored repeat-import protection, live-binding rejection, zero-eligible bulk controls, the retained v1.2.0 Portainer preview matrix, complete application and demo suites, and Linux/amd64 container validation.
+
 ## StackMap v1.2.0
 
 ### Highlights

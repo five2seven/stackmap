@@ -129,11 +129,12 @@ export class SqliteInventoryRepository {
       this.afterPortainerImportStage?.('source')
       const sourceId = this.connection.prepare('SELECT id FROM portainer_sources WHERE origin = ?').pluck().get(selection.origin) as number
       const bound = this.connection.prepare(`
-        SELECT 1 FROM portainer_container_bindings
+        SELECT service_id FROM portainer_container_bindings
         WHERE source_id = ? AND environment_id = ? AND container_id = ?
       `)
       for (const item of selection.services) {
-        if (bound.get(sourceId, item.environmentId, item.containerId)) {
+        const binding = bound.get(sourceId, item.environmentId, item.containerId) as { service_id: string | null } | undefined
+        if (binding?.service_id) {
           throw new PortainerImportConflictError('PORTAINER_ALREADY_BOUND')
         }
       }
@@ -161,6 +162,9 @@ export class SqliteInventoryRepository {
       const bindContainer = this.connection.prepare(`
         INSERT INTO portainer_container_bindings (source_id, environment_id, container_id, service_id, imported_at)
         VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(source_id, environment_id, container_id) DO UPDATE
+        SET service_id = excluded.service_id, imported_at = excluded.imported_at
+        WHERE portainer_container_bindings.service_id IS NULL
       `)
       for (const { environmentId, containerId, service } of selection.services) {
         if (!service.hostId || !hostExists.get(service.hostId)) throw new InventoryValidationError('Selected target host does not exist')
@@ -168,7 +172,8 @@ export class SqliteInventoryRepository {
         this.afterPortainerImportStage?.('service')
         this.replaceServiceChildren(service)
         this.afterPortainerImportStage?.('children')
-        bindContainer.run(sourceId, environmentId, containerId, service.id, importedAt)
+        const binding = bindContainer.run(sourceId, environmentId, containerId, service.id, importedAt)
+        if (binding.changes !== 1) throw new PortainerImportConflictError('PORTAINER_ALREADY_BOUND')
         this.afterPortainerImportStage?.('binding')
       }
       const nextRevision = revision + 1
