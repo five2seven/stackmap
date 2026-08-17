@@ -24,14 +24,18 @@ connection or user-data upload.
 - Port Map grouped by host, with search, filtering, conflicts, and edit actions
 - Path Map grouped by host and path, with shared-path details, warnings, search, filtering, and edit actions
 - Service search and filters for status, host, network, and exposure
+- Manual, read-only Portainer discovery with reviewable, create-only imports
+- Portainer preview controls for individual or bulk service selection and target-host assignment
 - Versioned JSON export of the current server inventory
 - Shared durable inventory in SQLite through the same-origin API
 
 ## Deploy with Portainer
 
-The production container is published at `ghcr.io/five2seven/stackmap:latest`. Ordinary `main` merges and
-tag pushes validate without publishing an image; image publication remains an explicitly dispatched
-workflow.
+The production container is published at `ghcr.io/five2seven/stackmap`. Use the versioned
+`ghcr.io/five2seven/stackmap:1.2.1` tag for a predictable deployment. The `latest` tag follows the most
+recently published release and can be used when automatic movement to a later release is intended.
+Ordinary `main` merges and tag pushes validate without publishing an image; image publication remains an
+explicitly dispatched workflow.
 
 1. Open Portainer.
 2. Select **Stacks**.
@@ -46,7 +50,7 @@ workflow.
 ---
 services:
   stackmap:
-    image: ghcr.io/five2seven/stackmap:latest
+    image: ghcr.io/five2seven/stackmap:1.2.1
     init: true
     container_name: stackmap
     environment:
@@ -142,9 +146,15 @@ The retired browser migration workflow is not part of backup or restore. Server 
 
 Set `STACKMAP_PORTAINER_URL` to the HTTPS origin of the Portainer server to enable manual import. HTTPS uses normal system certificate and hostname validation and remains preferred. For a trusted private LAN only, HTTP is also accepted when every address resolved at startup and for each connection is RFC1918 IPv4 (`10.0.0.0/8`, `172.16.0.0/12`, or `192.168.0.0/16`). Mixed, public, loopback, link-local, metadata-service, CGNAT, multicast, unspecified, and IPv6 destinations are rejected. Hostname text alone is not trusted, redirects are not followed, and TLS verification cannot be disabled. HTTP exposes the API token and returned inventory data to observers on that LAN.
 
-In the production UI, enter a Portainer API token, select environments and containers, review host, network, port, and bind-mount choices, then explicitly confirm. StackMap performs read-only Portainer discovery and creates the selected records atomically in SQLite. Tokens remain short-lived server memory only.
+StackMap supports Docker environments exposed through the configured Portainer server, including local Docker environments that omit the optional container-engine label. Docker container summaries may describe unpublished ports by omitting `IP` and by omitting `PublicPort` or setting it to `null`; these remain container ports and do not create host-port mappings. Unsupported or non-Docker environments are not offered for import.
 
-Portainer import is create-only: it never updates, synchronizes, refreshes, or deletes existing services. Containers bound to an existing StackMap service are skipped by default; if that service was deleted, the preserved binding can be attached to a newly created service by a later confirmed import. The public demo has no Portainer integration. Portable JSON backup schema version 1 remains unchanged; a successful full restore clears Portainer repeat-import metadata because restored inventory has no source bindings.
+In the production UI, enter a Portainer API token, choose Docker environments, and build a preview. Review each container's host, network, ports, and bind mounts before importing. Containers may be selected individually; stopped and paused containers remain unselected by default. **Select all services** explicitly selects every currently importable container, including stopped or paused containers, while clearing it deselects all services and a partial selection is shown as indeterminate. Containers already bound to a live StackMap service remain protected from accidental duplicate import and are not eligible for selection.
+
+Choose a target host with each service's **Target host** control, or use **Set host for selected services** to update only the current selection. The bulk control offers only host choices valid for every selected service; existing StackMap hosts remain available, while a proposed Portainer host is available only to services discovered from its environment. StackMap recalculates host-port conflicts in the preview after either kind of host change.
+
+All preview edits remain temporary until **Import selected** is explicitly acknowledged and confirmed. Confirmation creates only the selected new hosts and services in one SQLite transaction; it never updates, synchronizes, refreshes, overwrites, or deletes an existing service. Portainer API tokens remain only in short-lived server memory.
+
+Deleting an imported StackMap service preserves its Portainer provenance. When that provenance no longer points to an existing service, the container becomes eligible for a later confirmed, create-only import instead of remaining permanently blocked. A successful re-import attaches the preserved provenance to the newly created service, so subsequent previews again protect it from accidental duplicate import. The public demo has no Portainer integration. Portable JSON backup schema version 1 remains unchanged; a successful full restore clears Portainer repeat-import metadata because restored inventory has no source bindings.
 
 For disaster recovery or image rollback, use a cold filesystem backup: stop the container cleanly, copy
 the complete `/config` directory, and then restart it. Copying only `stackmap.db` while StackMap is running
@@ -190,8 +200,8 @@ Additional validation commands are `npm run lint`, `npm run build`, `npm run tes
 - Scheduled, cloud, incremental, partial, and merge backup or restore are not implemented.
 - The legacy IndexedDB migration workflow is retired. Browser data remains untouched and must be recovered with a compatible older release or an existing JSON export if it was not migrated earlier.
 - There are no user accounts or cloud synchronization.
-- StackMap does not connect to or manage remote Docker hosts.
-- There is no container monitoring or automatic discovery.
+- StackMap does not connect directly to Docker engines, mount the Docker socket, or manage containers. Its optional Portainer integration performs only user-initiated, read-only discovery followed by explicit create-only import.
+- There is no container monitoring, polling, synchronization, background refresh, or automatic discovery or import.
 - Docker Compose import is not supported.
 - Markdown export is not available yet.
 - Docker Compose skeleton export is not available yet.
