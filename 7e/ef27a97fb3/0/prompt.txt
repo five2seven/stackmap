@@ -1071,3 +1071,43 @@ Return:
 - final local main and origin/main state
 - worktree status
 - confirmation planning, release, publication, and deployment were untouched
+
+---
+
+Close out the v1.2.1 stale-binding re-import plan after the merged implementation.
+
+Follow AGENTS.md.
+
+Record the single v1.2.1 task as Complete with:
+- implementation commit `5bb509cab8a0740176058e2a52e6f30bbadf7fee`
+- Entire checkpoint `db6557066a4c`
+- PR #50
+- merge commit `e9034aeb28ffb9d7608f23acba4e6e4a6053d8ed`
+- focused and full validation
+- exact-head CI `32057531960`
+- Semgrep `211865808`
+- final behavior:
+  - live bindings still block duplicate imports
+  - stale/null-target bindings are re-importable
+  - stale binding is atomically reattached to the newly created service
+  - repeat-import protection is restored after successful re-import
+  - rollback and expected-revision behavior remain intact
+  - zero-eligible Select All and no-selection Apply Host behavior remain correct
+  - v1.2.0 bulk-selection and host-assignment behavior remains unchanged
+- confirmation that SQLite, backup/restore, security/network-policy, token handling, create-only import, and demo boundaries remain unchanged
+
+Mark the v1.2.1 plan Complete with no additional task.
+
+Update only the planning/current-task documents required by AGENTS.md.
+
+Do not change application code, version metadata, workflows, release notes, tags, Releases, GHCR, or Pages.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- final task/plan status
+- validation
