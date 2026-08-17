@@ -1,0 +1,631 @@
+Close out the v1.1.3 Portainer PortSummary compatibility plan after the merged implementation.
+
+Follow AGENTS.md.
+
+Record the single v1.1.3 task as Complete with:
+
+- implementation commit `5978c82d2dbba610eac59780b85a97c3370a6e19`
+- Entire checkpoint `b14f157ecf8d`
+- PR #44
+- merge commit `f8f753119dbd4c2675c2234f897ceccc836ad093`
+- focused and full validation
+- exact-head CI and Semgrep results
+- final compatibility behavior:
+
+- omitted `IP` accepted
+- omitted/null `PublicPort` treated as unpublished
+- unpublished ports do not create host-port mappings
+- required `PrivatePort` and `Type` remain strict
+- malformed present values remain rejected
+- confirmation that existing security, import, database, UI, and demo behavior remained unchanged
+
+Mark the v1.1.3 plan Complete with no additional task.
+
+Update only the planning/current-task documents required by AGENTS.md.
+
+Do not change application code, version metadata, workflows, release notes, GHCR, Pages, tags, or releases.
+
+Validate, commit, push a planning branch, and open a draft PR.
+
+Return:
+
+- branch
+- commit
+- Entire checkpoint
+- PR URL
+- final task/plan status
+- validation
+
+---
+
+Review planning PR #45.
+
+Follow AGENTS.md.
+
+Verify:
+
+- the single v1.1.3 task is accurately Complete
+- the v1.1.3 plan is Complete with no additional task
+- implementation commit, Entire checkpoint, PR #44, merge commit, CI, and Semgrep traceability are accurate
+- the final Docker PortSummary compatibility behavior is recorded correctly
+- only the intended planning files changed
+- no release/publication work began
+
+If ready:
+
+- mark PR #45 ready
+- merge normally
+- sync local main with origin/main
+
+Do not tag or release v1.1.3 yet.
+Do not publish GHCR or deploy Pages.
+
+Return:
+
+- findings
+- validation
+- merge commit
+- final main state
+Review planning PR #45.
+
+Follow AGENTS.md.
+
+Verify:
+
+- the single v1.1.3 task is accurately Complete
+- the v1.1.3 plan is Complete with no additional task
+- implementation commit, Entire checkpoint, PR #44, merge commit, CI, and Semgrep traceability are accurate
+- the final Docker PortSummary compatibility behavior is recorded correctly
+- only the intended planning files changed
+- no release/publication work began
+
+If ready:
+
+- mark PR #45 ready
+- merge normally
+- sync local main with origin/main
+
+Do not tag or release v1.1.3 yet.
+Do not publish GHCR or deploy Pages.
+
+Return:
+
+- findings
+- validation
+- merge commit
+- final main state
+
+---
+
+Perform the final v1.1.3 release-readiness review from current `main`.
+
+Follow AGENTS.md and the release checklist.
+
+Verify:
+
+- package/app version is consistently `1.1.3`
+- changelog and release notes accurately describe the Docker PortSummary compatibility fix
+- omitted `IP` is accepted
+- omitted/null `PublicPort` is treated as unpublished
+- unpublished ports do not create false host-port mappings or conflicts
+- published-port behavior remains correct
+- required `PrivatePort` and `Type` validation remains strict
+- malformed present optional values remain rejected
+- existing Portainer security controls, token lifecycle, route allowlisting, RFC1918 HTTP policy, HTTPS validation, redirect rejection, confirmation, create-only import, provenance, SQLite authority, UI workflow, and demo isolation remain unchanged
+- no stale current-guidance wording remains from v1.1.2
+- no sensitive or environment-specific information was introduced
+- full application/demo/container/deployment validation passes
+- exact-main container CI passes
+- full Semgrep scan on exact main reports zero blocking findings
+- no `v1.1.3` tag or GitHub Release exists yet
+- no `1.1.3` GHCR image exists yet
+- Pages has not been redeployed
+
+Do not modify files.
+Do not tag or release v1.1.3.
+Do not publish GHCR.
+Do not deploy Pages.
+
+Return:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- validation
+- publication state
+- final recommendation: Ready for v1.1.3 release or Changes required
+
+---
+
+Perform the final v1.1.3 release-readiness review from current `main`.
+
+Follow AGENTS.md and the release checklist.
+
+Verify:
+
+- package/app version is consistently `1.1.3`
+- changelog and release notes accurately describe the Docker PortSummary compatibility fix
+- omitted `IP` is accepted
+- omitted/null `PublicPort` is treated as unpublished
+- unpublished ports do not create false host-port mappings or conflicts
+- published-port behavior remains correct
+- required `PrivatePort` and `Type` validation remains strict
+- malformed present optional values remain rejected
+- existing Portainer security controls, token lifecycle, route allowlisting, RFC1918 HTTP policy, HTTPS validation, redirect rejection, confirmation, create-only import, provenance, SQLite authority, UI workflow, and demo isolation remain unchanged
+- no stale current-guidance wording remains from v1.1.2
+- no sensitive or environment-specific information was introduced
+- full application/demo/container/deployment validation passes
+- exact-main container CI passes
+- full Semgrep scan on exact main reports zero blocking findings
+- no `v1.1.3` tag or GitHub Release exists yet
+- no `1.1.3` GHCR image exists yet
+- Pages has not been redeployed
+
+Do not modify files.
+Do not tag or release v1.1.3.
+Do not publish GHCR.
+Do not deploy Pages.
+
+Return:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- validation
+- publication state
+- final recommendation: Ready for v1.1.3 release or Changes required
+
+---
+
+Continue the v1.1.3 release-readiness check from current `main` at `944feffe743f3e245952e7af20203300fb77afc0`.
+
+Do not redo completed validation.
+
+The only outstanding gate is exact-main Semgrep.
+
+Check suite `86832883093` is currently queued for the exact main commit.
+
+Required action:
+
+- wait for / re-check the exact-main Semgrep result
+- if the managed Semgrep check completes successfully with zero blocking findings, record the gate as passed
+- if the managed integration does not produce a usable result, run a fresh full Semgrep scan against the exact synchronized `main` commit and document that it scanned the exact commit
+- do not make repository changes unless Semgrep finds an actual issue
+
+Do not:
+
+- tag or release v1.1.3 yet
+- publish GHCR
+- deploy Pages
+- modify code, docs, planning, workflows, or metadata
+
+Return:
+
+- exact-main Semgrep result
+- scan/check identifier
+- confirmation it ran against commit `944feffe743f3e245952e7af20203300fb77afc0`
+- final recommendation: Ready for v1.1.3 release or Changes required
+
+---
+
+Release StackMap v1.1.3 from clean synchronized main at `944feffe743f3e245952e7af20203300fb77afc0`.
+
+Follow AGENTS.md and the release checklist.
+
+Proceed in this order:
+
+1. Verify no `v1.1.3` tag or GitHub Release exists.
+2. Create and push annotated tag `v1.1.3` at current main.
+3. Explicitly dispatch container publication for ref `v1.1.3`.
+
+- verify `ghcr.io/five2seven/stackmap:1.1.3` is anonymously accessible
+4. Explicitly dispatch container publication for ref `main`.
+
+- verify `ghcr.io/five2seven/stackmap:latest` is updated
+5. Verify `1.1.3` and `latest` contain the same runnable application layers and identify commit `944feffe743f3e245952e7af20203300fb77afc0`.
+6. Create the immutable GitHub Release for `v1.1.3` using the prepared release notes.
+7. Verify the public repository, tag, Release page, versioned GHCR image, latest GHCR image, and live demo.
+
+Do not redeploy Cloudflare Pages.
+Do not modify code, documentation, planning, version metadata, workflows, or release notes.
+
+If any publication or verification step fails, stop before creating the GitHub Release.
+
+Return:
+
+- annotated tag SHA and tagged commit
+- publication workflow run IDs/results
+- GHCR `1.1.3` and `latest` digests
+- GitHub Release URL
+- final validation
+- final repository state
+
+---
+
+Add two bulk actions to the Portainer import preview UI.
+
+Follow AGENTS.md and required planning gates.
+
+Requirements:
+
+1. Select all services
+- Add a top-level checkbox labeled `Select all services`.
+- Checked state selects every importable service in the current preview.
+- Unchecking clears all service selections.
+- If only some services are selected, show an indeterminate state.
+- Preserve existing per-service checkboxes.
+- Do not automatically select stopped/paused services unless the user explicitly uses Select all.
+- Bulk selection must only affect the current preview state.
+
+2. Apply host to selected services
+- Add a bulk control labeled `Set host for selected services`.
+- Allow choosing any valid target host already available in the preview.
+- Applying the control updates the target host only for currently selected services.
+- Unselected services must remain unchanged.
+- Preserve the existing per-service target-host dropdown.
+- Recompute host-scoped conflicts after the bulk change using the same logic as individual host changes.
+
+3. Preserve behavior
+- No database mutation until explicit import confirmation.
+- No changes to Portainer discovery, security, token handling, provenance, create-only import semantics, SQLite authority, or demo isolation.
+- No synchronization, polling, background work, or automatic import.
+
+Add tests for:
+- select all
+- clear all
+- indeterminate state
+- stopped/paused containers remain unselected by default
+- select all explicitly includes them
+- bulk host assignment to selected services
+- unselected services remain unchanged
+- host-scoped conflicts recompute correctly
+- per-service controls continue to work after bulk actions
+
+Treat this as a focused UI/preview-state improvement and determine the correct next patch/minor version from repository state.
+
+Do not release or publish anything.
+
+Return:
+- whether planning is required
+- proposed version
+- changed files
+- tests
+- commit
+- Entire checkpoint
+- draft PR URL
+
+---
+
+Review planning PR #46.
+
+Follow AGENTS.md.
+
+Verify:
+
+- `1.2.0` is the appropriate version for these new user-facing Portainer preview controls
+- exactly one implementation task exists and is Ready
+- the plan accurately covers:
+
+- Select all services
+- Clear all services
+- Indeterminate state when partially selected
+- stopped/paused services remain unselected by default
+- Select all explicitly includes them
+- bulk target-host assignment applies only to selected services
+- unselected services remain unchanged
+- host-scoped conflicts recompute after bulk host changes
+- provenance-bound/non-importable services are excluded appropriately
+- existing per-service selection and host controls continue to work
+- all bulk actions affect preview state only
+- no database mutation occurs before explicit confirmation/import
+- no Portainer discovery/security/token/network-policy/provenance/create-only/SQLite/demo behavior is changed
+- no sync, polling, background, update, overwrite, or automatic import behavior is added
+- only the intended planning files changed
+- no implementation or release/publication work began
+
+Do not modify files during review.
+
+If ready:
+
+- mark PR #46 ready
+- merge normally
+- sync local main with origin/main
+
+Do not begin implementation yet.
+
+Return:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation
+- Merge commit
+- Final main state
+
+---
+
+PR #46 has now received the required independent approval.
+
+Continue from the current state. Do not redo the planning review unless the PR head changed.
+
+Verify:
+
+- PR #46 still points to exact head `f238eb374a6ed7b9db6b68b053babab2effb49d8`
+- required independent approval is present
+- required checks remain successful
+- PR remains normally mergeable
+
+If those conditions hold:
+
+- merge PR #46 normally
+- sync local main with origin/main
+- verify the normal merge commit
+
+Do not begin v1.2.0 implementation yet.
+Do not tag, release, publish GHCR, or deploy Pages.
+
+Return:
+
+- approval/check status
+- merge commit
+- final main state
+- confirmation implementation and release work remain untouched
+
+---
+
+PR #46 has now received the required independent approval.
+
+Continue from the current state. Do not redo the planning review unless the PR head changed.
+
+Verify:
+
+- PR #46 still points to exact head `f238eb374a6ed7b9db6b68b053babab2effb49d8`
+- required independent approval is present
+- required checks remain successful
+- PR remains normally mergeable
+
+If those conditions hold:
+
+- merge PR #46 normally
+- sync local main with origin/main
+- verify the normal merge commit
+
+Do not begin v1.2.0 implementation yet.
+Do not tag, release, publish GHCR, or deploy Pages.
+
+Return:
+
+- approval/check status
+- merge commit
+- final main state
+- confirmation implementation and release work remain untouched
+
+---
+
+Implement the single Ready v1.2.0 task from `docs/current-task.md`.
+
+Follow AGENTS.md and the merged v1.2.0 Portainer preview bulk-actions plan.
+
+Requirements:
+
+1. Select all services
+
+- Add a top-level `Select all services` checkbox in the Portainer preview.
+- Checked: select every currently importable service.
+- Unchecked: clear every service selection.
+- Partial selection: show an indeterminate state.
+- Preserve existing per-service checkboxes.
+- Stopped/paused services remain unselected by default.
+- Explicit Select all must include stopped/paused services if they are otherwise importable.
+- Provenance-bound or otherwise non-importable services must not be selected by Select all.
+
+2. Bulk target-host assignment
+
+- Add a control labeled `Set host for selected services`.
+- Present the same valid target-host choices available through the individual service controls.
+- Applying a target host updates only currently selected services.
+- Unselected services remain unchanged.
+- Preserve existing per-service target-host controls.
+- Recompute host-scoped conflicts after the bulk host update using the same existing conflict semantics as individual host changes.
+
+3. Preview-only state
+
+- Bulk actions modify preview state only.
+- No inventory/database mutation before explicit confirmation/import.
+- Existing expected-revision, confirmation, and atomic create-only import behavior remains unchanged.
+
+4. Preserve boundaries
+
+- No changes to Portainer discovery, network policy, token lifecycle, route allowlisting, HTTPS validation, RFC1918 HTTP behavior, redirects, provenance, SQLite authority, backup/restore, or demo isolation.
+- No synchronization, polling, refresh, overwrite, update, automatic import, scheduled work, or background behavior.
+
+5. Tests
+   Add focused coverage for:
+
+- select all
+- clear all
+- indeterminate state
+- stopped/paused default behavior
+- explicit Select all includes stopped/paused importable services
+- non-importable/provenance-bound services excluded
+- bulk host assignment affects selected services only
+- unselected services remain unchanged
+- host-scoped conflicts recompute correctly
+- individual service selection/host controls still work after bulk actions
+- confirmation/import behavior remains unchanged
+
+Also:
+
+- update version metadata to `1.2.0`
+- update changelog/release notes/docs only as required
+- preserve demo isolation
+- run focused and full validation
+
+Commit, push, open a draft PR, and wait for exact-head CI/Semgrep.
+
+Return:
+
+- commit
+- Entire checkpoint
+- PR URL
+- changed files
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation no unrelated behavior was added
+
+---
+
+Review PR #47 at exact head `04493b19994ae27d404ee2ccf70b1996e579d7d4` against `origin/main`.
+
+Follow AGENTS.md and the merged v1.2.0 Portainer preview bulk-actions plan.
+
+Verify:
+
+- `Select all services` selects every currently importable service.
+- Clearing it deselects all services.
+- Partial selection shows indeterminate state.
+- Stopped/paused services remain unselected by default.
+- Explicit Select all includes stopped/paused services when otherwise importable.
+- Provenance-bound/non-importable services remain excluded from bulk selection.
+- `Set host for selected services` affects only currently selected services.
+- Unselected services remain unchanged.
+- Individual host controls still work after bulk changes.
+- Host-scoped conflicts recompute correctly after bulk host assignment.
+- Confirmation/import payload reflects the final preview state.
+- Bulk actions remain preview-only with no inventory/database mutation before confirmation.
+- Existing expected-revision, atomic create-only import, provenance, SQLite, backup/restore, Portainer discovery/security/network-policy/token/route behavior, and demo isolation are unchanged.
+- No sync, polling, update, overwrite, automatic import, scheduled work, or background behavior was added.
+- Version metadata, changelog, health assertions, and release notes consistently use `1.2.0`.
+- Exact-head CI and Semgrep passed.
+
+Do not modify files or PR state.
+
+Report:
+
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge, release, publish, deploy, or advance planning.
+
+---
+
+Fix the blocking review finding in PR #47 only.
+
+Follow AGENTS.md.
+
+Confirmed issue:
+- The preview UI builds one shared `targetHosts` list containing all proposed hosts from all selected Portainer environments plus existing hosts.
+- Both the bulk host control and per-service host dropdown use that shared list.
+- Server confirmation validation only accepts:
+  - the service's own proposed host, or
+  - an existing StackMap host.
+- Therefore, in a multi-environment preview, the UI can offer environment B's proposed host for a service discovered from environment A, but confirmation later fails with `PORTAINER_CONFIRMATION_INVALID`.
+
+Required fix:
+- Restrict each service's valid target-host choices to exactly the same choices the server confirmation accepts:
+  - that service's own proposed host
+  - existing StackMap hosts
+- The bulk `Set host for selected services` control must only offer/apply choices that are valid for every currently selected service.
+- Do not broaden server confirmation rules unless the merged v1.2.0 plan explicitly requires cross-environment reassignment. Prefer aligning the UI to current server semantics.
+- Preserve existing same-environment proposed-host behavior and existing-host assignment.
+- Preserve all current conflict recomputation behavior.
+
+Add regression coverage for:
+- two proposed Portainer environments in one preview
+- service from environment A cannot select environment B's proposed host
+- service from environment B cannot select environment A's proposed host
+- each service can still select its own proposed host
+- both can select an existing StackMap host
+- bulk host options reflect the intersection of valid choices for the current selection
+- confirmation succeeds for every host choice the UI actually offers
+- confirmation rejects a deliberately tampered cross-environment proposed-host payload
+- existing select-all, indeterminate, stopped/paused, provenance-bound, per-service controls, and confirmation behavior continue to pass
+
+Do not change:
+- version
+- release notes/changelog unless strictly necessary
+- Portainer discovery/security/token/network policy
+- database/provenance/import semantics
+- demo behavior
+- synchronization/polling/update/background behavior
+
+Keep PR #47 open as draft.
+
+Validate focused and full suites, exact-head CI, Semgrep, and `git diff --check`.
+
+Return:
+- commit
+- Entire checkpoint
+- files changed
+- focused tests
+- full validation
+- exact-head CI/Semgrep
+- confirmation the blocking finding is resolved
+
+---
+
+Review PR #47 again at exact head `0e647ea9228b5b59d1370533d80540cfae757c26` against `origin/main`.
+
+Follow AGENTS.md and the merged v1.2.0 Portainer preview bulk-actions plan.
+
+Focus specifically on the prior blocking finding and verify:
+
+- each service can only choose:
+  - its own proposed Portainer host
+  - existing StackMap hosts
+- a service from environment A cannot choose environment B's proposed host
+- a service from environment B cannot choose environment A's proposed host
+- the bulk host control offers only the intersection of host choices valid for every currently selected service
+- every host choice actually offered by the UI passes server confirmation
+- deliberately tampered cross-environment proposed-host payloads are rejected
+- existing-host assignment still works
+- same-environment proposed-host assignment still works
+- host-scoped conflicts still recompute correctly
+- existing select-all, clear-all, indeterminate, stopped/paused, provenance-bound, per-service controls, confirmation payloads, and preview-only behavior remain intact
+
+Also verify:
+- no server confirmation semantics were broadened
+- no unrelated production/server/database/security/demo behavior changed
+- version metadata, changelog, and release notes remain consistent at `1.2.0`
+- exact-head CI and Semgrep passed
+
+Do not modify files or PR state.
+
+Report:
+- Blocking
+- Important
+- Minor
+- No-issue summary
+- Validation/CI verification
+- Final recommendation: Ready to merge or Changes required
+
+Do not merge, release, publish, deploy, or advance planning.
+
+---
+
+Merge PR #47.
+
+Follow AGENTS.md.
+
+- mark PR #47 ready
+- merge normally
+- sync local main with origin/main
+- verify the merge commit and confirm it is a normal two-parent merge
+- do not advance planning yet
+- do not tag or release v1.2.0
+- do not publish GHCR
+- do not deploy Pages
+
+Return:
+- merge commit
+- final local main and origin/main state
+- worktree status
+- confirmation planning, release, publication, and deployment were untouched
