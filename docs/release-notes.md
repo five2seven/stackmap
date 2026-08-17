@@ -1,5 +1,29 @@
 # Release Notes
 
+## StackMap v1.2.0
+
+### Highlights
+
+- Adds a `Select all services` control to the Portainer preview, with clear-all and indeterminate states. Stopped and paused containers remain unselected by default but are included by an explicit select-all action when importable.
+- Adds selected-only bulk target-host assignment using the same valid preview hosts and conflict rules as the existing per-service host controls.
+- Keeps provenance-bound containers excluded and preserves preview-only edits, explicit confirmation, atomic create-only import, SQLite authority, Portainer security controls, and public-demo isolation.
+
+### Upgrade guidance
+
+Before upgrading, download a server JSON backup and stop StackMap cleanly to make a cold backup of the complete `/config` directory. Preserve the same `/config` mount when recreating the container. Version 1.2.0 makes no database or portable-backup schema change, so existing v1.1.3 data remains compatible.
+
+### Known limitations
+
+- Bulk selection and host assignment apply only to the active preview and are discarded on cancellation, completion, refresh, or preview replacement.
+- Portainer import remains manual and create-only, with no synchronization, polling, background refresh, overwrite, merge, or service updates.
+- Cleartext HTTP remains restricted to destinations resolving exclusively to RFC1918 IPv4; HTTPS remains preferred.
+- Cloudflare Access integration and custom TLS trust controls are not included.
+- Published container validation covers Linux/amd64; ARM64 remains unvalidated.
+
+### Validation
+
+Release-candidate validation covers aggregate select, clear, and indeterminate states; stopped, paused, and provenance-bound behavior; selected-only host assignment; conflict recomputation; per-service control regressions; explicit confirmation; the complete application and demo suites; and Linux/amd64 container validation.
+
 ## StackMap v1.1.3
 
 ### Highlights
