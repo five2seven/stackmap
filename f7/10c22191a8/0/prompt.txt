@@ -241,3 +241,57 @@ Return:
 - GitHub Release URL
 - final validation
 - final repository state
+
+---
+
+Add two bulk actions to the Portainer import preview UI.
+
+Follow AGENTS.md and required planning gates.
+
+Requirements:
+
+1. Select all services
+- Add a top-level checkbox labeled `Select all services`.
+- Checked state selects every importable service in the current preview.
+- Unchecking clears all service selections.
+- If only some services are selected, show an indeterminate state.
+- Preserve existing per-service checkboxes.
+- Do not automatically select stopped/paused services unless the user explicitly uses Select all.
+- Bulk selection must only affect the current preview state.
+
+2. Apply host to selected services
+- Add a bulk control labeled `Set host for selected services`.
+- Allow choosing any valid target host already available in the preview.
+- Applying the control updates the target host only for currently selected services.
+- Unselected services must remain unchanged.
+- Preserve the existing per-service target-host dropdown.
+- Recompute host-scoped conflicts after the bulk change using the same logic as individual host changes.
+
+3. Preserve behavior
+- No database mutation until explicit import confirmation.
+- No changes to Portainer discovery, security, token handling, provenance, create-only import semantics, SQLite authority, or demo isolation.
+- No synchronization, polling, background work, or automatic import.
+
+Add tests for:
+- select all
+- clear all
+- indeterminate state
+- stopped/paused containers remain unselected by default
+- select all explicitly includes them
+- bulk host assignment to selected services
+- unselected services remain unchanged
+- host-scoped conflicts recompute correctly
+- per-service controls continue to work after bulk actions
+
+Treat this as a focused UI/preview-state improvement and determine the correct next patch/minor version from repository state.
+
+Do not release or publish anything.
+
+Return:
+- whether planning is required
+- proposed version
+- changed files
+- tests
+- commit
+- Entire checkpoint
+- draft PR URL
