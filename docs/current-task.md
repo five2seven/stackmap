@@ -2,7 +2,7 @@
 
 ## Portainer bind-mount purpose inference
 
-- **Status:** Ready
+- **Status:** Complete
 - **Planned implementation branch:** `codex/portainer-bind-mount-purpose-inference`
 - **Plan:** `docs/v1.3.0-portainer-bind-mount-purpose-inference-plan.md`
 - **Version target:** 1.3.0
@@ -46,7 +46,25 @@
 
 No purpose enum or new category system; host-path-driven inference; image-specific heuristics; fuzzy substring or probabilistic classification; inference after confirmation; database or backup-format migration; update/overwrite import; change to Portainer discovery, token lifecycle, route allowlisting, RFC1918 HTTP policy, HTTPS validation, redirect rejection, provenance, SQLite authority, backup/restore, or demo behavior; synchronization, polling, refresh, automatic update/import, scheduled/background work; unrelated UI redesign; release, tag, Release, GHCR publication, or Pages deployment.
 
-The single StackMap v1.3.0 Portainer bind-mount purpose-inference task is Ready. Implementation, review, closeout, and any eventual release remain separate work.
+### Completion record
+
+- **Implementation PR:** #55
+- **Implementation commit:** `ecd2e20e02de6020472c6653bb322fb12edd7253`
+- **Entire checkpoint:** `4e2e57b38f98`
+- **Merge commit:** `78b55a591f743655bfc25401f7952284cbf676ad`
+- **Focused validation:** The initial six-file Portainer/UI selection ran 91 tests successfully. The final four-file focused regression selection ran 67 tests successfully after confirmation-tamper coverage was expanded.
+- **Full validation:** Lint, 265 unit/integration/component tests across 24 files, production and demo builds, 12 production E2E tests, the demo-isolation E2E test, dependency audit, script syntax checks, and `git diff --check` passed. Exact-head CI additionally built and exercised the Linux/amd64 image and passed container smoke, deployment, persistence, backup/restore, upgrade, health, shutdown, and failure-path validation.
+- **Exact-head checks:** CI run `32081328247` passed for exact implementation head `ecd2e20e02de6020472c6653bb322fb12edd7253`; Semgrep run `212018868` passed with no blocking findings.
+
+### Final behavior
+
+- Portainer preview construction infers `Configuration`, `Metadata`, or `Media library` only from the approved exact terminal segments of normalized absolute POSIX container destinations. `/data`, partial matches, relative or Windows-style paths, ambiguous destinations, and host-path-only signals remain blank.
+- The preview exposes an editable purpose for each included bind mount. Users may override or clear an inference, and confirmation imports that final preview value exactly without recomputing it.
+- Confirmation accepts only bounded purpose changes for offered path IDs. Path identity, host and container paths, read-only state, shape, and subset constraints remain fail-closed.
+- The configuration warning now reads `No path is marked for configuration.` while retaining its existing configuration-specific predicate.
+- Create-only explicit confirmation, expected-revision and atomic rollback behavior, live/stale provenance, bulk selection and host assignment, host-option intersection, cross-environment restrictions, conflict handling, SQLite authority, backup/restore, Portainer security and network policy, token handling, and demo isolation remain unchanged. No synchronization, polling, refresh, overwrite, update, automatic import, scheduled work, or background behavior was added.
+
+The single StackMap v1.3.0 Portainer bind-mount purpose-inference task is Complete. The plan is Complete with no additional task. Release readiness and any eventual release remain separate work.
 
 ## Prior plan
 
