@@ -1494,3 +1494,25 @@ Only stop and ask me when:
 - a release/publication step requires explicit authorization under AGENTS.md
 
 Otherwise, proceed autonomously and report milestones rather than asking me to relay prompts between agents.
+
+---
+
+I authorize the normal merge of PR #55.
+
+After merging:
+- synchronize local main with origin/main
+- verify the normal two-parent merge
+- complete the v1.3.0 planning closeout
+- perform final release-readiness validation
+- continue autonomously through all non-release steps allowed by AGENTS.md
+
+Do not require routine handoffs from me.
+
+Stop only if:
+- a repository policy explicitly requires my authorization
+- an external approval/check cannot be completed autonomously
+- a destructive or irreversible action requires approval
+- a material product/security decision is genuinely ambiguous
+- release/publication requires explicit authorization
+
+Do not tag, release, publish GHCR, or deploy Pages until you request and receive that separate release authorization.
